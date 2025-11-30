@@ -57,8 +57,9 @@ const Pricing = () => {
                   {plan.popular && (
                     <div className="popular-badge">Phổ biến</div>
                   )}
-                  <Card.Body className="text-center p-4">
-                    <Card.Title className="h3 mb-3">{plan.name}</Card.Title>
+                  <Card.Body className="text-center d-flex flex-column justify-content-between p-4">
+                   <div className="pricing-card-content">
+                   <Card.Title className="h3 mb-3">{plan.name}</Card.Title>
                     <div className="price mb-3">
                       <span className="currency">đ</span>
                       <span className="amount">{formatPrice(plan.price)}</span>
@@ -72,6 +73,7 @@ const Pricing = () => {
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
+                   </div>
                   <Button 
                     as={Link} 
                     to="/contact" 

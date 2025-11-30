@@ -2,16 +2,16 @@ import React from 'react';
 import { Container, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import './Footer.css';
-
+import logo from '../../assets/logo-hvktmm.png';
 const Footer = () => {
   return (
-    <footer className="footer custom-footer mt-5">
+    <footer className="footer custom-footer">
       <Container>
         <Row className="py-4">
           <Col md={4} className="mb-3">
             <h5>
-              <i className="fas fa-server me-2"></i>
-              TTCS Hosting
+              <img className="logo-img" src={logo} alt="TTCS Hosting" />
+              <span className="logo-text style-logo-text">TTCS Hosting</span>
             </h5>
             <p>
               Dịch vụ hosting chuyên nghiệp, uy tín và chất lượng cao.
@@ -22,12 +22,13 @@ const Footer = () => {
             <h5>Liên kết nhanh</h5>
             <ul className="list-unstyled">
               <li><Link to="/" className="text-light text-decoration-none">Trang chủ</Link></li>
-              <li><Link to="/about" className="text-light text-decoration-none">Giới thiệu</Link></li>
+              <li><Link to="/" className="text-light text-decoration-none">Giới thiệu</Link></li>
               <li><Link to="/services" className="text-light text-decoration-none">Dịch vụ</Link></li>
               <li><Link to="/pricing" className="text-light text-decoration-none">Bảng giá</Link></li>
               <li><Link to="/contact" className="text-light text-decoration-none">Liên hệ</Link></li>
             </ul>
           </Col>
+          
           <Col md={4} className="mb-3">
             <h5>Liên hệ</h5>
             <ul className="list-unstyled">
@@ -42,6 +43,7 @@ const Footer = () => {
               <a href="#" className="text-light"><i className="fab fa-github fa-lg"></i></a>
             </div>
           </Col>
+         
         </Row>
         <Row>
           <Col className="text-center py-3 border-top">

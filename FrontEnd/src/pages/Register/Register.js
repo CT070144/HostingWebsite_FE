@@ -82,7 +82,9 @@ const Register = () => {
                     <Row>
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Họ và tên *</Form.Label>
+                          <Form.Label>Họ và tên 
+                            <span className="text-danger">*</span>
+                          </Form.Label>
                           <Form.Control
                             type="text"
                             name="name"
@@ -100,7 +102,9 @@ const Register = () => {
 
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Email *</Form.Label>
+                          <Form.Label>Email 
+                            <span className="text-danger">*</span>
+                          </Form.Label>
                           <Form.Control
                             type="email"
                             name="email"
@@ -119,7 +123,9 @@ const Register = () => {
                     <Row>
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Số điện thoại *</Form.Label>
+                          <Form.Label>Số điện thoại 
+                            <span className="text-danger">*</span>
+                          </Form.Label>
                           <Form.Control
                             type="tel"
                             name="phone"
@@ -136,7 +142,9 @@ const Register = () => {
 
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Mật khẩu *</Form.Label>
+                          <Form.Label>Mật khẩu 
+                            <span className="text-danger">*</span>
+                          </Form.Label>
                           <Form.Control
                             type="password"
                             name="password"
@@ -154,7 +162,9 @@ const Register = () => {
                     </Row>
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Xác nhận mật khẩu *</Form.Label>
+                      <Form.Label>Xác nhận mật khẩu 
+                        <span className="text-danger">*</span>
+                      </Form.Label>
                       <Form.Control
                         type="password"
                         name="confirmPassword"
@@ -171,7 +181,7 @@ const Register = () => {
                     <Form.Group className="mb-3">
                       <Form.Check
                         type="checkbox"
-                        label="Tôi đồng ý với các điều khoản và chính sách"
+                        label={<span>Tôi đồng ý với các điều khoản và chính sách <span className="text-danger">*</span></span>}
                         required
                       />
                     </Form.Group>

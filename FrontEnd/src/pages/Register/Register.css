@@ -1,7 +1,11 @@
 .register-page {
   padding-top: 76px;
   min-height: calc(100vh - 76px);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('../../assets/login.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
 }
 
 .register-card {

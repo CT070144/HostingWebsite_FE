@@ -30,7 +30,7 @@ const Services = () => {
     <div className="services-page">
       <Container className="py-5">
         <div className="text-center mb-5">
-          <h1 className="display-4 mb-4">Dịch vụ của chúng tôi</h1>
+          <h1 className="display-4 section-title mb-4">Dịch vụ của chúng tôi</h1>
           <p className="lead">
             Cung cấp đầy đủ các giải pháp hosting cho mọi nhu cầu
           </p>

@@ -84,4 +84,7 @@
 .social-links a:last-child {
   margin-right: 0;
 }
+.map{
+  border: 4px solid var(--primary-lighter);
 
+}

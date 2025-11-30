@@ -91,15 +91,46 @@ npm test
 - ✅ Form handling
 - ✅ Modern UI/UX
 
+## Deploy lên Vercel
+
+Xem hướng dẫn chi tiết tại: [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md)
+
+### Quick Start
+
+1. **Chuẩn bị:**
+   ```bash
+   npm run build
+   ```
+
+2. **Deploy qua Vercel Dashboard:**
+   - Đăng nhập https://vercel.com
+   - Import project từ GitHub
+   - Cấu hình build settings
+   - Deploy!
+
+3. **Hoặc dùng Vercel CLI:**
+   ```bash
+   npm install -g vercel
+   vercel login
+   vercel --prod
+   ```
+
 ## Phát triển tiếp
 
 - [ ] Tích hợp API backend
-- [ ] Authentication và Authorization
-- [ ] Dashboard cho khách hàng
+- [x] Authentication và Authorization
+- [x] Dashboard cho khách hàng
 - [ ] Thanh toán online
 - [ ] Quản lý đơn hàng
 - [ ] Blog/Tin tức
 - [ ] Multi-language support
+
+## Tài liệu
+
+- [Hướng dẫn Deploy Vercel](./VERCEL_DEPLOY.md)
+- [Hướng dẫn Authentication](./AUTHENTICATION.md)
+- [Hướng dẫn Mock Data](./MOCK_DATA.md)
+- [Design System](./DESIGN_SYSTEM.md)
 
 ## License
 

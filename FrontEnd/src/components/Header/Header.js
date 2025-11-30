@@ -28,10 +28,14 @@ const Header = () => {
       onToggle={setExpanded}
       className="custom-navbar"
     >
+      
       <Container>
-        <Navbar.Brand as={Link} to="/">
+        <Navbar.Brand as={Link} to="/" className="brand-wrapper">
           <img className="logo-img" src={logo} alt="TTCS Hosting" />
-          TTCS Hosting
+          <div className="brand-text-wrapper">
+            <span className="logo-text style-logo-text">TTCS Hosting</span>
+            <span className="logo-subtitle">Sản phẩm chỉ dùng để báo cáo môn - Không phải sản phẩm thương mại</span>
+          </div>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
@@ -44,22 +48,8 @@ const Header = () => {
             >
               Trang chủ
             </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/about" 
-              className={isActive('/about')}
-              onClick={() => setExpanded(false)}
-            >
-              Giới thiệu
-            </Nav.Link>
-            <Nav.Link 
-              as={Link} 
-              to="/services" 
-              className={isActive('/services')}
-              onClick={() => setExpanded(false)}
-            >
-              Dịch vụ
-            </Nav.Link>
+         
+         
             <Nav.Link 
               as={Link} 
               to="/pricing" 

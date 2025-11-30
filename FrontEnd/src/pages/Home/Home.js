@@ -39,20 +39,22 @@ const Home = () => {
                 style={{ backgroundImage: `url(${slide.image})` }}
               >
                 <div className="carousel-overlay"></div>
-                <Container>
-                  <div className="carousel-content text-center text-white">
-                    <h1 className="display-3 fw-bold mb-4">{slide.title}</h1>
-                    <h2 className="h3 mb-3">{slide.subtitle}</h2>
-                    <p className="lead mb-4">{slide.description}</p>
-                    <Button 
-                      as={Link} 
-                      to={slide.buttonLink} 
-                      variant="primary" 
-                      size="lg"
-                      className="btn-primary-custom"
-                    >
-                      {slide.buttonText}
-                    </Button>
+                <Container fluid className="h-100">
+                  <div className="carousel-content-wrapper h-100">
+                    <div className="carousel-content text-white">
+                      <h1 className="display-3 fw-bold mb-4">{slide.title}</h1>
+                      <h2 className="h3 mb-3">{slide.subtitle}</h2>
+                      <p className="lead mb-4">{slide.description}</p>
+                      <Button 
+                        as={Link} 
+                        to={slide.buttonLink} 
+                        variant="primary" 
+                        size="lg"
+                        className="btn-primary-custom"
+                      >
+                        {slide.buttonText}
+                      </Button>
+                    </div>
                   </div>
                 </Container>
               </div>
@@ -69,7 +71,8 @@ const Home = () => {
             {homeMockData.featuredProducts.map((product) => (
               <Col md={6} lg={3} key={product.id} className="mb-4">
                 <Card className="featured-product-card h-100">
-                  <Card.Body className="text-center p-4">
+                  <Card.Body className="text-center d-flex flex-column justify-content-between p-4">
+                    <div className="product-content">
                     <div className="product-icon mb-3">
                       <i className={`${product.icon} fa-3x`}></i>
                     </div>
@@ -90,6 +93,7 @@ const Home = () => {
                         </li>
                       ))}
                     </ul>
+                    </div>
                     <Button 
                       as={Link} 
                       to={product.link} 

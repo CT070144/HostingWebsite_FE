@@ -13,7 +13,8 @@
   background-position: center;
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  margin-top: 80px;
 }
 
 .carousel-overlay {
@@ -22,13 +23,26 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--gradient-overlay);
+
+}
+
+.carousel-content-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  width: 100%;
 }
 
 .carousel-content {
-  position: relative;
-  z-index: 1;
-  padding: 80px 0;
+  min-width: 33.333333%;
+  padding: var(--spacing-xl);
+
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+ 
 }
 
 .carousel-content h1 {
@@ -162,11 +176,13 @@
 }
 
 .stat-box {
-  background: var(--bg-primary);
+
   padding: var(--spacing-lg) var(--spacing-xl);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   text-align: center;
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .stat-value {
@@ -279,14 +295,27 @@
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+  .carousel-content {
+    width: 50%;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-carousel,
   .carousel-slide {
     height: 400px;
   }
 
+  .carousel-content-wrapper {
+    padding: var(--spacing-lg) var(--spacing-md);
+  }
+
   .carousel-content {
-    padding: 40px 0;
+    width: 100%;
+    max-width: 100%;
+    padding: var(--spacing-lg);
   }
 
   .carousel-content h1 {
@@ -308,4 +337,8 @@
   .newsletter-card {
     padding: 2rem 1rem;
   }
+}
+.product-content {
+  flex: 1;
+  grow: 1;
 }
