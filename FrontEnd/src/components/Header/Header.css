@@ -1,0 +1,92 @@
+.custom-navbar {
+  background-color: var(--primary-darker) !important;
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 3px solid var(--border-color);
+ 
+}
+.logo-img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  margin-right: 10px;
+  border-radius: 50%;
+}
+.custom-navbar .navbar-brand {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: var(--text-white) !important;
+  transition: all var(--transition-base);
+}
+
+.custom-navbar .navbar-brand:hover {
+  color: var(--primary-lighter) !important;
+}
+
+.custom-navbar .navbar-brand i {
+  color: var(--primary-lighter);
+}
+
+.custom-navbar .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.custom-navbar .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.custom-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md) !important;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-md);
+  margin: 0 var(--spacing-xs);
+}
+
+.custom-navbar .nav-link:hover {
+  color: var(--text-white) !important;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.custom-navbar .nav-link.active {
+  color: var(--text-white) !important;
+  font-weight: 600;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.custom-navbar .nav-link i {
+  margin-right: var(--spacing-xs);
+}
+
+/* Dropdown Styles */
+.custom-navbar .dropdown-toggle {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.custom-navbar .dropdown-menu {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs);
+}
+
+.custom-navbar .dropdown-item {
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.custom-navbar .dropdown-item:hover {
+  background-color: var(--primary-ultra-light);
+  color: var(--primary-color);
+}
+
+.custom-navbar .dropdown-item i {
+  color: var(--primary-color);
+  width: 20px;
+}
+

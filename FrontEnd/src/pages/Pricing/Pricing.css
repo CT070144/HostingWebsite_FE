@@ -1,0 +1,61 @@
+.pricing-page {
+  padding-top: 76px;
+  min-height: calc(100vh - 76px);
+  background-color: #f8f9fa;
+}
+
+.pricing-card {
+  position: relative;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.pricing-card.popular {
+  border: 2px solid #007bff;
+  transform: scale(1.05);
+}
+
+.popular-badge {
+  position: absolute;
+  top: -15px;
+  right: 20px;
+  background: #007bff;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.currency {
+  font-size: 1.5rem;
+  vertical-align: top;
+}
+
+.amount {
+  font-size: 2.5rem;
+}
+
+.period {
+  font-size: 1rem;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.list-group-item {
+  border: none;
+  padding: 0.75rem 0;
+}
+

@@ -1,0 +1,16 @@
+.register-page {
+  padding-top: 76px;
+  min-height: calc(100vh - 76px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.register-card {
+  border: none;
+  border-radius: 15px;
+  margin-top: 2rem;
+}
+
+.register-card .card-body {
+  border-radius: 15px;
+}
+
