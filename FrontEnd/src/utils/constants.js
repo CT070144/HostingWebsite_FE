@@ -11,9 +11,9 @@ export const MOCK_DELAY = parseInt(process.env.REACT_APP_MOCK_DELAY || '500', 10
 
 export const ROUTES = {
   HOME: '/',
-  ABOUT: '/about',
   SERVICES: '/services',
   PRICING: '/pricing',
+  HOSTING: '/hosting',
   CONTACT: '/contact',
   LOGIN: '/login',
   REGISTER: '/register',

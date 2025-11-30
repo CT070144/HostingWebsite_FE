@@ -14,7 +14,7 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  margin-top: 80px;
+  margin-top: 70px;
 }
 
 .carousel-overlay {
@@ -340,5 +340,4 @@
 }
 .product-content {
   flex: 1;
-  grow: 1;
 }

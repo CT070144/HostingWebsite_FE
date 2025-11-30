@@ -6,6 +6,7 @@ import Home from './pages/Home/Home';
 import Services from './pages/Services/Services';
 import Pricing from './pages/Pricing/Pricing';
 import Contact from './pages/Contact/Contact';
+import Hosting from './pages/Hosting/Hosting';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/hosting" element={<Hosting />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

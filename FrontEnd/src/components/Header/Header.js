@@ -34,7 +34,7 @@ const Header = () => {
           <img className="logo-img" src={logo} alt="TTCS Hosting" />
           <div className="brand-text-wrapper">
             <span className="logo-text style-logo-text">TTCS Hosting</span>
-            <span className="logo-subtitle">Sản phẩm chỉ dùng để báo cáo môn - Không phải sản phẩm thương mại</span>
+            <span className="logo-subtitle">Báo cáo thực tập cơ sở</span>
           </div>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -49,7 +49,14 @@ const Header = () => {
               Trang chủ
             </Nav.Link>
          
-         
+            <Nav.Link 
+              as={Link} 
+              to="/hosting" 
+              className={isActive('/hosting')}
+              onClick={() => setExpanded(false)}
+            >
+              Hosting
+            </Nav.Link>
             <Nav.Link 
               as={Link} 
               to="/pricing" 
