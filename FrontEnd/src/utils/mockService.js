@@ -20,14 +20,14 @@ export const mockService = {
     const user = authMockData.users.find(u => u.email === email && u.password === password);
     
     if (!user) {
-      throw {
-        response: {
-          status: 401,
-          data: {
-            message: 'Email hoặc mật khẩu không đúng'
-          }
+      const error = new Error('Email hoặc mật khẩu không đúng');
+      error.response = {
+        status: 401,
+        data: {
+          message: 'Email hoặc mật khẩu không đúng'
         }
       };
+      throw error;
     }
 
     const { password: _, ...userWithoutPassword } = user;
@@ -48,14 +48,14 @@ export const mockService = {
     // Check if email already exists
     const existingUser = authMockData.users.find(u => u.email === userData.email);
     if (existingUser) {
-      throw {
-        response: {
-          status: 400,
-          data: {
-            message: 'Email đã được sử dụng'
-          }
+      const error = new Error('Email đã được sử dụng');
+      error.response = {
+        status: 400,
+        data: {
+          message: 'Email đã được sử dụng'
         }
       };
+      throw error;
     }
 
     // Create new user
@@ -82,14 +82,14 @@ export const mockService = {
     
     const token = localStorage.getItem('token');
     if (!token) {
-      throw {
-        response: {
-          status: 401,
-          data: {
-            message: 'Unauthorized'
-          }
+      const error = new Error('Unauthorized');
+      error.response = {
+        status: 401,
+        data: {
+          message: 'Unauthorized'
         }
       };
+      throw error;
     }
 
     // Find user by token
@@ -98,14 +98,14 @@ export const mockService = {
     );
 
     if (!email) {
-      throw {
-        response: {
-          status: 401,
-          data: {
-            message: 'Invalid token'
-          }
+      const error = new Error('Invalid token');
+      error.response = {
+        status: 401,
+        data: {
+          message: 'Invalid token'
         }
       };
+      throw error;
     }
 
     const user = authMockData.users.find(u => u.email === email);
@@ -121,14 +121,14 @@ export const mockService = {
 
     const user = authMockData.users.find(u => u.email === email);
     if (!user) {
-      throw {
-        response: {
-          status: 404,
-          data: {
-            message: 'Email không tồn tại trong hệ thống'
-          }
+      const error = new Error('Email không tồn tại trong hệ thống');
+      error.response = {
+        status: 404,
+        data: {
+          message: 'Email không tồn tại trong hệ thống'
         }
       };
+      throw error;
     }
 
     return {
@@ -169,14 +169,14 @@ export const mockService = {
     
     const token = localStorage.getItem('token');
     if (!token) {
-      throw {
-        response: {
-          status: 401,
-          data: {
-            message: 'Unauthorized'
-          }
+      const error = new Error('Unauthorized');
+      error.response = {
+        status: 401,
+        data: {
+          message: 'Unauthorized'
         }
       };
+      throw error;
     }
 
     return {
@@ -187,10 +187,9 @@ export const mockService = {
   // Contact endpoints
   async postContact(...args) {
     await delay(MOCK_DELAY);
-    const formData = args[0] || args[2]; // Can be first or third arg
-    
     // In real app, this would save to backend
     // For mock, we just return success
+    // formData would be args[0] || args[2] in real implementation
     return {
       data: contactMockData.response
     };
