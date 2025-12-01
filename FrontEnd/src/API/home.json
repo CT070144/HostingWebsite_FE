@@ -1,0 +1,163 @@
+{
+  "slides": [
+    {
+      "id": 1,
+      "title": "Dịch vụ Hosting Chuyên Nghiệp",
+      "subtitle": "Giải pháp hosting tốt nhất cho website của bạn",
+      "description": "Tốc độ nhanh, bảo mật cao, hỗ trợ 24/7",
+      "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1920&h=1080&fit=crop",
+      "buttonText": "Xem bảng giá",
+      "buttonLink": "/pricing"
+    },
+    {
+      "id": 2,
+      "title": "VPS Server Mạnh Mẽ",
+      "subtitle": "Máy chủ ảo với hiệu năng cao",
+      "description": "Tài nguyên riêng, quản lý dễ dàng, mở rộng linh hoạt",
+      "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=1080&fit=crop",
+      "buttonText": "Tìm hiểu thêm",
+      "buttonLink": "/services"
+    },
+    {
+      "id": 3,
+      "title": "Cloud Server Hiện Đại",
+      "subtitle": "Công nghệ đám mây tiên tiến",
+      "description": "Tự động scale, backup tự động, uptime 99.9%",
+      "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=1080&fit=crop",
+      "buttonText": "Liên hệ ngay",
+      "buttonLink": "/contact"
+    }
+  ],
+  "featuredProducts": [
+    {
+      "id": 1,
+      "type": "hosting",
+      "title": "Hosting Giá Rẻ",
+      "icon": "fas fa-server",
+      "description": "Tiết Kiệm Tối Đa Chi Phí Cho Website",
+      "price": "13,000",
+      "priceUnit": "vnđ/tháng",
+      "features": [
+        "SSD Storage",
+        "LiteSpeed Technology",
+        "Email không giới hạn",
+        "SSL miễn phí"
+      ],
+      "link": "/pricing"
+    },
+    {
+      "id": 2,
+      "type": "vps",
+      "title": "VPS Server",
+      "icon": "fas fa-cloud",
+      "description": "Máy Chủ Ảo Với Tài Nguyên Riêng",
+      "price": "99,000",
+      "priceUnit": "vnđ/tháng",
+      "features": [
+        "CPU & RAM riêng",
+        "Full root access",
+        "OS tự chọn",
+        "Quản lý dễ dàng"
+      ],
+      "link": "/services"
+    },
+    {
+      "id": 3,
+      "type": "server",
+      "title": "Dedicated Server",
+      "icon": "fas fa-server",
+      "description": "Máy Chủ Vật Lý Hiệu Năng Cao",
+      "price": "1,999,000",
+      "priceUnit": "vnđ/tháng",
+      "features": [
+        "Server riêng biệt",
+        "Hiệu năng tối đa",
+        "Bảo mật cao",
+        "Tùy chỉnh hoàn toàn"
+      ],
+      "link": "/services"
+    },
+    {
+      "id": 4,
+      "type": "cloud",
+      "title": "Cloud Server",
+      "icon": "fas fa-cloud",
+      "description": "Giải Pháp Đám Mây Linh Hoạt",
+      "price": "199,000",
+      "priceUnit": "vnđ/tháng",
+      "features": [
+        "Tự động scale",
+        "Backup tự động",
+        "CDN tích hợp",
+        "99.9% uptime"
+      ],
+      "link": "/services"
+    }
+  ],
+  "serviceFeatures": [
+    {
+      "id": 1,
+      "title": "Chất lượng dịch vụ vượt trội",
+      "description": "Chúng tôi cam kết mang đến chất lượng dịch vụ tốt nhất với hạ tầng ổn định, tốc độ nhanh chóng và giải pháp bảo mật đáng tin cậy. Luôn cập nhật công nghệ mới nhất để đảm bảo trải nghiệm tốt nhất cho khách hàng.",
+      "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=600&fit=crop",
+      "stats": [
+        {
+          "label": "Tier 3",
+          "value": "Data Center"
+        },
+        {
+          "label": "90%",
+          "value": "Customer Satisfaction"
+        }
+      ],
+      "align": "right"
+    },
+    {
+      "id": 2,
+      "title": "Giải pháp đa dạng và linh hoạt",
+      "description": "Cung cấp đầy đủ các dịch vụ từ máy chủ vật lý, hosting, VPS, email, tên miền, cloud, đến các giải pháp bảo mật (WAF, SSL). Linh hoạt đáp ứng nhu cầu từ cá nhân đến doanh nghiệp lớn.",
+      "image": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop",
+      "align": "left"
+    },
+    {
+      "id": 3,
+      "title": "Hỗ trợ khách hàng chuyên nghiệp 24/7",
+      "description": "Đội ngũ hỗ trợ kỹ thuật chuyên nghiệp sẵn sàng 24/7, kể cả ngày lễ và Tết. Hỗ trợ qua nhiều kênh: ticket, điện thoại, email để giải quyết mọi vấn đề nhanh chóng và hiệu quả, đảm bảo khách hàng yên tâm sử dụng dịch vụ.",
+      "image": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop",
+      "align": "right"
+    }
+  ],
+  "faqs": [
+    {
+      "id": 1,
+      "question": "TTCS Hosting cung cấp những gói dịch vụ và giải pháp nào?",
+      "answer": "TTCS Hosting cung cấp đa dạng dịch vụ từ Đăng ký tên miền, Hosting đến VPS/Cloud Server, Máy chủ vật lý (Dedicated Server/Colocation), Email Hosting, SSL, WAF/Anti-DDoS, Dịch vụ sao lưu và CDN, cùng các giải pháp trọn gói phát triển website và bảo mật cho doanh nghiệp."
+    },
+    {
+      "id": 2,
+      "question": "Làm sao để tôi liên hệ khi cần hỗ trợ từ TTCS Hosting?",
+      "answer": "Bạn có thể liên hệ với chúng tôi qua nhiều kênh: Gửi ticket hỗ trợ trên website, gọi điện thoại hotline, gửi email, hoặc chat trực tuyến. Đội ngũ hỗ trợ sẵn sàng 24/7 để giải quyết mọi vấn đề của bạn."
+    },
+    {
+      "id": 3,
+      "question": "Chính sách hoàn tiền của TTCS Hosting như thế nào?",
+      "answer": "Chúng tôi có chính sách hoàn tiền trong vòng 30 ngày đầu tiên nếu bạn không hài lòng với dịch vụ. Vui lòng liên hệ bộ phận hỗ trợ để được hướng dẫn chi tiết."
+    },
+    {
+      "id": 4,
+      "question": "TTCS Hosting hỗ trợ những phương thức thanh toán nào?",
+      "answer": "Chúng tôi hỗ trợ nhiều phương thức thanh toán: Chuyển khoản ngân hàng, thẻ tín dụng/ghi nợ, ví điện tử, và các cổng thanh toán trực tuyến phổ biến tại Việt Nam."
+    },
+    {
+      "id": 5,
+      "question": "TTCS Hosting đặt máy chủ tại các DataCenter nào?",
+      "answer": "Chúng tôi có các DataCenter tại Việt Nam và quốc tế với tiêu chuẩn Tier 3, đảm bảo uptime cao và tốc độ truy cập nhanh cho khách hàng trong nước và quốc tế."
+    },
+    {
+      "id": 6,
+      "question": "Tôi có được hỗ trợ chuyển dữ liệu từ nhà cung cấp khác về TTCS Hosting hay không?",
+      "answer": "Có, chúng tôi hỗ trợ miễn phí chuyển dữ liệu từ nhà cung cấp khác về TTCS Hosting. Đội ngũ kỹ thuật sẽ hỗ trợ bạn trong toàn bộ quá trình chuyển đổi để đảm bảo không mất dữ liệu và thời gian downtime tối thiểu."
+    }
+  ]
+}
+
