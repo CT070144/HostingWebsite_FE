@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
-import { servicesService } from '../../services/servicesService';
 import './Services.css';
+import servicesMockData from '../../mockData/services.json';
 
 const Services = () => {
   const [services, setServices] = useState([]);
@@ -9,21 +9,8 @@ const Services = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchServices = async () => {
-      try {
-        setLoading(true);
-        const response = await servicesService.getServices();
-        setServices(response.data);
-        setError(null);
-      } catch (err) {
-        setError('Không thể tải danh sách dịch vụ');
-        console.error('Services error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchServices();
+    setServices(servicesMockData.services);
+    setLoading(false);
   }, []);
 
   return (

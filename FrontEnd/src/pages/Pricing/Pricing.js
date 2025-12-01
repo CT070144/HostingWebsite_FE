@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, ListGroup, Spinner, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { pricingService } from '../../services/pricingService';
+import pricingMockData from '../../mockData/pricing.json';
 import './Pricing.css';
 
 const Pricing = () => {
@@ -10,21 +10,12 @@ const Pricing = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        setLoading(true);
-        const response = await pricingService.getPricingPlans();
-        setPlans(response.data);
-        setError(null);
-      } catch (err) {
-        setError('Không thể tải bảng giá');
-        console.error('Pricing error:', err);
-      } finally {
+    
+      
         setLoading(false);
-      }
-    };
-
-    fetchPricing();
+        setPlans(pricingMockData.plans);
+        setError(null);
+     
   }, []);
 
   const formatPrice = (price) => {
