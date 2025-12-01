@@ -1,0 +1,204 @@
+.config-product-page {
+  min-height: 60vh;
+  background-color: #f8f9fa;
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+/* Configuration Section */
+.config-item {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  text-align: center;
+  height: 100%;
+  transition: box-shadow 0.2s;
+}
+
+.config-item:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.config-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.config-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Payment Cycle Section */
+.payment-cycle-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.payment-cycle-radio {
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.payment-cycle-radio:hover {
+  border-color: var(--primary-color);
+  background-color: #fff5f2;
+}
+
+.payment-cycle-radio input[type="radio"]:checked + label {
+  border-color: var(--primary-color);
+  background-color: #fff5f2;
+}
+
+.payment-cycle-radio input[type="radio"]:checked {
+  accent-color: var(--primary-color);
+}
+
+.payment-cycle-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.cycle-label {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+  padding-right: 10px;
+}
+
+.cycle-price {
+  font-size: 1rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Dedicated IP Section */
+.dedicated-ip-price {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Order Summary Card */
+.order-summary-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #05253f 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(var(--primary-color), 0.3);
+  position: sticky;
+  top: 100px;
+}
+
+.order-summary-card .card-body {
+  padding: 30px;
+}
+
+.order-summary-card h3 {
+  color: white;
+  font-weight: 600;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.order-item-name {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.order-item-price {
+  font-weight: 600;
+  color: white;
+}
+
+.order-subtotal {
+  padding: 15px 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.order-subtotal-label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.order-subtotal-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-cycle-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.order-cycle-price {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.order-total-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+}
+
+.order-total-price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.continue-button {
+  background-color: white;
+  color: rgb(255, 255, 255);
+  border: none;
+  font-weight: 600;
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.continue-button:hover {
+  background-color: var(--primary-color);
+  color: rgb(255, 255, 255);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.continue-button:active {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .order-summary-card {
+    position: relative;
+    top: 0;
+    margin-top: 20px;
+  }
+}
+
