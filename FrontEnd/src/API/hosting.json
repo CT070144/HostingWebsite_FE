@@ -1,0 +1,546 @@
+{
+  "banner": {
+    "title": "HOSTING GIÁ RẺ",
+    "subtitle": "TIẾT KIỆM CHI PHÍ CHO WEBSITE",
+    "description": "Hosting giá rẻ của TTCS Hosting là dịch vụ hosting web chất lượng cao, giá cả hợp lý, phù hợp cho sinh viên, doanh nghiệp nhỏ và startup. Hỗ trợ đa dạng mã nguồn PHP, website hoạt động ổn định, bảo mật tối đa, tốc độ tải trang nhanh chóng.",
+    "features": [
+      "CPU E5v3 + Ổ Cứng SSD Enterprise RAID 10, Uptime 99,9%",
+      "Hỗ trợ PHP (5.x đến 8.x), Node.js, Cloudlinux, phpMyAdmin, Softaculous, WordPress Toolkit, Imunify360, JetBackup",
+      "Không giới hạn Băng thông, Database, MySQL, Cronjob, FTP, Inodes, Subdomain",
+      "Miễn phí cPanel, Tên Miền, SSL, Backup, LiteSpeed WebServer",
+      "Tặng kho Themes và Plugins WordPress bản quyền mới nhất",
+      "Hỗ trợ kỹ thuật 24/7 (Chuyển dữ liệu, trỏ tên miền, xử lý sự cố)"
+    ],
+    "price": "12,750",
+    "priceUnit": "VNĐ/THÁNG",
+    "promotions": [
+      "(*) Cam kết hoàn phí trong 5 ngày nếu không hài lòng",
+      ">> Nhập Mã: 90T11 Giảm 90% (chu kỳ tối đa 2 năm) - 30T11 Giảm 30%. Số lượng có hạn",
+      ">> Tặng kèm tên miền .IO.VN"
+    ]
+  },
+  "products": [
+    {
+      "id": 1,
+      "name": "LH - Start",
+      "monthlyPrice": 12750,
+      "yearlyPrice": 459000,
+      "hot": true,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "300MB",
+        "ram": "0.5 GB",
+        "cpu": "0.5 core",
+        "websites": 1,
+        "emails": 1,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 2,
+      "name": "LH1",
+      "monthlyPrice": 21250,
+      "yearlyPrice": 765000,
+      "hot": false,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "1.5 GB + [TẶNG 2 GB]",
+        "ram": "1 GB",
+        "cpu": "1 core",
+        "websites": 1,
+        "emails": 10,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 3,
+      "name": "LH2",
+      "monthlyPrice": 34000,
+      "yearlyPrice": 1224000,
+      "hot": false,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "4 GB + [TẶNG 3 GB]",
+        "ram": "2 GB",
+        "cpu": "1.5 cores",
+        "websites": 2,
+        "emails": 15,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 4,
+      "name": "LH3",
+      "monthlyPrice": 51000,
+      "yearlyPrice": 1836000,
+      "hot": true,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "6 GB + [TẶNG 5 GB]",
+        "ram": "3 GB",
+        "cpu": "1.5 cores",
+        "websites": 3,
+        "emails": 25,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 5,
+      "name": "LH4",
+      "monthlyPrice": 80750,
+      "yearlyPrice": 2907000,
+      "hot": false,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "12 GB + [TẶNG 12 GB]",
+        "ram": "3 GB",
+        "cpu": "2 cores",
+        "websites": 5,
+        "emails": 50,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 6,
+      "name": "LH5",
+      "monthlyPrice": 148750,
+      "yearlyPrice": 5355000,
+      "hot": false,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "25 GB + [TẶNG 20 GB]",
+        "ram": "5 GB",
+        "cpu": "2 cores",
+        "websites": 10,
+        "emails": 80,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    },
+    {
+      "id": 7,
+      "name": "LH6",
+      "monthlyPrice": 233750,
+      "yearlyPrice": 8415000,
+      "hot": false,
+      "discountCodes": [
+        {
+          "code": "90T11",
+          "discount": 90,
+          "maxCycle": 24,
+          "description": "Giảm 90% (chu kỳ tối đa 2 năm)"
+        },
+        {
+          "code": "30T11",
+          "discount": 30,
+          "description": "Giảm 30%"
+        }
+      ],
+      "features": {
+        "ssd": "40 GB + [TẶNG 20 GB]",
+        "ram": "8 GB",
+        "cpu": "3 cores",
+        "websites": 15,
+        "emails": 150,
+        "bandwidth": "Không giới hạn",
+        "mysql": "Không giới hạn",
+        "ssl": "Miễn phí",
+        "backup": "Miễn phí",
+        "dataTransfer": "Miễn phí",
+        "themesPlugins": "Miễn phí"
+      }
+    }
+  ],
+  "notes": [
+    "TTCS Hosting không chịu trách nhiệm về các trường hợp website bị lỗi do mã nguồn của khách hàng. Chúng tôi chỉ hỗ trợ kiểm tra nguyên nhân trong khả năng cho phép.",
+    "Số lượng tài khoản email chỉ áp dụng cho Email nội bộ. Nếu có nhu cầu sử dụng nhiều hơn, vui lòng tham khảo dịch vụ Email Hosting.",
+    "Khách hàng vui lòng liên hệ trực tiếp với phòng kinh doanh hoặc đặt mua / đăng nhập vào giao diện quản lý gói dịch vụ chính trước khi đặt mua các lựa chọn nâng cấp và các dịch vụ bổ sung.",
+    "Gói dịch vụ chỉ có thể nâng cấp hoặc hạ cấp theo chu kỳ.",
+    "Bảng giá Hosting Giá Rẻ chưa bao gồm 10% VAT.",
+    "Các giới hạn tài nguyên khác của Linux Hosting giá rẻ: Xem tại đây."
+  ],
+  "upgradeOptions": {
+    "additionalServices": [
+      {
+        "id": 1,
+        "service": "Addon Domains",
+        "condition": "Chỉ áp dụng cho gói LH6/WH6/LH6-Sin",
+        "price": "20,000 vnđ/1 domain/tháng"
+      },
+      {
+        "id": 2,
+        "service": "Additional Diskspace",
+        "condition": "Áp dụng cho gói LH6 - Mua tối thiểu 5GB",
+        "price": "20,000 vnđ/1GB/tháng"
+      },
+      {
+        "id": 3,
+        "service": "SSH Access",
+        "condition": "(chỉ áp dụng cho gói LH - Start)",
+        "price": "20,000 vnđ/tháng"
+      }
+    ],
+    "commonLimits": [
+      {
+        "id": 1,
+        "limit": "Max DB size",
+        "unit": "1 đơn vị",
+        "value": "1 GB"
+      },
+      {
+        "id": 2,
+        "limit": "Virtual Memory",
+        "unit": "1 đơn vị",
+        "value": "3 GB"
+      },
+      {
+        "id": 3,
+        "limit": "Max emails sent per hour",
+        "unit": "Emails",
+        "value": "300"
+      }
+    ]
+  },
+  "voucher": {
+    "title": "Tặng kho themes và plugins WordPress mới nhất 2025!",
+    "description": "Tặng license plugins và themes: RankMath Pro, SEOPress Pro, Yoast SEO Premium, Schema Pro, Smush Pro, Theme Astra, MyThemeShop, Themeforest, Elementor Pro, WPML, WP Rocket, Perfmatters, Duplicator Pro, WP Staging Pro,... khi sử dụng Hosting hoặc VPS tại TTCS Hosting!",
+    "items": [
+      "RankMath Pro",
+      "SEOPress Pro",
+      "Yoast SEO Premium",
+      "Schema Pro",
+      "Smush Pro",
+      "Theme Astra",
+      "MyThemeShop",
+      "Themeforest",
+      "Elementor Pro",
+      "WPML",
+      "WP Rocket",
+      "Perfmatters",
+      "Duplicator Pro",
+      "WP Staging Pro"
+    ]
+  },
+  "comparisonTable": {
+    "title": "SO SÁNH CÁC GÓI WEB HOSTING GIÁ RẺ TẠI TTCS HOSTING",
+    "features": [
+      {
+        "name": "Giá",
+        "type": "price"
+      },
+      {
+        "name": "SSD",
+        "type": "text"
+      },
+      {
+        "name": "RAM",
+        "type": "text"
+      },
+      {
+        "name": "CPU",
+        "type": "text"
+      },
+      {
+        "name": "Website",
+        "type": "number"
+      },
+      {
+        "name": "Tài Khoản Emails",
+        "type": "number"
+      },
+      {
+        "name": "Băng thông, MySQL",
+        "type": "text"
+      },
+      {
+        "name": "SSL, Backup, Chuyển dữ liệu",
+        "type": "text"
+      },
+      {
+        "name": "Kho Themes & Plugins mới nhất",
+        "type": "text"
+      },
+      {
+        "name": "I/O",
+        "type": "text"
+      },
+      {
+        "name": "MySQL CPU",
+        "type": "text"
+      },
+      {
+        "name": "Entry Processes",
+        "type": "number"
+      },
+      {
+        "name": "Number of Process",
+        "type": "number"
+      },
+      {
+        "name": "Lưu lượng truy cập (Tháng)",
+        "type": "text"
+      },
+      {
+        "name": "Sao Lưu",
+        "type": "text"
+      },
+      {
+        "name": "Inodes",
+        "type": "text"
+      },
+      {
+        "name": "FTP Account",
+        "type": "text"
+      },
+      {
+        "name": "Subdomains",
+        "type": "text"
+      },
+      {
+        "name": "Parked Domain",
+        "type": "text"
+      },
+      {
+        "name": "Data Transfer",
+        "type": "text"
+      }
+    ]
+  },
+  "hostingLinesComparison": {
+    "title": "SO SÁNH CÁC DÒNG WEB HOSTING CỦA TTCS HOSTING",
+    "lines": [
+      {
+        "id": 1,
+        "name": "HOSTING GIÁ RẺ",
+        "purpose": "Phù hợp cho 1-2 website nhỏ dưới 20 bài viết, sản phẩm, landing page",
+        "hardDrive": "SSD",
+        "backup": "2 lần/ngày (lưu 7 ngày)",
+        "antiDDoS": "Cơ bản",
+        "vSecure": "Trả phí",
+        "cpu": "Intel Xeon E5 v3",
+        "diskIO": "50 MB/s"
+      },
+      {
+        "id": 2,
+        "name": "HOSTING CAO CẤP",
+        "purpose": "Phù hợp cho 1-2 website có 20-50 sản phẩm, bài viết, landing page",
+        "hardDrive": "NVMe",
+        "backup": "4 lần/ngày (lưu 7 ngày)",
+        "antiDDoS": "Toàn diện",
+        "vSecure": "Miễn phí",
+        "cpu": "Intel Xeon Gold",
+        "diskIO": "250 MB/s"
+      },
+      {
+        "id": 3,
+        "name": "WORDPRESS HOSTING",
+        "purpose": "Dành riêng cho website WordPress, 1-2 website có 20-50 sản phẩm, bài viết, landing page",
+        "hardDrive": "NVMe",
+        "backup": "4 lần/ngày (lưu 7 ngày)",
+        "antiDDoS": "Toàn diện",
+        "vSecure": "Miễn phí",
+        "cpu": "Intel Xeon Platinum",
+        "diskIO": "300 MB/s"
+      },
+      {
+        "id": 4,
+        "name": "HOSTING DOANH NGHIỆP",
+        "purpose": "Phù hợp cho doanh nghiệp có 5-20 website cần công suất lớn",
+        "hardDrive": "NVMe",
+        "backup": "6 lần/ngày (lưu 7 ngày)",
+        "antiDDoS": "Toàn diện",
+        "vSecure": "Miễn phí",
+        "cpu": "Intel Xeon Platinum",
+        "diskIO": "450 MB/s"
+      },
+      {
+        "id": 5,
+        "name": "HOSTING WINDOWS",
+        "purpose": "Dành riêng cho hệ điều hành Windows Server, 1-2 website có 20-50 sản phẩm, bài viết, landing page",
+        "hardDrive": "SSD",
+        "backup": "2 lần/ngày (lưu 7 ngày)",
+        "antiDDoS": "Cơ bản",
+        "vSecure": "Trả phí",
+        "cpu": "Intel Xeon E5 v3",
+        "diskIO": "50 MB/s"
+      }
+    ]
+  },
+  "outstandingFeatures": [
+    {
+      "id": 1,
+      "icon": "fas fa-tachometer-alt",
+      "title": "Tốc độ truy cập cao",
+      "description": "Hosting giá rẻ của TTCS Hosting được trang bị CPU Intel Xeon E5v3, ổ cứng SSD Enterprise kết hợp với công nghệ LiteSpeed Webserver Enterprise giúp tăng tốc độ tải trang đáng kể. Cam kết Uptime 99,9%."
+    },
+    {
+      "id": 2,
+      "icon": "fas fa-shield-alt",
+      "title": "Tính bảo mật và ổn định",
+      "description": "Dữ liệu của khách hàng được bảo vệ nhiều lớp bảo mật như: CloudLinux và imunify360+, giúp ngăn chặn các cuộc tấn công Brute Force và Local Attack. Sử dụng kèm SSL để mã hóa dữ liệu để tăng cường bảo mật và ổn định."
+    },
+    {
+      "id": 3,
+      "icon": "fas fa-dollar-sign",
+      "title": "Tiết kiệm chi phí",
+      "description": "TTCS Hosting cam kết luôn cung cấp giá thuê Hosting Website cạnh tranh nhất [chỉ từ 12.750VNĐ] nhưng vẫn đảm bảo dịch vụ. Phù hợp cho người dùng có ngân sách hạn hẹp, sinh viên, người mới bắt đầu hoặc các dự án nhỏ."
+    },
+    {
+      "id": 4,
+      "icon": "fas fa-store",
+      "title": "Tặng kho Themes và Plugins WordPress",
+      "description": "Hosting Giá Rẻ tại TTCS Hosting tặng miễn phí kho Themes và Plugins WordPress, hỗ trợ phát triển website toàn diện, từ hiệu suất, bảo mật đến SEO. Giúp người dùng tiết kiệm chi phí thiết kế và phát triển website."
+    },
+    {
+      "id": 5,
+      "icon": "fas fa-cog",
+      "title": "Dễ dàng sử dụng",
+      "description": "Công cụ quản lý Hosting cPanel tại TTCS Hosting có giao diện thân thiện, dễ sử dụng giúp bạn dễ dàng quản trị, kiểm soát hoạt động của website mà không cần nhiều kiến thức kỹ thuật."
+    },
+    {
+      "id": 6,
+      "icon": "fas fa-puzzle-piece",
+      "title": "Tương thích đa dạng mã nguồn",
+      "description": "Hosting website hỗ trợ nhiều loại mã nguồn khác nhau như: PHP, Laravel, Nodejs,... Hỗ trợ các hệ cơ sở dữ liệu như: MySQL,... Cho phép người dùng linh hoạt lựa chọn nền tảng cho website của mình."
+    }
+  ],
+  "faqs": [
+    {
+      "id": 1,
+      "question": "Hosting giá rẻ là gì?",
+      "answer": "Hosting giá rẻ là dịch vụ lưu trữ website với mức giá thấp, phù hợp cho các website nhỏ, cá nhân hoặc doanh nghiệp mới bắt đầu. Tuy giá rẻ nhưng vẫn đảm bảo chất lượng dịch vụ cơ bản cần thiết."
+    },
+    {
+      "id": 2,
+      "question": "Cách thức hoạt động của Hosting giá rẻ",
+      "answer": "Hosting giá rẻ hoạt động tương tự như các dịch vụ hosting khác, sử dụng công nghệ chia sẻ tài nguyên server giữa nhiều website để giảm chi phí, nhưng vẫn đảm bảo hiệu suất và độ ổn định."
+    },
+    {
+      "id": 3,
+      "question": "Đặc điểm gói hosting giá rẻ của TTCS Hosting",
+      "answer": "Gói hosting giá rẻ của TTCS Hosting được trang bị CPU Intel Xeon E5v3, ổ cứng SSD Enterprise, hỗ trợ đầy đủ các tính năng cần thiết như cPanel, SSL miễn phí, backup tự động, và nhiều tính năng khác."
+    },
+    {
+      "id": 4,
+      "question": "Đối tượng nào nên sử dụng hosting giá rẻ?",
+      "answer": "Hosting giá rẻ phù hợp cho sinh viên, người mới bắt đầu, doanh nghiệp nhỏ, startup, hoặc các dự án website có quy mô nhỏ với ngân sách hạn chế."
+    },
+    {
+      "id": 5,
+      "question": "Hosting giá rẻ sử dụng Control Panel nào để quản trị website?",
+      "answer": "TTCS Hosting sử dụng cPanel - một trong những control panel phổ biến và dễ sử dụng nhất hiện nay, giúp bạn quản lý website một cách dễ dàng mà không cần kiến thức kỹ thuật sâu."
+    },
+    {
+      "id": 6,
+      "question": "Cấu hình CPU & Ổ cứng & Thông số kỹ thuật của Hosting giá rẻ như thế nào?",
+      "answer": "Hosting giá rẻ của TTCS Hosting sử dụng CPU Intel Xeon E5v3, ổ cứng SSD Enterprise RAID 10, với các thông số kỹ thuật được tối ưu để đảm bảo hiệu suất và độ ổn định cho website của bạn."
+    },
+    {
+      "id": 7,
+      "question": "Thuê Hosting Website tại TTCS Hosting hỗ trợ mã nguồn (CMS) nào?",
+      "answer": "TTCS Hosting hỗ trợ đa dạng các mã nguồn phổ biến như WordPress, Joomla, Drupal, Laravel, và nhiều CMS khác. Hỗ trợ PHP từ phiên bản 5.x đến 8.x, Node.js, và các hệ cơ sở dữ liệu như MySQL."
+    }
+  ]
+}
+
