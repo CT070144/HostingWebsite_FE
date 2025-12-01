@@ -11,18 +11,20 @@ import {
   ListGroup,
   ListGroupItem
 } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import hostingMockData from '../../mockData/hosting.json';
 import './Hosting.css';
 import hostingImage from '../../assets/hosting.png';
 const Hosting = () => {
+  const navigate = useNavigate();
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
 
   const handleOrder = (productId) => {
-    // Handle order action
-    console.log('Order product:', productId);
+    // Navigate to config product page with productId
+    navigate(`/config-product/${productId}`);
   };
 
   return (

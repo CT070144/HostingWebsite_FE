@@ -1,0 +1,286 @@
+.cart-page {
+  min-height: 60vh;
+  background-color: #f8f9fa;
+  padding-top: 80px;
+  padding-bottom: 40px;
+}
+
+/* Cart Table */
+.cart-table {
+  margin-bottom: 0;
+}
+
+.cart-table thead th {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #333;
+}
+
+.cart-table tbody td {
+  vertical-align: middle;
+  padding: 20px 10px;
+}
+
+/* Promo List */
+.promo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.promo-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.promo-info {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.promo-item i {
+  cursor: pointer;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+/* Customer Type Buttons */
+.customer-type-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.customer-type-buttons .btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.customer-type-buttons .btn-outline-success {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.customer-type-buttons .btn-outline-success:hover {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+/* Language Selector */
+.language-selector {
+  display: flex;
+  gap: 10px;
+}
+
+/* Payment Method Options */
+.payment-method-option {
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  transition: all 0.2s;
+}
+
+.payment-method-option:hover {
+  background-color: #f8f9fa;
+  border-color: var(--primary-color);
+}
+
+.payment-method-option input[type="radio"]:checked + label {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.payment-method-option input[type="radio"] {
+  accent-color: var(--primary-color);
+}
+
+/* Order Summary Card */
+.order-summary-card {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #05253f 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 100px;
+}
+
+.order-summary-card .card-body {
+  padding: 30px;
+}
+
+.order-summary-card h3 {
+  color: white;
+  font-weight: 600;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.order-item-name {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.order-item-price {
+  font-weight: 600;
+  color: white;
+}
+
+.order-renewal {
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.order-renewal-label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: white;
+}
+
+.order-renewal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.order-renewal-cycle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.order-renewal-price {
+  font-weight: 600;
+  color: white;
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.order-total-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white;
+}
+
+.order-total-price {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.payment-button {
+  background-color: white;
+  color: rgb(255, 255, 255);
+  border: none;
+  font-weight: 600;
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.payment-button:hover {
+  background-color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.payment-button:active {
+  transform: translateY(0);
+}
+
+.terms-checkbox {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.terms-checkbox input[type="checkbox"] {
+  accent-color: white;
+}
+
+.terms-checkbox label {
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+/* Form Styling */
+.form-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(29, 78, 216, 0.25);
+}
+
+/* Flag Icon */
+.flag-icon {
+  font-size: 1.2rem;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .order-summary-card {
+    position: relative;
+    top: 0;
+    margin-top: 20px;
+  }
+  
+  .customer-type-buttons {
+    flex-direction: column;
+  }
+  
+  .customer-type-buttons .btn {
+    width: 100%;
+  }
+  
+  .language-selector {
+    flex-direction: column;
+  }
+  
+  .language-selector .btn {
+    width: 100%;
+  }
+}
+
+/* Button Styles */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
