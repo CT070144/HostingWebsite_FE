@@ -6,6 +6,7 @@ import servicesMockData from '../mockData/services.json';
 import pricingMockData from '../mockData/pricing.json';
 import dashboardMockData from '../mockData/dashboard.json';
 import contactMockData from '../mockData/contact.json';
+import adminMockData from '../mockData/admin.json';
 
 // Simulate network delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -193,6 +194,27 @@ export const mockService = {
     return {
       data: contactMockData.response
     };
+  },
+
+  // Admin endpoints
+  async getAdminDashboard() {
+    await delay(MOCK_DELAY);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      const error = new Error('Unauthorized');
+      error.response = {
+        status: 401,
+        data: {
+          message: 'Unauthorized'
+        }
+      };
+      throw error;
+    }
+
+    return {
+      data: adminMockData
+    };
   }
 };
 
@@ -207,7 +229,8 @@ export const matchMockEndpoint = (method, url) => {
     'GET:/services': mockService.getServices,
     'GET:/pricing': mockService.getPricing,
     'GET:/dashboard': mockService.getDashboard,
-    'POST:/contact': mockService.postContact
+    'POST:/contact': mockService.postContact,
+    'GET:/admin/dashboard': mockService.getAdminDashboard
   };
 
   // Remove base URL and query params
