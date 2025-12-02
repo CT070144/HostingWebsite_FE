@@ -76,6 +76,7 @@ const Header = () => {
             
             {isAuthenticated ? (
               <NavDropdown 
+                className="nav-item-dropdown"
                 title={
                   <span>
                     <i className="fas fa-user-circle me-2"></i>
@@ -85,7 +86,7 @@ const Header = () => {
                 id="user-dropdown"
                 align="end"
               >
-                <NavDropdown.Item as={Link} to="/dashboard" onClick={() => setExpanded(false)}>
+                <NavDropdown.Item as={Link} to="/admin/dashboard" onClick={() => setExpanded(false)}>
                   <i className="fas fa-tachometer-alt me-2"></i>
                   Dashboard
                 </NavDropdown.Item>
@@ -100,6 +101,7 @@ const Header = () => {
                 <Nav.Link 
                   as={Link} 
                   to="/login" 
+                 
                   className={isActive('/login')}
                   onClick={() => setExpanded(false)}
                 >

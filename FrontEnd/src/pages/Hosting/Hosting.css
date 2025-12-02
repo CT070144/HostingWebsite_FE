@@ -8,7 +8,9 @@
   padding: var(--spacing-3xl) 0;
 }
 
-
+.btn-primary-custom{
+  color: var(--text-white);
+}
 
 .banner-title {
   font-size: 3rem;
