@@ -11,12 +11,62 @@ import {
 } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import homeMockData from '../../mockData/home.json';
+import { bannerService } from '../../services/bannerService';
+import { faqService } from '../../services/faqService';
 import './Home.css';
 import Services from '../Services/Services.js';
+
+const baseUrl = 'http://localhost:8084';
 
 const Home = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [slides, setSlides] = useState([]);
+  const [faqs, setFaqs] = useState([]);
+  const [loadingSlides, setLoadingSlides] = useState(true);
+  const [loadingFaqs, setLoadingFaqs] = useState(true);
+
+  useEffect(() => {
+    // Fetch slides
+    const fetchSlides = async () => {
+      try {
+        setLoadingSlides(true);
+        const res = await bannerService.list();
+        const slidesData = res.data.map(slide => ({
+          ...slide,
+          id: slide.slide_id,
+          image: slide.image ? `${baseUrl}${slide.image}` : '',
+          buttonText: slide.buttonText || slide.button_text || 'Xem thêm',
+          buttonLink: slide.buttonLink || slide.button_link || '/pricing',
+        }));
+        setSlides(slidesData);
+      } catch (err) {
+        console.error('Failed to fetch slides:', err);
+        // Fallback to mock data on error
+        setSlides(homeMockData.slides);
+      } finally {
+        setLoadingSlides(false);
+      }
+    };
+
+    // Fetch FAQs
+    const fetchFaqs = async () => {
+      try {
+        setLoadingFaqs(true);
+        const res = await faqService.list();
+        setFaqs(res.data || []);
+      } catch (err) {
+        console.error('Failed to fetch FAQs:', err);
+        // Fallback to mock data on error
+        setFaqs(homeMockData.faqs);
+      } finally {
+        setLoadingFaqs(false);
+      }
+    };
+
+    fetchSlides();
+    fetchFaqs();
+  }, []);
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault();
@@ -31,36 +81,44 @@ const Home = () => {
     <div className="home-page">
       {/* Hero Carousel Section */}
       <section className="hero-carousel-section">
-        <Carousel fade interval={5000} className="hero-carousel">
-          {homeMockData.slides.map((slide) => (
-            <Carousel.Item key={slide.id}>
-              <div 
-                className="carousel-slide"
-                style={{ backgroundImage: `url(${slide.image})` }}
-              >
-                <div className="carousel-overlay"></div>
-                <Container fluid className="h-100">
-                  <div className="carousel-content-wrapper h-100">
-                    <div className="carousel-content text-white">
-                      <h1 className="display-3 fw-bold mb-4">{slide.title}</h1>
-                      <h2 className="h3 mb-3">{slide.subtitle}</h2>
-                      <p className="lead mb-4">{slide.description}</p>
-                      <Button 
-                        as={Link} 
-                        to={slide.buttonLink} 
-                        variant="primary" 
-                        size="lg"
-                        className="btn-primary-custom"
-                      >
-                        {slide.buttonText}
-                      </Button>
+        {loadingSlides ? (
+          <div className="carousel-loading text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        ) : (
+          <Carousel fade interval={5000} className="hero-carousel">
+            {slides.map((slide) => (
+              <Carousel.Item key={slide.id}>
+                <div 
+                  className="carousel-slide"
+                  style={{ backgroundImage: `url(${slide.image})` }}
+                >
+                  <div className="carousel-overlay"></div>
+                  <Container fluid className="h-100">
+                    <div className="carousel-content-wrapper h-100">
+                      <div className="carousel-content text-white">
+                        <h1 className="display-3 fw-bold mb-4">{slide.title}</h1>
+                        <h2 className="h3 mb-3">{slide.subtitle}</h2>
+                        <p className="lead mb-4">{slide.description}</p>
+                        <Button 
+                          as={Link} 
+                          to={slide.buttonLink} 
+                          variant="primary" 
+                          size="lg"
+                          className="btn-primary-custom"
+                        >
+                          {slide.buttonText}
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </Container>
-              </div>
-            </Carousel.Item>
-          ))}
-        </Carousel>
+                  </Container>
+                </div>
+              </Carousel.Item>
+            ))}
+          </Carousel>
+        )}
       </section>
       <Services />
       {/* Featured Products Section */}
@@ -202,18 +260,26 @@ const Home = () => {
           <h2 className="section-title text-center mb-5">Câu Hỏi Thường Gặp</h2>
           <Row>
             <Col md={10} className="mx-auto">
-              <Accordion defaultActiveKey="0" className="faq-accordion">
-                {homeMockData.faqs.map((faq, index) => (
-                  <Accordion.Item eventKey={index.toString()} key={faq.id}>
-                    <Accordion.Header>
-                      {faq.question}
-                    </Accordion.Header>
-                    <Accordion.Body>
-                      {faq.answer}
-                    </Accordion.Body>
-                  </Accordion.Item>
-                ))}
-              </Accordion>
+              {loadingFaqs ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : (
+                <Accordion defaultActiveKey="0" className="faq-accordion">
+                  {faqs.map((faq, index) => (
+                    <Accordion.Item eventKey={index.toString()} key={faq.id}>
+                      <Accordion.Header>
+                        {faq.question}
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        {faq.answer}
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
+              )}
             </Col>
           </Row>
         </Container>

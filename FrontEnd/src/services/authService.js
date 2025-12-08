@@ -3,12 +3,12 @@ import api from '../utils/api';
 export const authService = {
   // Đăng nhập
   login: async (email, password) => {
-    return await api.post('/auth/login', { email, password });
+    return await api.post('/login', { email, password });
   },
 
   // Đăng ký
   register: async (userData) => {
-    return await api.post('/auth/register', userData);
+    return await api.post('/register', userData);
   },
 
   // Lấy thông tin user hiện tại

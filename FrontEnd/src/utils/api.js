@@ -2,6 +2,8 @@ import axios from 'axios';
 import { API_BASE_URL, USE_MOCK_DATA } from './constants';
 import { matchMockEndpoint } from './mockService';
 
+export const baseUrl = "http://localhost:8084";
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

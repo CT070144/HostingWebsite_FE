@@ -18,6 +18,10 @@ import AdminLayout from './pages/Dashboard/Admin/AdminLayout';
 import AdminDashboardPage from './pages/Dashboard/Admin/AdminDashboardPage';
 import AdminOrdersPage from './pages/Dashboard/Admin/AdminOrdersPage';
 import AdminProductsPage from './pages/Dashboard/Admin/AdminProductsPage';
+import AdminUsersPage from './pages/Dashboard/Admin/AdminUsersPage';
+import AdminBannerPage from './pages/Dashboard/Admin/AdminBannerPage';
+import AdminFaqsPage from './pages/Dashboard/Admin/AdminFaqsPage';
+import AdminServiceFeaturesPage from './pages/Dashboard/Admin/AdminServiceFeaturesPage';
 import './App.css';
 
 function App() {
@@ -34,6 +38,11 @@ function App() {
         <Route path="dashboard" element={<AdminDashboardPage />} />
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="products" element={<AdminProductsPage />} />
+        <Route path="configuration/users" element={<AdminUsersPage />} />
+        <Route path="configuration/banner" element={<AdminBannerPage />} />
+        <Route path="configuration/faqs" element={<AdminFaqsPage />} />
+        <Route path="configuration/service-features" element={<AdminServiceFeaturesPage />} />
+        <Route path="configuration" element={<AdminUsersPage />} />
       </Route>
       <Route path="/*" element={
         <Layout>

@@ -7,11 +7,18 @@ import './Register.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    phone: '',
+    phone_number: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    identity_number: '',
+    address: '',
+    ward: '',
+    city: '',
+    country: 'Vietnam',
+    account_type: 'PERSONAL'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,32 +86,48 @@ const Register = () => {
                   )}
 
                   <Form noValidate validated={validated} onSubmit={handleSubmit}>
+                    <h5 className="mb-3">Thông tin cá nhân</h5>
                     <Row>
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Họ và tên 
-                            <span className="text-danger">*</span>
-                          </Form.Label>
+                          <Form.Label>Họ <span className="text-danger">*</span></Form.Label>
                           <Form.Control
                             type="text"
-                            name="name"
-                            value={formData.name}
+                            name="last_name"
+                            value={formData.last_name}
                             onChange={handleChange}
-                            placeholder="Nhập họ và tên"
+                            placeholder="Nhập họ"
                             required
                             autoFocus
                           />
                           <Form.Control.Feedback type="invalid">
-                            Vui lòng nhập họ và tên
+                            Vui lòng nhập họ
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
 
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Email 
-                            <span className="text-danger">*</span>
-                          </Form.Label>
+                          <Form.Label>Tên <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="first_name"
+                            value={formData.first_name}
+                            onChange={handleChange}
+                            placeholder="Nhập tên"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng nhập tên
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
+                    <Row>
+                      <Col md={6} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Email <span className="text-danger">*</span></Form.Label>
                           <Form.Control
                             type="email"
                             name="email"
@@ -118,18 +141,14 @@ const Register = () => {
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
-                    </Row>
 
-                    <Row>
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Số điện thoại 
-                            <span className="text-danger">*</span>
-                          </Form.Label>
+                          <Form.Label>Số điện thoại <span className="text-danger">*</span></Form.Label>
                           <Form.Control
                             type="tel"
-                            name="phone"
-                            value={formData.phone}
+                            name="phone_number"
+                            value={formData.phone_number}
                             onChange={handleChange}
                             placeholder="Nhập số điện thoại"
                             required
@@ -139,12 +158,115 @@ const Register = () => {
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
+                    </Row>
+
+                    <Row>
+                      <Col md={6} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>CMND/CCCD <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="identity_number"
+                            value={formData.identity_number}
+                            onChange={handleChange}
+                            placeholder="Nhập số CMND/CCCD"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng nhập số CMND/CCCD
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
 
                       <Col md={6} className="mb-3">
                         <Form.Group>
-                          <Form.Label>Mật khẩu 
-                            <span className="text-danger">*</span>
-                          </Form.Label>
+                          <Form.Label>Loại tài khoản</Form.Label>
+                          <Form.Select
+                            name="account_type"
+                            value={formData.account_type}
+                            onChange={handleChange}
+                          >
+                            <option value="PERSONAL">Cá nhân</option>
+                            <option value="BUSINESS">Doanh nghiệp</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
+                    <h5 className="mb-3 mt-4">Địa chỉ</h5>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Địa chỉ <span className="text-danger">*</span></Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Số nhà, tên đường"
+                        required
+                      />
+                      <Form.Control.Feedback type="invalid">
+                        Vui lòng nhập địa chỉ
+                      </Form.Control.Feedback>
+                    </Form.Group>
+
+                    <Row>
+                      <Col md={4} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Phường/Xã <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="ward"
+                            value={formData.ward}
+                            onChange={handleChange}
+                            placeholder="Nhập phường/xã"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng nhập phường/xã
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+
+                      <Col md={4} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Thành phố <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="city"
+                            value={formData.city}
+                            onChange={handleChange}
+                            placeholder="Nhập thành phố"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng nhập thành phố
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+
+                      <Col md={4} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Quốc gia <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="country"
+                            value={formData.country}
+                            onChange={handleChange}
+                            placeholder="Nhập quốc gia"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng nhập quốc gia
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+
+                    <h5 className="mb-3 mt-4">Bảo mật</h5>
+                    <Row>
+                      <Col md={6} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Mật khẩu <span className="text-danger">*</span></Form.Label>
                           <Form.Control
                             type="password"
                             name="password"
@@ -159,24 +281,24 @@ const Register = () => {
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
-                    </Row>
 
-                    <Form.Group className="mb-3">
-                      <Form.Label>Xác nhận mật khẩu 
-                        <span className="text-danger">*</span>
-                      </Form.Label>
-                      <Form.Control
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="Nhập lại mật khẩu"
-                        required
-                      />
-                      <Form.Control.Feedback type="invalid">
-                        Vui lòng xác nhận mật khẩu
-                      </Form.Control.Feedback>
-                    </Form.Group>
+                      <Col md={6} className="mb-3">
+                        <Form.Group>
+                          <Form.Label>Xác nhận mật khẩu <span className="text-danger">*</span></Form.Label>
+                          <Form.Control
+                            type="password"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            placeholder="Nhập lại mật khẩu"
+                            required
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            Vui lòng xác nhận mật khẩu
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                    </Row>
 
                     <Form.Group className="mb-3">
                       <Form.Check
