@@ -13,6 +13,8 @@ import { Link } from 'react-router-dom';
 import homeMockData from '../../mockData/home.json';
 import { bannerService } from '../../services/bannerService';
 import { faqService } from '../../services/faqService';
+import { serviceFeaturesService } from '../../services/serviceFeaturesService';
+import { featuredProductService } from '../../services/featuredProductService';
 import './Home.css';
 import Services from '../Services/Services.js';
 
@@ -23,8 +25,12 @@ const Home = () => {
   const [submitted, setSubmitted] = useState(false);
   const [slides, setSlides] = useState([]);
   const [faqs, setFaqs] = useState([]);
+  const [serviceFeatures, setServiceFeatures] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loadingSlides, setLoadingSlides] = useState(true);
   const [loadingFaqs, setLoadingFaqs] = useState(true);
+  const [loadingServiceFeatures, setLoadingServiceFeatures] = useState(true);
+  const [loadingFeaturedProducts, setLoadingFeaturedProducts] = useState(true);
 
   useEffect(() => {
     // Fetch slides
@@ -35,7 +41,11 @@ const Home = () => {
         const slidesData = res.data.map(slide => ({
           ...slide,
           id: slide.slide_id,
-          image: slide.image ? `${baseUrl}${slide.image}` : '',
+          image: slide.image 
+            ? (slide.image_type === 'url' || slide.image_type === 'URL' 
+              ? slide.image 
+              : `${baseUrl}${slide.image}`)
+            : '',
           buttonText: slide.buttonText || slide.button_text || 'Xem thêm',
           buttonLink: slide.buttonLink || slide.button_link || '/pricing',
         }));
@@ -64,8 +74,86 @@ const Home = () => {
       }
     };
 
+    // Fetch Service Features
+    const fetchServiceFeatures = async () => {
+      try {
+        setLoadingServiceFeatures(true);
+        const res = await serviceFeaturesService.list();
+        
+        // Handle different response formats
+        let features = [];
+        if (Array.isArray(res.data)) {
+          features = res.data;
+        } else if (res.data?.data && Array.isArray(res.data.data)) {
+          features = res.data.data;
+        } else if (res.data?.content && Array.isArray(res.data.content)) {
+          features = res.data.content;
+        }
+        
+        // Take only first 3 features and normalize image URLs
+        const featuresData = features.slice(0, 3).map(feature => ({
+          ...feature,
+          image: feature.image 
+            ? (feature.image_type === 'url' || feature.image_type === 'URL' 
+              ? feature.image 
+              : `${baseUrl}${feature.image}`)
+            : ''
+        }));
+        
+        setServiceFeatures(featuresData);
+      } catch (err) {
+        console.error('Failed to fetch service features:', err);
+        // Fallback to mock data on error (only first 3)
+        const mockFeatures = (homeMockData.serviceFeatures || []).slice(0, 3);
+        setServiceFeatures(mockFeatures);
+      } finally {
+        setLoadingServiceFeatures(false);
+      }
+    };
+
+    // Fetch Featured Products
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoadingFeaturedProducts(true);
+        const res = await featuredProductService.list();
+        // Handle different response formats
+        let products = [];
+        if (Array.isArray(res.data)) {
+          products = res.data;
+        } else if (res.data?.data && Array.isArray(res.data.data)) {
+          products = res.data.data;
+        } else if (res.data?.content && Array.isArray(res.data.content)) {
+          products = res.data.content;
+        }
+        
+        // Normalize and take only first 4 products
+        const normalizedProducts = products.slice(0, 4).map(item => ({
+          id: item.id,
+          type: item.type || 'hosting',
+          title: item.title || '',
+          icon: item.icon || 'fas fa-server',
+          description: item.description || '',
+          price: item.price || '',
+          priceUnit: item.priceUnit || item.price_unit || 'vnđ/tháng',
+          features: Array.isArray(item.features) ? item.features : [],
+          link: item.link || '/pricing'
+        }));
+        
+        setFeaturedProducts(normalizedProducts);
+      } catch (err) {
+        console.error('Failed to fetch featured products:', err);
+        // Fallback to mock data on error (only first 4)
+        const mockProducts = (homeMockData.featuredProducts || []).slice(0, 4);
+        setFeaturedProducts(mockProducts);
+      } finally {
+        setLoadingFeaturedProducts(false);
+      }
+    };
+
     fetchSlides();
     fetchFaqs();
+    fetchServiceFeatures();
+    fetchFeaturedProducts();
   }, []);
 
   const handleNewsletterSubmit = (e) => {
@@ -125,46 +213,60 @@ const Home = () => {
       <section className="featured-products-section py-5">
         <Container>
           <h2 className="section-title text-center mb-5">Sản Phẩm Nổi Bật</h2>
-          <Row>
-            {homeMockData.featuredProducts.map((product) => (
-              <Col md={6} lg={3} key={product.id} className="mb-4">
-                <Card className="featured-product-card h-100">
-                  <Card.Body className="text-center d-flex flex-column justify-content-between p-4">
-                    <div className="product-content">
-                    <div className="product-icon mb-3">
-                      <i className={`${product.icon} fa-3x`}></i>
-                    </div>
-                    <Card.Title className="h5 mb-3">{product.title}</Card.Title>
-                    <Card.Text className="text-muted mb-3">
-                      {product.description}
-                    </Card.Text>
-                    <div className="product-price mb-3">
-                      <span className="price-label">Giá chỉ từ:</span>
-                      <span className="price-value">{product.price}</span>
-                      <span className="price-unit">/{product.priceUnit}</span>
-                    </div>
-                    <ul className="product-features list-unstyled mb-3">
-                      {product.features.slice(0, 2).map((feature, idx) => (
-                        <li key={idx}>
-                          <i className="fas fa-check text-success me-2"></i>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    </div>
-                    <Button 
-                      as={Link} 
-                      to={product.link} 
-                      variant="primary"
-                      className="btn-primary-custom w-100"
-                    >
-                      Chi tiết bảng giá
-                    </Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+          {loadingFeaturedProducts ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : featuredProducts.length === 0 ? (
+            <div className="text-center py-5">
+              <p className="text-muted">Chưa có sản phẩm nổi bật</p>
+            </div>
+          ) : (
+            <Row>
+              {featuredProducts.map((product) => (
+                <Col md={6} lg={3} key={product.id} className="mb-4">
+                  <Card className="featured-product-card h-100">
+                    <Card.Body className="text-center d-flex flex-column justify-content-between p-4">
+                      <div className="product-content">
+                        <div className="product-icon mb-3">
+                          <i className={`${product.icon} fa-3x`}></i>
+                        </div>
+                        <Card.Title className="h5 mb-3">{product.title}</Card.Title>
+                        <Card.Text className="text-muted mb-3">
+                          {product.description}
+                        </Card.Text>
+                        <div className="product-price mb-3">
+                          <span className="price-label">Giá chỉ từ:</span>
+                          <span className="price-value">{product.price}</span>
+                          <span className="price-unit">/{product.priceUnit}</span>
+                        </div>
+                        <ul className="product-features list-unstyled mb-3">
+                          {product.features && product.features.length > 0 ? (
+                            product.features.slice(0, 2).map((feature, idx) => (
+                              <li key={idx}>
+                                <i className="fas fa-check text-success me-2"></i>
+                                {feature}
+                              </li>
+                            ))
+                          ) : null}
+                        </ul>
+                      </div>
+                      <Button 
+                        as={Link} 
+                        to={product.link || '/pricing'} 
+                        variant="primary"
+                        className="btn-primary-custom w-100"
+                      >
+                        Chi tiết bảng giá
+                      </Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
         </Container>
       </section>
 
@@ -174,35 +276,43 @@ const Home = () => {
           <h2 className="section-title text-center mb-5">
             Điều gì làm nên khác biệt của TTCS Hosting
           </h2>
-          {homeMockData.serviceFeatures.map((feature, index) => (
-            <Row key={feature.id} className={`mb-5 ${index % 2 === 1 ? 'flex-row-reverse' : ''}`}>
-              <Col md={6} className="mb-4 mb-md-0">
-                <div className="feature-image-wrapper">
-                  <img 
-                    src={feature.image} 
-                    alt={feature.title}
-                    className="feature-image"
-                  />
-                  {feature.stats && (
-                    <div className="feature-stats">
-                      {feature.stats.map((stat, idx) => (
-                        <div key={idx} className="stat-box">
-                          <div className="stat-value">{stat.value}</div>
-                          <div className="stat-label">{stat.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Col>
-              <Col md={6} className="d-flex align-items-center">
-                <div>
-                  <h3 className="h2 mb-4">{feature.title}</h3>
-                  <p className="lead">{feature.description}</p>
-                </div>
-              </Col>
-            </Row>
-          ))}
+          {loadingServiceFeatures ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            serviceFeatures.map((feature, index) => (
+              <Row key={feature.id} className={`mb-5 ${feature.align === 'right' ? 'flex-row-reverse' : ''}`}>
+                <Col md={6} className="mb-4 mb-md-0">
+                  <div className="feature-image-wrapper">
+                    <img 
+                      src={feature.image} 
+                      alt={feature.title}
+                      className="feature-image"
+                    />
+                    {feature.stats && feature.stats.length > 0 && (
+                      <div className="feature-stats">
+                        {feature.stats.map((stat, idx) => (
+                          <div key={idx} className="stat-box">
+                            <div className="stat-value">{stat.value}</div>
+                            <div className="stat-label">{stat.label}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Col>
+                <Col md={6} className="d-flex align-items-center">
+                  <div>
+                    <h3 className="h2 mb-4">{feature.title}</h3>
+                    <p className="lead">{feature.description}</p>
+                  </div>
+                </Col>
+              </Row>
+            ))
+          )}
         </Container>
       </section>
 

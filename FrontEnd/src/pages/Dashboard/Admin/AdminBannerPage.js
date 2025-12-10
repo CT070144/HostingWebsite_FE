@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Admin.css';
 import { bannerService } from '../../../services/bannerService';
 import { baseUrl } from '../../../utils/api';
+import { useNotify } from '../../../contexts/NotificationContext';
 const TableRow = ({ banner, onView, onEdit, onDelete }) => {
   const id = banner.slide_id || banner.id;
   const btnText = banner.buttonText || banner.button_text;
@@ -49,6 +50,7 @@ const TableRow = ({ banner, onView, onEdit, onDelete }) => {
 };
 
 const AdminBannerPage = () => {
+  const { notifyError, notifyWarning } = useNotify();
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,11 +78,15 @@ const AdminBannerPage = () => {
         const res = await bannerService.list();
         setBanners(res.data.map(banner => ({
           ...banner,
-          image: banner.image ? `${baseUrl}${banner.image}` : ''
+          image: banner.image 
+            ? (banner.image_type === 'url' || banner.image_type === 'URL' 
+              ? banner.image 
+              : `${baseUrl}${banner.image}`)
+            : ''
         })) || []);
       } catch (err) {
         console.error('Load slides failed', err);
-        alert('Không tải được danh sách slide. Vui lòng thử lại.');
+        notifyError('Không tải được danh sách slide. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
@@ -107,7 +113,7 @@ const AdminBannerPage = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('Dung lượng ảnh tối đa 2MB');
+        notifyWarning('Dung lượng ảnh tối đa 2MB');
         return;
       }
       setImageFile(file);
@@ -143,7 +149,7 @@ const AdminBannerPage = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.size > 2 * 1024 * 1024) {
-        alert('Dung lượng ảnh tối đa 2MB');
+        notifyWarning('Dung lượng ảnh tối đa 2MB');
         return;
       }
       setImageFile(file);
@@ -164,7 +170,7 @@ const AdminBannerPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title) {
-      alert('Vui lòng nhập tiêu đề');
+      notifyWarning('Vui lòng nhập tiêu đề');
       return;
     }
 
@@ -178,11 +184,15 @@ const AdminBannerPage = () => {
     fd.append('display_order', Number(formData.display_order) || 0);
 
     if (formData.image_type === 'FILE') {
-      if (!imageFile) {
-        alert('Vui lòng tải lên ảnh khi chọn loại FILE');
+      // Khi tạo mới, bắt buộc phải có file
+      // Khi update, chỉ gửi file nếu có file mới
+      if (!imageFile && !editingBanner) {
+        notifyWarning('Vui lòng tải lên ảnh khi chọn loại FILE');
         return;
       }
-      fd.append('image', imageFile);
+      if (imageFile) {
+        fd.append('image', imageFile);
+      }
     } else {
       fd.append('image_url', formData.image);
     }
@@ -196,12 +206,16 @@ const AdminBannerPage = () => {
       const res = await bannerService.list();
       setBanners(res.data.map(banner => ({
         ...banner,
-        image: banner.image ? `${baseUrl}${banner.image}` : ''
+        image: banner.image 
+          ? (banner.image_type === 'url' || banner.image_type === 'URL' 
+            ? banner.image 
+            : `${baseUrl}${banner.image}`)
+          : ''
       })) || []);
       handleCloseModal();
     } catch (err) {
       console.error('Save slide failed', err);
-      alert(editingBanner ? 'Cập nhật slide thất bại' : 'Thêm slide thất bại');
+      notifyError(editingBanner ? 'Cập nhật slide thất bại' : 'Thêm slide thất bại');
     }
   };
 
@@ -233,12 +247,16 @@ const AdminBannerPage = () => {
           const res = await bannerService.list();
           setBanners(res.data.map(banner => ({
             ...banner,
-            image: banner.image ? `${baseUrl}${banner.image}` : ''
+            image: banner.image 
+              ? (banner.image_type === 'url' || banner.image_type === 'URL' 
+                ? banner.image 
+                : `${baseUrl}${banner.image}`)
+              : ''
           })) || []);
         })
         .catch((err) => {
           console.error('Delete slide failed', err);
-          alert('Xóa slide thất bại. Vui lòng thử lại.');
+          notifyError('Xóa slide thất bại. Vui lòng thử lại.');
         });
     }
   };

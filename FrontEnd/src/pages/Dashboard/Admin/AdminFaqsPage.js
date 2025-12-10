@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { faqService } from '../../../services/faqService';
 import './AdminFaqsPage.css';
+import { useNotify } from '../../../contexts/NotificationContext';
 
 const emptyForm = { question: '', answer: '', category: '', display_order: 0 };
 
 const AdminFaqsPage = () => {
+  const { notifyError, notifyWarning, notifySuccess } = useNotify();
   const [faqs, setFaqs] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -22,7 +24,7 @@ const AdminFaqsPage = () => {
       setFaqs(res.data || []);
     } catch (err) {
       console.error('Load FAQs failed', err);
-      alert('Không tải được danh sách FAQs. Vui lòng thử lại.');
+      notifyError('Không tải được danh sách FAQs. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ const AdminFaqsPage = () => {
         .then(() => fetchFaqs())
         .catch((err) => {
           console.error('Delete FAQ failed', err);
-          alert('Xóa FAQ thất bại. Vui lòng thử lại.');
+          notifyError('Xóa FAQ thất bại. Vui lòng thử lại.');
         });
     }
   };
@@ -89,7 +91,7 @@ const AdminFaqsPage = () => {
     const displayOrder = Number(formData.display_order) || 0;
 
     if (!trimmedQuestion || !trimmedAnswer) {
-      alert('Vui lòng nhập đầy đủ câu hỏi và câu trả lời.');
+      notifyWarning('Vui lòng nhập đầy đủ câu hỏi và câu trả lời.');
       return;
     }
 
@@ -109,7 +111,7 @@ const AdminFaqsPage = () => {
       await fetchFaqs();
     } catch (err) {
       console.error('Save FAQ failed', err);
-      alert(editingFaq ? 'Cập nhật FAQ thất bại.' : 'Thêm FAQ thất bại.');
+      notifyError(editingFaq ? 'Cập nhật FAQ thất bại.' : 'Thêm FAQ thất bại.');
       return;
     }
 

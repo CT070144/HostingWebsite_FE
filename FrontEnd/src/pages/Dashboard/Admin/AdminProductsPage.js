@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './Admin.css';
 import hostingData from '../../../mockData/hosting.json';
+import homeMockData from '../../../mockData/home.json';
+import { featuredProductService } from '../../../services/featuredProductService';
+import { discountService } from '../../../services/discountService';
+import { useNotify } from '../../../contexts/NotificationContext';
 
 const AdminProductsPage = () => {
+  const { notifySuccess, notifyError, notifyWarning } = useNotify();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,7 +15,17 @@ const AdminProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [allDiscountCodes, setAllDiscountCodes] = useState([]);
+  const [loadingDiscountCodes, setLoadingDiscountCodes] = useState(false);
+  const [discountSearchTerm, setDiscountSearchTerm] = useState('');
+  const [newDiscountCode, setNewDiscountCode] = useState({
+    code: '',
+    discount_percent: '',
+    max_cycle: '',
+    description: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     monthlyPrice: '',
@@ -31,12 +46,102 @@ const AdminProductsPage = () => {
       themesPlugins: '',
     },
   });
+  // Featured products (Home page)
+  const [featuredProducts, setFeaturedProducts] = useState(homeMockData.featuredProducts || []);
+  const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
+  const [isFeaturedPreviewOpen, setIsFeaturedPreviewOpen] = useState(false);
+  const [featuredForm, setFeaturedForm] = useState({
+    id: null,
+    type: 'hosting',
+    title: '',
+    icon: 'fas fa-server',
+    description: '',
+    price: '',
+    priceUnit: 'vnđ/tháng',
+    link: '/pricing',
+    features: [],
+  });
+  const FEATURED_ICONS = [
+    'fas fa-server',
+    'fas fa-cloud',
+    'fas fa-rocket',
+    'fas fa-shield-alt',
+    'fas fa-database',
+    'fas fa-bolt',
+    'fas fa-cubes',
+  ];
+
+  const normalizeFeatured = (raw) =>
+    (raw || []).map((item) => ({
+      ...item,
+      priceUnit: item.priceUnit || item.price_unit || 'vnđ/tháng',
+      features: Array.isArray(item.features) ? item.features : [],
+    }));
 
   useEffect(() => {
     // Load products from mock data
-    const loadedProducts = hostingData.products || [];
+    const loadedProducts = (hostingData.products || []).map((p) => ({
+      ...p,
+      discountCodes: (p.discountCodes || []).map((d) => ({
+        discount_code_id: d.discount_code_id || undefined,
+        product_id: d.product_id || p.id,
+        code: d.code,
+        discount_percent: d.discount_percent ?? d.discount ?? 0,
+        max_cycle: d.max_cycle ?? d.maxCycle,
+        description: d.description || '',
+        is_active: d.is_active ?? true,
+      })),
+    }));
     setProducts(loadedProducts);
     setFilteredProducts(loadedProducts);
+
+    const fetchDiscountCodes = async () => {
+      try {
+        setLoadingDiscountCodes(true);
+        const res = await discountService.list();
+        const codes = res.data || [];
+        setAllDiscountCodes(codes);
+      } catch (err) {
+        console.error('Fetch discount codes failed, fallback to mock', err);
+        // Fallback: collect unique from products
+        const allCodes = [];
+        const codeMap = new Map();
+        loadedProducts.forEach(product => {
+          if (product.discountCodes && Array.isArray(product.discountCodes)) {
+            product.discountCodes.forEach(code => {
+              if (!codeMap.has(code.code)) {
+                codeMap.set(code.code, code);
+                allCodes.push(code);
+              }
+            });
+          }
+        });
+        console.log(allCodes);
+        setAllDiscountCodes(allCodes);
+      } finally {
+        setLoadingDiscountCodes(false);
+      }
+    };
+
+    const fetchFeatured = async () => {
+      try {
+        const res = await featuredProductService.list();
+        const data = Array.isArray(res.data)
+          ? res.data
+          : Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data?.content)
+          ? res.data.content
+          : [];
+        setFeaturedProducts(normalizeFeatured(data));
+      } catch (err) {
+        console.error('Fetch featured products failed, fallback to mock', err);
+        setFeaturedProducts(normalizeFeatured(homeMockData.featuredProducts || []));
+      }
+    };
+
+    fetchDiscountCodes();
+    fetchFeatured();
   }, []);
 
   useEffect(() => {
@@ -193,12 +298,12 @@ const AdminProductsPage = () => {
             if (Array.isArray(importedData)) {
               setProducts(importedData);
               setFilteredProducts(importedData);
-              alert('Nhập file thành công!');
+              notifySuccess('Nhập file thành công!');
             } else {
-              alert('File không đúng định dạng!');
+              notifyError('File không đúng định dạng!');
             }
           } catch (error) {
-            alert('Lỗi khi đọc file!');
+            notifyError('Lỗi khi đọc file!');
           }
         };
         reader.readAsText(file);
@@ -206,6 +311,202 @@ const AdminProductsPage = () => {
     };
     input.click();
   };
+
+  // Discount Code Management
+  const handleOpenDiscountModal = () => {
+    setIsDiscountModalOpen(true);
+  };
+
+  const handleCloseDiscountModal = () => {
+    setIsDiscountModalOpen(false);
+    setDiscountSearchTerm('');
+    setNewDiscountCode({ code: '', discount: '', maxCycle: '', description: '' });
+  };
+
+  const handleAddExistingDiscount = (discount) => {
+    // Check if code already exists in current product
+    const exists = formData.discountCodes.some(d => d.code === discount.code);
+    if (exists) {
+      notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      discountCodes: [...prev.discountCodes, discount]
+    }));
+    notifySuccess('Đã thêm mã giảm giá!');
+  };
+
+  const handleCreateNewDiscount = () => {
+    if (!newDiscountCode.code || !newDiscountCode.discount_percent) {
+      notifyWarning('Vui lòng nhập mã code và % giảm giá!');
+      return;
+    }
+    
+    const discountValue = Number(newDiscountCode.discount_percent);
+    if (discountValue <= 0 || discountValue > 100) {
+      notifyWarning('% giảm giá phải từ 1 đến 100!');
+      return;
+    }
+
+    // Check if code already exists
+    const exists = formData.discountCodes.some(d => d.code === newDiscountCode.code);
+    if (exists) {
+      notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
+      return;
+    }
+
+    const payload = {
+      code: newDiscountCode.code.toUpperCase(),
+      description: newDiscountCode.description || `Giảm ${discountValue}%`,
+      discount_percent: discountValue,
+      is_active: true, // mặc định true
+      max_cycle: newDiscountCode.max_cycle ? Number(newDiscountCode.max_cycle) : undefined,
+    };
+    // Remove undefined fields
+    if (!payload.max_cycle) delete payload.max_cycle;
+
+    discountService.create(payload)
+      .then((res) => {
+        const created = res.data || payload;
+        setFormData(prev => ({
+          ...prev,
+          discountCodes: [...prev.discountCodes, created]
+        }));
+
+        // Add to all discount codes if not exists
+        const existsInAll = allDiscountCodes.some(d => d.code === created.code);
+        if (!existsInAll) {
+          setAllDiscountCodes(prev => [...prev, created]);
+        }
+
+        setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+        notifySuccess('Đã tạo mã giảm giá mới!');
+      })
+      .catch((err) => {
+        console.error('Create discount failed', err);
+        notifyError(err.response.data.message);
+      });
+  };
+
+  const handleRemoveDiscount = (codeToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      discountCodes: prev.discountCodes.filter(d => d.code !== codeToRemove)
+    }));
+  };
+
+  // Featured products handlers
+  const handleOpenFeaturedModal = () => {
+    setIsFeaturedModalOpen(true);
+  };
+
+  const handleCloseFeaturedModal = () => {
+    setIsFeaturedModalOpen(false);
+    setIsFeaturedPreviewOpen(false);
+    setFeaturedForm({
+      id: null,
+      type: 'hosting',
+      title: '',
+      icon: 'fas fa-server',
+      description: '',
+      price: '',
+      priceUnit: 'vnđ/tháng',
+      link: '/pricing',
+      features: [],
+    });
+  };
+
+  const handleEditFeatured = (item) => {
+    setFeaturedForm({
+      ...item,
+      features: item.features && Array.isArray(item.features) ? item.features : [],
+    });
+    setIsFeaturedModalOpen(true);
+  };
+
+  const handleDeleteFeatured = (id) => {
+    setFeaturedProducts((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleSubmitFeatured = (e) => {
+    e.preventDefault();
+    if (!featuredForm.title || !featuredForm.price) {
+      notifyWarning('Vui lòng nhập tiêu đề và giá');
+      return;
+    }
+    if (!featuredForm.priceUnit) {
+      notifyWarning('Vui lòng nhập đơn vị giá');
+      return;
+    }
+    if (!featuredForm.link) {
+      notifyWarning('Vui lòng nhập liên kết');
+      return;
+    }
+    if (!featuredForm.features || featuredForm.features.length === 0) {
+      notifyWarning('Vui lòng thêm ít nhất 1 tính năng');
+      return;
+    }
+    const priceString = featuredForm.price.toString();
+    if (editingProduct) {
+      // no-op
+    }
+    const cleanFeatures = (featuredForm.features || []).filter((f) => f && f.trim() !== '');
+    const payload = {
+      title: featuredForm.title,
+      description: featuredForm.description,
+      icon: featuredForm.icon,
+      price: priceString,
+      price_unit: featuredForm.priceUnit,
+      link: featuredForm.link,
+      type: featuredForm.type || 'hosting',
+      features: cleanFeatures,
+    };
+
+    // Nếu chưa có id => tạo mới qua API, nếu có id giữ behavior local update (chưa có API update)
+    if (!featuredForm.id) {
+      featuredProductService.create(payload)
+        .then((res) => {
+          const created = res.data || { ...payload };
+          setFeaturedProducts((prev) => [...prev, created]);
+          notifySuccess('Đã thêm sản phẩm nổi bật');
+          handleCloseFeaturedModal();
+        })
+        .catch((err) => {
+          console.error('Create featured product failed', err);
+          notifyError(err?.response?.data?.message || 'Thêm sản phẩm nổi bật thất bại');
+        });
+    } else {
+      const updated = {
+        ...featuredForm,
+        price: priceString,
+        features: cleanFeatures,
+      };
+      setFeaturedProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      notifySuccess('Đã cập nhật sản phẩm nổi bật (local)');
+      handleCloseFeaturedModal();
+    }
+  };
+
+  const handleOpenFeaturedPreview = () => {
+    const requiredMissing = [];
+    if (!featuredForm.title) requiredMissing.push('Tiêu đề');
+    if (!featuredForm.price) requiredMissing.push('Giá');
+    if (!featuredForm.priceUnit) requiredMissing.push('Đơn vị giá');
+    if (!featuredForm.link) requiredMissing.push('Liên kết');
+    if (!featuredForm.features || featuredForm.features.length === 0) requiredMissing.push('Tính năng');
+    if (requiredMissing.length > 0) {
+      notifyWarning(`Vui lòng nhập: ${requiredMissing.join(', ')}`);
+      return;
+    }
+    setIsFeaturedPreviewOpen(true);
+  };
+
+  // Filter discount codes based on search
+  const filteredDiscountCodes = allDiscountCodes.filter(discount => 
+    (discount.code || '').toLowerCase().includes(discountSearchTerm.toLowerCase()) ||
+    (discount.description || '').toLowerCase().includes(discountSearchTerm.toLowerCase())
+  );
 
   // Pagination
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -224,6 +525,9 @@ const AdminProductsPage = () => {
           </button>
           <button className="btn btn-secondary" onClick={handleImport}>
             <i className="fas fa-arrow-down"></i> Nhập file
+          </button>
+          <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
+            <i className="fas fa-star"></i> Sản phẩm nổi bật
           </button>
           <div className="btn-group">
             <button className="btn btn-primary" onClick={handleAddNew}>
@@ -519,6 +823,72 @@ const AdminProductsPage = () => {
                 </div>
               </div>
 
+              {/* Discount Codes Section */}
+              <div className="form-group" style={{ marginTop: '20px' }}>
+                <label className="form-label">
+                  Mã giảm giá
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleOpenDiscountModal}
+                    style={{ marginLeft: '10px', padding: '5px 15px', fontSize: '14px' }}
+                  >
+                    <i className="fas fa-plus"></i> Thêm mã giảm giá
+                  </button>
+                </label>
+                {formData.discountCodes.length === 0 ? (
+                  <p style={{ color: '#999', fontStyle: 'italic' }}>
+                    Chưa có mã giảm giá nào. Nhấn nút "Thêm mã giảm giá" để thêm.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {formData.discountCodes.map((discount, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '4px',
+                          backgroundColor: '#f9f9f9'
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ color: '#1976d2' }}>{discount.code}</strong>
+                          <span style={{ marginLeft: '10px', color: '#4caf50' }}>
+                            -{discount.discount_percent ?? discount.discount ?? 0}%
+                          </span>
+                          {discount.max_cycle && (
+                            <span style={{ marginLeft: '10px', color: '#ff9800', fontSize: '12px' }}>
+                              (Tối đa {discount.max_cycle} tháng)
+                            </span>
+                          )}
+                          {!discount.is_active && (
+                            <span style={{ marginLeft: '10px', color: '#f44336', fontSize: '12px' }}>
+                              (Ngừng kích hoạt)
+                            </span>
+                          )}
+                          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#666' }}>
+                            {discount.description}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-icon btn-delete"
+                          onClick={() => handleRemoveDiscount(discount.code)}
+                          title="Xóa"
+                          style={{ marginLeft: '10px' }}
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="form-actions">
                 <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
                   Hủy
@@ -528,6 +898,523 @@ const AdminProductsPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Discount Code Modal */}
+      {isDiscountModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseDiscountModal}>
+          <div 
+            className="modal-content product-modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '800px' }}
+          >
+            <div className="modal-header">
+              <h2>Danh mục Mã giảm giá</h2>
+              <button className="modal-close" onClick={handleCloseDiscountModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '20px' }}>
+              {/* Create New Discount Code */}
+              <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+                <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '16px' }}>
+                  <i className="fas fa-plus-circle"></i> Tạo mã giảm giá mới
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Mã code *</label>
+                    <input
+                      type="text"
+                      value={newDiscountCode.code}
+                      onChange={(e) => setNewDiscountCode({
+                        ...newDiscountCode,
+                        code: e.target.value.toUpperCase()
+                      })}
+                      placeholder="VD: SUMMER2024"
+                      className="form-input"
+                      style={{ textTransform: 'uppercase' }}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">% Giảm giá *</label>
+                    <input
+                      type="number"
+                      value={newDiscountCode.discount_percent}
+                      onChange={(e) => setNewDiscountCode({
+                        ...newDiscountCode,
+                        discount_percent: e.target.value
+                      })}
+                      placeholder="VD: 50"
+                      className="form-input"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Chu kỳ tối đa (tháng)</label>
+                    <input
+                      type="number"
+                      value={newDiscountCode.max_cycle}
+                      onChange={(e) => setNewDiscountCode({
+                        ...newDiscountCode,
+                        max_cycle: e.target.value
+                      })}
+                      placeholder="VD: 24 (tùy chọn)"
+                      className="form-input"
+                      min="1"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Mô tả</label>
+                    <input
+                      type="text"
+                      value={newDiscountCode.description}
+                      onChange={(e) => setNewDiscountCode({
+                        ...newDiscountCode,
+                        description: e.target.value
+                      })}
+                      placeholder="VD: Giảm giá mùa hè"
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleCreateNewDiscount}
+                  style={{ marginTop: '10px' }}
+                >
+                  <i className="fas fa-check"></i> Tạo và thêm vào sản phẩm
+                </button>
+              </div>
+
+              {/* Lookup Existing Discount Codes */}
+              <div>
+                <h3 style={{ marginTop: 0, marginBottom: '15px', fontSize: '16px' }}>
+                  <i className="fas fa-search"></i> Chọn từ mã giảm giá có sẵn
+                </h3>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                  <input
+                    type="text"
+                    value={discountSearchTerm}
+                    onChange={(e) => setDiscountSearchTerm(e.target.value)}
+                    placeholder="Tìm kiếm mã giảm giá..."
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div style={{ 
+                  maxHeight: '300px', 
+                  overflowY: 'auto', 
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '4px',
+                  backgroundColor: '#fff'
+                }}>
+                  {loadingDiscountCodes ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#1976d2' }}>
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <p style={{ marginTop: '10px' }}>Đang tải mã giảm giá...</p>
+                    </div>
+                  ) : filteredDiscountCodes.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+                      <i className="fas fa-inbox" style={{ fontSize: '48px', marginBottom: '10px' }}></i>
+                      <p>Không tìm thấy mã giảm giá nào</p>
+                    </div>
+                  ) : (
+                    filteredDiscountCodes.map((discount, index) => (
+                      <div
+                        key={discount.discount_code_id || index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '15px',
+                          borderBottom: index < filteredDiscountCodes.length - 1 ? '1px solid #e0e0e0' : 'none',
+                          transition: 'background-color 0.2s',
+                          cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#fff'}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div>
+                            <strong style={{ color: '#1976d2', fontSize: '16px' }}>
+                              {discount.code}
+                            </strong>
+                            <span style={{ 
+                              marginLeft: '10px', 
+                              color: '#4caf50',
+                              fontWeight: 'bold',
+                              fontSize: '15px'
+                            }}>
+                              -{discount.discount_percent ?? discount.discount ?? 0}%
+                            </span>
+                            {discount.max_cycle && (
+                              <span style={{ 
+                                marginLeft: '10px', 
+                                color: '#ff9800',
+                                fontSize: '13px',
+                                backgroundColor: '#fff3e0',
+                                padding: '2px 8px',
+                                borderRadius: '4px'
+                              }}>
+                                Tối đa {discount.max_cycle} tháng
+                              </span>
+                            )}
+                            {discount.product_id && (
+                              <span style={{ marginLeft: '10px', color: '#607d8b', fontSize: '12px' }}>
+                                PID: {discount.product_id}
+                              </span>
+                            )}
+                            {!discount.is_active && (
+                              <span style={{ marginLeft: '10px', color: '#f44336', fontSize: '12px' }}>
+                                (Ngừng kích hoạt)
+                              </span>
+                            )}
+                          </div>
+                          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#666' }}>
+                            {discount.description}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => handleAddExistingDiscount(discount)}
+                          style={{ padding: '8px 15px', fontSize: '14px' }}
+                        >
+                          <i className="fas fa-plus"></i> Thêm
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ padding: '15px 20px', borderTop: '1px solid #e0e0e0' }}>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={handleCloseDiscountModal}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Featured Products Modal */}
+      {isFeaturedModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseFeaturedModal}>
+          <div
+            className="modal-content product-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '820px' }}
+          >
+            <div className="modal-header">
+              <h2>Danh mục Sản phẩm nổi bật</h2>
+              <button className="modal-close" onClick={handleCloseFeaturedModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              <div style={{ marginBottom: '16px', fontSize: '13px', color: '#6b7280' }}>
+                Dữ liệu đang dùng mock từ <code>home.json</code> (featuredProducts). Thao tác này chỉ thay đổi tạm thời trên UI.
+              </div>
+
+              {/* Current list */}
+              <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                {featuredProducts.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
+                    <i className="fas fa-inbox" style={{ fontSize: '40px' }}></i>
+                    <div>Chưa có sản phẩm nổi bật</div>
+                  </div>
+                ) : (
+                  featuredProducts.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 14px',
+                        borderBottom: '1px solid #e5e7eb'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <i className={item.icon} style={{ color: '#2563eb' }}></i>
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{item.title}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>{item.description}</div>
+                          <div style={{ fontSize: '12px', color: '#2563eb', marginTop: 4 }}>
+                            {item.price}{item.priceUnit ? ` / ${item.priceUnit}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary" onClick={() => handleEditFeatured(item)}>
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button className="btn btn-danger" onClick={() => handleDeleteFeatured(item.id)}>
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmitFeatured}>
+                <div className="form-row">
+                  <div className="form-column">
+                    <div className="form-group">
+                      <label className="form-label">Tiêu đề *</label>
+                      <input
+                        type="text"
+                        value={featuredForm.title}
+                        onChange={(e) => setFeaturedForm({ ...featuredForm, title: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Mô tả</label>
+                      <input
+                        type="text"
+                        value={featuredForm.description}
+                        onChange={(e) => setFeaturedForm({ ...featuredForm, description: e.target.value })}
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Icon</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {FEATURED_ICONS.map((icon) => (
+                        <button
+                          key={icon}
+                          type="button"
+                          onClick={() => setFeaturedForm({ ...featuredForm, icon })}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 10px',
+                            borderRadius: 6,
+                            border: featuredForm.icon === icon ? '2px solid #2563eb' : '1px solid #e5e7eb',
+                            background: featuredForm.icon === icon ? '#eff6ff' : '#fff',
+                            cursor: 'pointer',
+                            minWidth: 120
+                          }}
+                        >
+                          <i className={icon} style={{ color: '#2563eb' }}></i>
+                          <span style={{ fontSize: 12 }}>{icon.replace('fas ', '').replace('fa-', '')}</span>
+                        </button>
+                      ))}
+                    </div>
+                
+                    </div>
+                  </div>
+
+                  <div className="form-column">
+                    <div className="form-group">
+                      <label className="form-label">Giá *</label>
+                      <input
+                        type="text"
+                        value={featuredForm.price}
+                        onChange={(e) => setFeaturedForm({ ...featuredForm, price: e.target.value })}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Đơn vị giá</label>
+                      <input
+                        type="text"
+                        value={featuredForm.priceUnit}
+                        onChange={(e) => setFeaturedForm({ ...featuredForm, priceUnit: e.target.value })}
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Liên kết</label>
+                      <input
+                        type="text"
+                        value={featuredForm.link}
+                        onChange={(e) => setFeaturedForm({ ...featuredForm, link: e.target.value })}
+                        className="form-input"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        Tính năng nổi bật
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => setFeaturedForm((prev) => ({ ...prev, features: [...(prev.features || []), ''] }))}
+                          style={{ marginLeft: 10, padding: '4px 10px', fontSize: 13 }}
+                        >
+                          <i className="fas fa-plus"></i> Thêm
+                        </button>
+                      </label>
+                      {(featuredForm.features || []).length === 0 ? (
+                        <p style={{ color: '#9ca3af', fontStyle: 'italic', marginBottom: 0 }}>Chưa có tính năng nào.</p>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {(featuredForm.features || []).map((feat, idx) => (
+                            <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                value={feat}
+                                onChange={(e) => {
+                                  const next = [...(featuredForm.features || [])];
+                                  next[idx] = e.target.value;
+                                  setFeaturedForm({ ...featuredForm, features: next });
+                                }}
+                                className="form-input"
+                                placeholder="Nhập nội dung tính năng"
+                                style={{ flex: 1 }}
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-danger"
+                                onClick={() => {
+                                  const next = [...(featuredForm.features || [])];
+                                  next.splice(idx, 1);
+                                  setFeaturedForm({ ...featuredForm, features: next });
+                                }}
+                                title="Xóa"
+                              >
+                                <i className="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn btn-secondary" onClick={handleCloseFeaturedModal}>
+                    Hủy
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={handleOpenFeaturedPreview}>
+                    Xem trước
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    {featuredForm.id ? 'Cập nhật' : 'Thêm mới'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Featured Preview Modal */}
+      {isFeaturedPreviewOpen && (
+        <div className="modal-overlay" onClick={() => setIsFeaturedPreviewOpen(false)}>
+          <div
+            className="modal-content product-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', padding: 0,paddingBottom:'10px' }}
+          >
+            <div className="modal-header">
+              <h2>Preview</h2>
+              <button className="modal-close" onClick={() => setIsFeaturedPreviewOpen(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '16px 16px 20px 16px', background: '#f8fafc' }}>
+              <div
+                style={{
+                  maxWidth: 270,
+                  border: '1px solid rgb(0, 40, 119)',
+                  borderRadius: 16,
+                  padding: '18px 16px',
+                  boxShadow: '10px 18px rgba(1, 28, 72, 0.83)',
+                  paddingBottom:'10px',
+                  background: '#fff',
+                  margin: '0 auto'
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background: '#e0e7ff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12,
+                  }}
+                >
+                  <i className={featuredForm.icon || 'fas fa-cloud'} style={{ color: '#1d4ed8', fontSize: 22 }}></i>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6 }}>
+                  {featuredForm.title}
+                </div>
+                <div style={{ color: '#4b5563', marginBottom: 12, minHeight: 40 }}>
+                  {featuredForm.description}
+                </div>
+                <div
+                  style={{
+                    background: '#f1f5f9',
+                    borderRadius: 12,
+                    padding: '12px',
+                    textAlign: 'center',
+                    marginBottom: 14,
+                  }}
+                >
+                  <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>GIÁ CHỈ TỪ:</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#1d4ed8', lineHeight: 1.2 }}>
+                    {featuredForm.price}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    {featuredForm.priceUnit}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                  {(featuredForm.features || []).map((f, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#065f46', fontSize: 13 }}>
+                      <i className="fas fa-check" style={{ color: '#16a34a' }}></i>
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    background: '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    fontWeight: 700,
+                    cursor: 'not-allowed',
+                  }}
+                  disabled
+                >
+                  Chi tiết bảng giá
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -14,9 +14,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import hostingMockData from '../../mockData/hosting.json';
 import './Cart.css';
+import { useNotify } from '../../contexts/NotificationContext';
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { notifyWarning } = useNotify();
   const [cartItems, setCartItems] = useState([]);
   const [accountType, setAccountType] = useState('new'); // 'existing' or 'new'
   const [customerType, setCustomerType] = useState('individual'); // 'individual' or 'organization'
@@ -113,7 +115,7 @@ const Cart = () => {
 
   const handlePayment = () => {
     if (!agreedToTerms) {
-      alert('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
+      notifyWarning('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
       return;
     }
     // Handle payment logic

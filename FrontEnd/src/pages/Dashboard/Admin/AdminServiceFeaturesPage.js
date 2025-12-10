@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { serviceFeaturesService } from '../../../services/serviceFeaturesService';
 import './AdminServiceFeaturesPage.css';
+import { useNotify } from '../../../contexts/NotificationContext';
 
 const baseUrl = 'http://localhost:8084';
 
 const AdminServiceFeaturesPage = () => {
+  const { notifyError, notifyWarning, notifySuccess } = useNotify();
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,12 +36,16 @@ const AdminServiceFeaturesPage = () => {
       const res = await serviceFeaturesService.list();
       const featuresData = res.data.map(feature => ({
         ...feature,
-        image: feature.image ? `${baseUrl}${feature.image}` : ''
+        image: feature.image 
+          ? (feature.image_type === 'url' || feature.image_type === 'URL' 
+            ? feature.image 
+            : `${baseUrl}${feature.image}`)
+          : ''
       }));
       setFeatures(featuresData);
     } catch (err) {
       console.error('Failed to fetch service features:', err);
-      alert('Không tải được danh sách dịch vụ. Vui lòng thử lại.');
+      notifyError('Không tải được danh sách dịch vụ. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -64,7 +70,7 @@ const AdminServiceFeaturesPage = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert('Dung lượng ảnh tối đa 5MB');
+        notifyWarning('Dung lượng ảnh tối đa 5MB');
         return;
       }
       setImageFile(file);
@@ -99,7 +105,7 @@ const AdminServiceFeaturesPage = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.size > 5 * 1024 * 1024) {
-        alert('Dung lượng ảnh tối đa 5MB');
+        notifyWarning('Dung lượng ảnh tối đa 5MB');
         return;
       }
       setImageFile(file);
@@ -142,7 +148,7 @@ const AdminServiceFeaturesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description) {
-      alert('Vui lòng nhập đầy đủ tiêu đề và mô tả');
+      notifyWarning('Vui lòng nhập đầy đủ tiêu đề và mô tả');
       return;
     }
 
@@ -162,7 +168,7 @@ const AdminServiceFeaturesPage = () => {
       // Khi tạo mới, bắt buộc phải có file
       // Khi update, chỉ gửi file nếu có file mới
       if (!imageFile && !editingFeature) {
-        alert('Vui lòng tải lên ảnh khi chọn loại FILE');
+        notifyWarning('Vui lòng tải lên ảnh khi chọn loại FILE');
         return;
       }
       if (imageFile) {
@@ -180,9 +186,10 @@ const AdminServiceFeaturesPage = () => {
       }
       await fetchFeatures();
       handleCloseModal();
+      notifySuccess(editingFeature ? 'Cập nhật dịch vụ thành công' : 'Thêm dịch vụ thành công');
     } catch (err) {
       console.error('Save feature failed', err);
-      alert(editingFeature ? 'Cập nhật dịch vụ thất bại' : 'Thêm dịch vụ thất bại');
+      notifyError(editingFeature ? 'Cập nhật dịch vụ thất bại' : 'Thêm dịch vụ thất bại');
     }
   };
 
@@ -207,9 +214,10 @@ const AdminServiceFeaturesPage = () => {
       try {
         await serviceFeaturesService.remove(id);
         await fetchFeatures();
+        notifySuccess('Đã xóa dịch vụ');
       } catch (err) {
         console.error('Delete feature failed', err);
-        alert('Xóa dịch vụ thất bại. Vui lòng thử lại.');
+        notifyError('Xóa dịch vụ thất bại. Vui lòng thử lại.');
       }
     }
   };

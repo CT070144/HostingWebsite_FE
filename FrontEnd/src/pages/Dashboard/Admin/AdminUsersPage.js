@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './Admin.css';
 import authData from '../../../mockData/auth.json';
+import { useNotify } from '../../../contexts/NotificationContext';
 
 const AdminUsersPage = () => {
+  const { notifyWarning, notifyError, notifySuccess } = useNotify();
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,14 +124,14 @@ const AdminUsersPage = () => {
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      alert('Email không hợp lệ!');
+      notifyWarning('Email không hợp lệ!');
       return;
     }
 
     // Validate phone (Vietnamese phone format)
     const phoneRegex = /^[0-9]{10,11}$/;
     if (formData.phone && !phoneRegex.test(formData.phone)) {
-      alert('Số điện thoại không hợp lệ!');
+      notifyWarning('Số điện thoại không hợp lệ!');
       return;
     }
 
@@ -187,16 +189,16 @@ const AdminUsersPage = () => {
             if (importedData.users && Array.isArray(importedData.users)) {
               setUsers(importedData.users);
               setFilteredUsers(importedData.users);
-              alert('Nhập file thành công!');
+              notifySuccess('Nhập file thành công!');
             } else if (Array.isArray(importedData)) {
               setUsers(importedData);
               setFilteredUsers(importedData);
-              alert('Nhập file thành công!');
+              notifySuccess('Nhập file thành công!');
             } else {
-              alert('File không đúng định dạng!');
+              notifyError('File không đúng định dạng!');
             }
           } catch (error) {
-            alert('Lỗi khi đọc file!');
+            notifyError('Lỗi khi đọc file!');
           }
         };
         reader.readAsText(file);

@@ -186,13 +186,13 @@
 }
 
 .stat-value {
-  font-size: 1.5rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--primary-color);
 }
 
 .stat-label {
-  font-size: 0.75rem;
+  font-size: 0.5rem;
   color: var(--text-muted);
   margin-top: 4px;
 }
