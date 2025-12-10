@@ -3,6 +3,8 @@
     "title": "HOSTING GIÁ RẺ",
     "subtitle": "TIẾT KIỆM CHI PHÍ CHO WEBSITE",
     "description": "Hosting giá rẻ của TTCS Hosting là dịch vụ hosting web chất lượng cao, giá cả hợp lý, phù hợp cho sinh viên, doanh nghiệp nhỏ và startup. Hỗ trợ đa dạng mã nguồn PHP, website hoạt động ổn định, bảo mật tối đa, tốc độ tải trang nhanh chóng.",
+    "image": "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=600&fit=crop",
+    "image_type":"URL",
     "features": [
       "CPU E5v3 + Ổ Cứng SSD Enterprise RAID 10, Uptime 99,9%",
       "Hỗ trợ PHP (5.x đến 8.x), Node.js, Cloudlinux, phpMyAdmin, Softaculous, WordPress Toolkit, Imunify360, JetBackup",
