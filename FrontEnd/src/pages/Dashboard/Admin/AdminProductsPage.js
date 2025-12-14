@@ -158,15 +158,30 @@ const AdminProductsPage = () => {
       }
       
       // Normalize products data to match API format
-      const normalizedProducts = productsData.map((p) => ({
-        id: p.id,
-        name: p.name || '',
-        monthlyPrice: p.monthlyPrice || 0,
-        yearlyPrice: p.yearlyPrice || 0,
-        hot: p.hot || false,
-        discountCodes: Array.isArray(p.discountCodes) ? p.discountCodes : [],
-        features: p.features && typeof p.features === 'object' ? p.features : {},
-      }));
+      const normalizedProducts = productsData.map((p) => {
+        // Handle discountCodes: can be array of strings or array of objects
+        let discountCodes = [];
+        if (Array.isArray(p.discountCodes)) {
+          discountCodes = p.discountCodes.map(code => {
+            // If it's already a string, return it
+            if (typeof code === 'string') return code;
+            // If it's an object, extract the code string
+            if (typeof code === 'object' && code.code) return code.code;
+            return String(code);
+          });
+        }
+        
+        return {
+          id: p.id,
+          name: p.name || '',
+          monthlyPrice: p.monthlyPrice || 0,
+          yearlyPrice: p.yearlyPrice || 0,
+          hot: p.hot || false,
+          discountCodes: discountCodes,
+          features: p.features && typeof p.features === 'object' ? p.features : {},
+          created_at: p.created_at || p.createdAt || p.created_at || null,
+        };
+      });
       
       setProducts(normalizedProducts);
       setFilteredProducts(normalizedProducts);
@@ -320,12 +335,22 @@ const AdminProductsPage = () => {
       ? Object.entries(product.features).map(([key, value]) => ({ key, value: value || '' }))
       : Array.isArray(product.features) ? product.features : [];
     
+    // Handle discountCodes: ensure it's array of strings
+    let discountCodes = [];
+    if (Array.isArray(product.discountCodes)) {
+      discountCodes = product.discountCodes.map(code => {
+        if (typeof code === 'string') return code;
+        if (typeof code === 'object' && code.code) return code.code;
+        return String(code);
+      });
+    }
+    
     setFormData({
       name: product.name || '',
       monthlyPrice: product.monthlyPrice || '',
       yearlyPrice: product.yearlyPrice || '',
       hot: product.hot || false,
-      discountCodes: product.discountCodes || [],
+      discountCodes: discountCodes, // Array of strings
       features: featuresArray,
     });
     setIsModalOpen(true);
@@ -377,12 +402,23 @@ const AdminProductsPage = () => {
     }, {});
     
     // Prepare product data according to API format
+    // Ensure discountCodes is array of strings
+    const discountCodesArray = Array.isArray(formData.discountCodes)
+      ? formData.discountCodes.map(code => {
+          // If it's already a string, return it
+          if (typeof code === 'string') return code;
+          // If it's an object, extract the code string
+          if (typeof code === 'object' && code.code) return code.code;
+          return String(code);
+        })
+      : [];
+    
     const productData = {
       name: formData.name.trim(),
       monthlyPrice: Number(formData.monthlyPrice) || 0,
       yearlyPrice: Number(formData.yearlyPrice) || 0,
       hot: formData.hot || false,
-      discountCodes: formData.discountCodes || [],
+      discountCodes: discountCodesArray, // Array of strings
       features: featuresObject,
     };
     
@@ -463,15 +499,23 @@ const AdminProductsPage = () => {
   };
 
   const handleAddExistingDiscount = (discount) => {
-    // Check if code already exists in current product
-    const exists = formData.discountCodes.some(d => d.code === discount.code);
+    // Extract code string from discount object
+    const codeString = discount.code || (typeof discount === 'string' ? discount : String(discount));
+    
+    // Check if code already exists in current product (discountCodes is now array of strings)
+    const exists = formData.discountCodes.some(d => {
+      const existingCode = typeof d === 'string' ? d : (d.code || String(d));
+      return existingCode === codeString;
+    });
+    
     if (exists) {
       notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
       return;
     }
+    
     setFormData(prev => ({
       ...prev,
-      discountCodes: [...prev.discountCodes, discount]
+      discountCodes: [...prev.discountCodes, codeString] // Add as string
     }));
     notifySuccess('Đã thêm mã giảm giá!');
   };
@@ -488,15 +532,20 @@ const AdminProductsPage = () => {
       return;
     }
 
-    // Check if code already exists
-    const exists = formData.discountCodes.some(d => d.code === newDiscountCode.code);
+    // Check if code already exists (discountCodes is now array of strings)
+    const codeString = newDiscountCode.code.toUpperCase();
+    const exists = formData.discountCodes.some(d => {
+      const existingCode = typeof d === 'string' ? d : (d.code || String(d));
+      return existingCode === codeString;
+    });
+    
     if (exists) {
       notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
       return;
     }
 
     const payload = {
-      code: newDiscountCode.code.toUpperCase(),
+      code: codeString,
       description: newDiscountCode.description || `Giảm ${discountValue}%`,
       discount_percent: discountValue,
       is_active: true, // mặc định true
@@ -513,20 +562,13 @@ const AdminProductsPage = () => {
           created = res.data.data || res.data || payload;
         }
         
-        // Normalize the created discount code to ensure all required fields
-        const normalizedDiscount = {
-          discount_code_id: created.discount_code_id || created.id,
-          code: created.code || payload.code,
-          discount_percent: created.discount_percent ?? created.discount_percent ?? payload.discount_percent,
-          max_cycle: created.max_cycle ?? payload.max_cycle,
-          description: created.description || payload.description || '',
-          is_active: created.is_active ?? true,
-        };
+        // Extract code string to add to product's discountCodes array
+        const codeToAdd = created.code || payload.code;
         
-        // Update form data with new discount code
+        // Update form data with new discount code (as string)
         setFormData(prev => ({
           ...prev,
-          discountCodes: [...prev.discountCodes, normalizedDiscount]
+          discountCodes: [...prev.discountCodes, codeToAdd] // Add as string
         }));
 
         // Refresh the discount codes list from API
@@ -535,7 +577,15 @@ const AdminProductsPage = () => {
           notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
         }).catch(() => {
           // If refresh fails, still update local state
-          const existsInAll = allDiscountCodes.some(d => d.code === normalizedDiscount.code);
+          const normalizedDiscount = {
+            discount_code_id: created.discount_code_id || created.id,
+            code: codeToAdd,
+            discount_percent: created.discount_percent ?? payload.discount_percent,
+            max_cycle: created.max_cycle ?? payload.max_cycle,
+            description: created.description || payload.description || '',
+            is_active: created.is_active ?? true,
+          };
+          const existsInAll = allDiscountCodes.some(d => d.code === codeToAdd);
           if (!existsInAll) {
             setAllDiscountCodes(prev => [...prev, normalizedDiscount]);
           }
@@ -553,7 +603,11 @@ const AdminProductsPage = () => {
   const handleRemoveDiscount = (codeToRemove) => {
     setFormData(prev => ({
       ...prev,
-      discountCodes: prev.discountCodes.filter(d => d.code !== codeToRemove)
+      discountCodes: prev.discountCodes.filter(d => {
+        // Handle both string and object formats
+        const existingCode = typeof d === 'string' ? d : (d.code || String(d));
+        return existingCode !== codeToRemove;
+      })
     }));
   };
 
@@ -793,18 +847,19 @@ const AdminProductsPage = () => {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th>Sản phẩm</th>
-                <th>Có thể bán</th>
-                <th>Loại</th>
-                <th>Nhãn hiệu</th>
-                <th>Ngày khởi tạo</th>
+                <th>Dịch vụ</th>
+                <th>Giá tháng</th>
+                <th>Giá năm</th>
+                <th>Giảm giá</th>
+                <th>Tính năng</th>
+                <th>Ngày tạo</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {currentProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="empty-state">
+                  <td colSpan="8" className="empty-state">
                     Không tìm thấy sản phẩm nào.
                   </td>
                 </tr>
@@ -823,22 +878,93 @@ const AdminProductsPage = () => {
                       <div className="product-image-placeholder">
                         <i className="fas fa-box"></i>
                       </div>
-                      <div className="product-details">
-                        <a href="#" className="product-name">{product.name}</a>
-                        <div className="product-price">
-                          {formatPrice(product.monthlyPrice)} VNĐ/tháng
-                        </div>
-                      </div>
+                      <a href="#" className="product-name">
+                        {product.name}
+                        {product.hot && (
+                          <span className="hot-indicator" style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem' }}>
+                            <i className="fas fa-fire"></i> HOT
+                          </span>
+                        )}
+                      </a>
                     </div>
                   </td>
                   <td>
-                    <span className="sellable-badge">
-                      {formatPrice(product.monthlyPrice * 100)}
+                    <span className="price-cell">
+                      {formatPrice(product.monthlyPrice)} VNĐ/tháng
                     </span>
                   </td>
-                  <td>Hosting</td>
-                  <td>TTCS</td>
-                  <td>{formatDate(new Date())}</td>
+                  <td>
+                    <span className="price-cell">
+                      {formatPrice(product.yearlyPrice)} VNĐ/năm
+                    </span>
+                  </td>
+                  <td>
+                    <div className="discount-codes-cell">
+                      {product.discountCodes && product.discountCodes.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {product.discountCodes.slice(0, 3).map((code, idx) => (
+                            <span
+                              key={idx}
+                              className="discount-code-badge"
+                              style={{
+                                display: 'inline-block',
+                                padding: '2px 6px',
+                                backgroundColor: '#eff6ff',
+                                color: '#2563eb',
+                                borderRadius: '4px',
+                                fontSize: '0.6875rem',
+                                fontWeight: '500',
+                              }}
+                            >
+                              {typeof code === 'string' ? code : (code.code || String(code))}
+                            </span>
+                          ))}
+                          {product.discountCodes.length > 3 && (
+                            <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                              +{product.discountCodes.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                          Không có
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="features-cell">
+                      {product.features && Object.keys(product.features).length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {Object.entries(product.features).slice(0, 3).map(([key, value], idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                fontSize: '0.6875rem',
+                                color: '#374151',
+                              }}
+                            >
+                              <strong>{formatFeatureLabel(key)}:</strong> {value}
+                            </span>
+                          ))}
+                          {Object.keys(product.features).length > 3 && (
+                            <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
+                              +{Object.keys(product.features).length - 3} tính năng khác
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                          Không có
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="date-cell">
+                      {formatDate(product.created_at)}
+                    </span>
+                  </td>
                   <td>
                     <div className="action-buttons">
                       <button
@@ -1105,18 +1231,20 @@ const AdminProductsPage = () => {
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {formData.discountCodes.map((discount, index) => {
-                      // Use a unique key - prefer discount_code_id or id, fallback to code + index
-                      const uniqueKey = discount.discount_code_id || discount.id || `${discount.code}-${index}`;
-                      const discountPercent = discount.discount_percent ?? discount.discount ?? 0;
-                      const code = discount.code || '';
-                      const description = discount.description || '';
-                      const maxCycle = discount.max_cycle;
-                      const isActive = discount.is_active !== undefined ? discount.is_active : true;
+                    {formData.discountCodes.map((discountCode, index) => {
+                      // discountCodes is now array of strings
+                      const codeString = typeof discountCode === 'string' ? discountCode : (discountCode.code || String(discountCode));
+                      
+                      // Try to find full discount info from allDiscountCodes for display
+                      const fullDiscountInfo = allDiscountCodes.find(d => d.code === codeString);
+                      const discountPercent = fullDiscountInfo?.discount_percent ?? fullDiscountInfo?.discount ?? 0;
+                      const description = fullDiscountInfo?.description || '';
+                      const maxCycle = fullDiscountInfo?.max_cycle;
+                      const isActive = fullDiscountInfo?.is_active !== undefined ? fullDiscountInfo.is_active : true;
                       
                       return (
                         <div
-                          key={uniqueKey}
+                          key={`${codeString}-${index}`}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1128,18 +1256,18 @@ const AdminProductsPage = () => {
                           }}
                         >
                           <div style={{ flex: 1 }}>
-                            {code && (
-                              <strong style={{ color: '#1976d2' }}>{code}</strong>
+                            <strong style={{ color: '#1976d2' }}>{codeString}</strong>
+                            {fullDiscountInfo && discountPercent > 0 && (
+                              <span style={{ marginLeft: '10px', color: '#4caf50' }}>
+                                -{discountPercent}%
+                              </span>
                             )}
-                            <span style={{ marginLeft: code ? '10px' : '0', color: '#4caf50' }}>
-                              -{discountPercent}%
-                            </span>
                             {maxCycle && (
                               <span style={{ marginLeft: '10px', color: '#ff9800', fontSize: '12px' }}>
                                 (Tối đa {maxCycle} tháng)
                               </span>
                             )}
-                            {!isActive && (
+                            {fullDiscountInfo && !isActive && (
                               <span style={{ marginLeft: '10px', color: '#f44336', fontSize: '12px' }}>
                                 (Ngừng kích hoạt)
                               </span>
@@ -1153,7 +1281,7 @@ const AdminProductsPage = () => {
                           <button
                             type="button"
                             className="btn-icon btn-delete"
-                            onClick={() => handleRemoveDiscount(code)}
+                            onClick={() => handleRemoveDiscount(codeString)}
                             title="Xóa"
                             style={{ marginLeft: '10px' }}
                           >

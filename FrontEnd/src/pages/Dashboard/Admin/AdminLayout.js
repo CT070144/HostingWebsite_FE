@@ -15,7 +15,7 @@ const AdminLayout = () => {
   const menuItems = [
     { key: 'dashboard', label: 'Tổng quan', icon: 'fas fa-tachometer-alt', path: '/admin/dashboard', subMenu: null },
     { key: 'orders', label: 'Đơn hàng', icon: 'fas fa-shopping-cart', path: '/admin/orders', subMenu: null },
-    { key: 'products', label: 'Sản phẩm', icon: 'fas fa-box', path: '/admin/products', subMenu: null },
+    { key: 'products', label: 'Dịch vụ', icon: 'fas fa-box', path: '/admin/products', subMenu: null },
   ];
 
   const configurationMenu = {

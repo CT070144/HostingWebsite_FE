@@ -181,6 +181,10 @@
   background-color: var(--bg-primary);
 }
 
+.hosting-products-section .row {
+  justify-content: center;
+}
+
 .product-card {
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -188,13 +192,32 @@
   position: relative;
   box-shadow: var(--shadow-sm);
   border: 2px solid var(--primary-lighter);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .product-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
   border-color: rgb(0, 85, 255);
+}
 
+.product-card .card-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-name {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-card.hot-product {
@@ -219,16 +242,22 @@
   padding: var(--spacing-md);
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .monthly-price {
   margin-bottom: var(--spacing-xs);
+  line-height: 1.2;
 }
 
 .product-price .price-value {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--primary-color);
+  display: block;
 }
 
 .product-price .price-unit {
@@ -253,10 +282,67 @@
   color: var(--text-secondary);
 }
 
+.product-features {
+  flex-grow: 1;
+  
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
 .product-features .list-group-item {
   border: none;
   padding: var(--spacing-sm) 0;
   font-size: 0.9rem;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+.product-features .list-group-item:last-child {
+  border-bottom: none !important;
+}
+
+.product-actions {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1199.98px) {
+  .product-card {
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .product-name {
+    font-size: 1rem;
+    min-height: 2.5rem;
+  }
+  
+  .product-price .price-value {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .product-card .card-body {
+    padding: 1rem;
+  }
+  
+  .product-name {
+    font-size: 0.95rem;
+    min-height: 2rem;
+  }
+  
+  .product-price {
+    padding: 0.75rem;
+    min-height: 80px;
+  }
+  
+  .product-price .price-value {
+    font-size: 1.25rem;
+  }
 }
 
 /* Notes Section */

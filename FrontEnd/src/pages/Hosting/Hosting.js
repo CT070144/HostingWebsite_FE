@@ -14,6 +14,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import hostingMockData from '../../mockData/hosting.json';
 import { hostingBannerService } from '../../services/bannerService';
+import { productService } from '../../services/productService';
 import { baseUrl } from '../../utils/api';
 import './Hosting.css';
 import hostingImage from '../../assets/hosting.png';
@@ -22,6 +23,8 @@ const Hosting = () => {
   const navigate = useNavigate();
   const [banner, setBanner] = useState(null);
   const [loadingBanner, setLoadingBanner] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   useEffect(() => {
     const fetchBanner = async () => {
@@ -77,6 +80,45 @@ const Hosting = () => {
     };
     
     fetchBanner();
+    
+    // Fetch products from API
+    const fetchProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        const res = await productService.listPublic(); // Get all products
+        
+        // Handle response format: { products: [...] } or direct array
+        let productsData = [];
+        if (res.data?.products && Array.isArray(res.data.products)) {
+          productsData = res.data.products;
+        } else if (Array.isArray(res.data)) {
+          productsData = res.data;
+        } else if (Array.isArray(res.data?.data)) {
+          productsData = res.data.data;
+        }
+        
+        // Normalize products data
+        const normalizedProducts = productsData.map((p) => ({
+          id: p.id,
+          name: p.name || '',
+          monthlyPrice: p.monthlyPrice || 0,
+          yearlyPrice: p.yearlyPrice || 0,
+          hot: p.hot || false,
+          discountCodes: Array.isArray(p.discountCodes) ? p.discountCodes : [],
+          features: p.features && typeof p.features === 'object' ? p.features : {},
+        }));
+        
+        setProducts(normalizedProducts);
+      } catch (err) {
+        console.error('Failed to fetch products from API:', err);
+        // Fallback to mock data on error
+        setProducts(hostingMockData.products || []);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    
+    fetchProducts();
   }, []);
 
   const formatPrice = (price) => {
@@ -178,16 +220,27 @@ const Hosting = () => {
           <div className="text-center mb-5">
             <h2 className="section-title">BẢNG GIÁ THUÊ HOSTING GIÁ RẺ</h2>
           </div>
-          <Row>
-            {hostingMockData.products.map((product) => (
-              <Col md={6} lg={4} xl={3} key={product.id} className="mb-4">
+          {loadingProducts ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-5">
+              <p>Không có sản phẩm nào.</p>
+            </div>
+          ) : (
+            <Row className="g-4">
+            {products.map((product) => (
+              <Col xs={12} sm={6} lg={4} xl={3} key={product.id}>
                 <Card className={`product-card h-100 ${product.hot ? 'hot-product' : ''}`}>
                   {product.hot && (
                     <div className="hot-badge">HOT</div>
                   )}
-                  <Card.Body className="p-4">
+                  <Card.Body className="d-flex flex-column p-4">
                     <Card.Title className="text-center mb-3">
-                      <h3>{product.name}</h3>
+                      <h4 className="product-name" style={{ fontSize: '1.4rem' }}>{product.name}</h4>
                     </Card.Title>
                     <div className="product-price text-center mb-3">
                       <div className="monthly-price">
@@ -207,57 +260,76 @@ const Hosting = () => {
                       ))}
                     </div>
 
-                    <ListGroup variant="flush" className="product-features mb-3">
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        SSD: <strong>{product.features.ssd}</strong>
-                        {product.hot && <i className="fas fa-fire text-danger ms-2"></i>}
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        RAM: <strong>{product.features.ram}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        CPU: <strong>{product.features.cpu}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        Website: <strong>{product.features.websites}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        Tài Khoản Emails: <strong>{product.features.emails}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        Băng thông, MySQL: <strong>{product.features.bandwidth}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        SSL, Backup, Chuyển dữ liệu: <strong>{product.features.ssl}</strong>
-                      </ListGroupItem>
-                      <ListGroupItem>
-                        <i className="fas fa-check text-success me-2"></i>
-                        Kho Themes & Plugins mới nhất: <strong>{product.features.themesPlugins}</strong>
-                      </ListGroupItem>
+                    <ListGroup variant="flush" className="product-features mb-auto">
+                      {product.features.ssd && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          SSD: <strong>{product.features.ssd}</strong>
+                          {product.hot && <i className="fas fa-fire text-danger ms-2"></i>}
+                        </ListGroupItem>
+                      )}
+                      {product.features.ram && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          RAM: <strong>{product.features.ram}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.cpu && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          CPU: <strong>{product.features.cpu}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.websites !== undefined && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          Website: <strong>{product.features.websites}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.emails !== undefined && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          Tài Khoản Emails: <strong>{product.features.emails}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.bandwidth && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          Băng thông, MySQL: <strong>{product.features.bandwidth}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.ssl && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          SSL, Backup, Chuyển dữ liệu: <strong>{product.features.ssl}</strong>
+                        </ListGroupItem>
+                      )}
+                      {product.features.themesPlugins && (
+                        <ListGroupItem>
+                          <i className="fas fa-check text-success me-2"></i>
+                          Kho Themes & Plugins mới nhất: <strong>{product.features.themesPlugins}</strong>
+                        </ListGroupItem>
+                      )}
                     </ListGroup>
 
-                    <Button 
-                      variant="primary" 
-                      className="btn-primary-custom w-100 mb-2"
-                      onClick={() => handleOrder(product.id)}
-                    >
-                      ĐẶT HÀNG
-                    </Button>
-                    <Button variant="outline-secondary" size="sm" className="w-100">
-                      Xem thêm <i className="fas fa-chevron-down ms-1"></i>
-                    </Button>
+                    <div className="product-actions mt-auto pt-3">
+                      <Button 
+                        variant="primary" 
+                        className="btn-primary-custom w-100 mb-2"
+                        onClick={() => handleOrder(product.id)}
+                      >
+                        ĐẶT HÀNG
+                      </Button>
+                      <Button variant="outline-secondary" size="sm" className="w-100">
+                        Xem thêm <i className="fas fa-chevron-down ms-1"></i>
+                      </Button>
+                    </div>
                   </Card.Body>
                 </Card>
               </Col>
             ))}
           </Row>
+          )}
         </Container>
       </section>
 
@@ -373,7 +445,7 @@ const Hosting = () => {
               <thead>
                 <tr>
                   <th>Gói Dịch Vụ</th>
-                  {hostingMockData.products.map((product) => (
+                  {products.map((product) => (
                     <th key={product.id} className={product.hot ? 'hot-column' : ''}>
                       {product.name}
                       {product.hot && <Badge bg="danger" className="ms-2">HOT</Badge>}
@@ -384,7 +456,7 @@ const Hosting = () => {
               <tbody>
                 <tr>
                   <td><strong>Giá</strong></td>
-                  {hostingMockData.products.map((product) => (
+                  {products.map((product) => (
                     <td key={product.id}>
                       {formatPrice(product.monthlyPrice)} vnđ/tháng
                     </td>
@@ -392,50 +464,50 @@ const Hosting = () => {
                 </tr>
                 <tr>
                   <td><strong>SSD</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.ssd}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.ssd || '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>RAM</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.ram}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.ram || '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>CPU</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.cpu}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.cpu || '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>Website</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.websites}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.websites !== undefined ? product.features.websites : '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>Tài Khoản Emails</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.emails}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.emails !== undefined ? product.features.emails : '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>Băng thông, MySQL</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.bandwidth}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.bandwidth || '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>SSL, Backup, Chuyển dữ liệu</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.ssl}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.ssl || '-'}</td>
                   ))}
                 </tr>
                 <tr>
                   <td><strong>Kho Themes & Plugins mới nhất</strong></td>
-                  {hostingMockData.products.map((product) => (
-                    <td key={product.id}>{product.features.themesPlugins}</td>
+                  {products.map((product) => (
+                    <td key={product.id}>{product.features.themesPlugins || '-'}</td>
                   ))}
                 </tr>
               </tbody>
