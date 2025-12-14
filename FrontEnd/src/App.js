@@ -20,8 +20,10 @@ import AdminOrdersPage from './pages/Dashboard/Admin/AdminOrdersPage';
 import AdminProductsPage from './pages/Dashboard/Admin/AdminProductsPage';
 import AdminUsersPage from './pages/Dashboard/Admin/AdminUsersPage';
 import AdminBannerPage from './pages/Dashboard/Admin/AdminBannerPage';
+import AdminHostingBannerPage from './pages/Dashboard/Admin/AdminHostingBannerPage';
 import AdminFaqsPage from './pages/Dashboard/Admin/AdminFaqsPage';
 import AdminServiceFeaturesPage from './pages/Dashboard/Admin/AdminServiceFeaturesPage';
+import TestAPI from './test api/TestAPI';
 import './App.css';
 
 function App() {
@@ -40,6 +42,7 @@ function App() {
         <Route path="products" element={<AdminProductsPage />} />
         <Route path="configuration/users" element={<AdminUsersPage />} />
         <Route path="configuration/banner" element={<AdminBannerPage />} />
+        <Route path="configuration/hosting-banner" element={<AdminHostingBannerPage />} />
         <Route path="configuration/faqs" element={<AdminFaqsPage />} />
         <Route path="configuration/service-features" element={<AdminServiceFeaturesPage />} />
         <Route path="configuration" element={<AdminUsersPage />} />
@@ -58,6 +61,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/config-product/:productId" element={<ConfigProduct />} />
             <Route path="/cart" element={<Cart />} />
+            <Route path="/test-api" element={<TestAPI />} />
           </Routes>
         </Layout>
       } />

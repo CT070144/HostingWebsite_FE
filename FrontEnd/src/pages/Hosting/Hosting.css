@@ -53,6 +53,16 @@
   margin-top: var(--spacing-xl);
   border-radius: var(--radius-lg);
 }
+
+/* Banner image specific styling */
+.hosting-banner-section .banner-image img.img-fluid {
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
 .price-label {
   display: block;
   font-size: 0.9rem;
@@ -94,7 +104,18 @@
 .banner-image {
   position: relative;
   height: 100%;
-  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-image img {
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .feature-graphic {
@@ -172,7 +193,7 @@
 .product-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--shadow-lg);
-  border-color: var(--primary-darker);
+  border-color: rgb(0, 85, 255);
 
 }
 
@@ -447,6 +468,10 @@
     margin-bottom: var(--spacing-md);
     transform: none;
   }
+
+  .hosting-banner-section .banner-image img.img-fluid {
+    max-width: 500px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -463,6 +488,11 @@
   }
 
   .banner-buttons .btn {
+    width: 100%;
+  }
+
+  .hosting-banner-section .banner-image img.img-fluid {
+    max-width: 100%;
     width: 100%;
   }
 

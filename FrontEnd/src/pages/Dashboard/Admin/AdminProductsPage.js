@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import './Admin.css';
+import { useNavigate } from 'react-router-dom';
+
+import './AdminProductsPage.css';
+
 import hostingData from '../../../mockData/hosting.json';
 import homeMockData from '../../../mockData/home.json';
 import { featuredProductService } from '../../../services/featuredProductService';
 import { discountService } from '../../../services/discountService';
+import { productService } from '../../../services/productService';
 import { useNotify } from '../../../contexts/NotificationContext';
 
 const AdminProductsPage = () => {
+  const navigate = useNavigate();
   const { notifySuccess, notifyError, notifyWarning } = useNotify();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -14,6 +19,18 @@ const AdminProductsPage = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  // Filter states
+  const [filters, setFilters] = useState({
+    page: 1,
+    limit: 20,
+    sort: '',
+    type: '',
+    min_price: '',
+    max_price: '',
+  });
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -32,19 +49,7 @@ const AdminProductsPage = () => {
     yearlyPrice: '',
     hot: false,
     discountCodes: [],
-    features: {
-      ssd: '',
-      ram: '',
-      cpu: '',
-      websites: '',
-      emails: '',
-      bandwidth: '',
-      mysql: '',
-      ssl: '',
-      backup: '',
-      dataTransfer: '',
-      themesPlugins: '',
-    },
+    features: [], // Array of { key: '', value: '' }
   });
   // Featured products (Home page)
   const [featuredProducts, setFeaturedProducts] = useState(homeMockData.featuredProducts || []);
@@ -78,50 +83,116 @@ const AdminProductsPage = () => {
       features: Array.isArray(item.features) ? item.features : [],
     }));
 
-  useEffect(() => {
-    // Load products from mock data
-    const loadedProducts = (hostingData.products || []).map((p) => ({
-      ...p,
-      discountCodes: (p.discountCodes || []).map((d) => ({
-        discount_code_id: d.discount_code_id || undefined,
-        product_id: d.product_id || p.id,
-        code: d.code,
-        discount_percent: d.discount_percent ?? d.discount ?? 0,
-        max_cycle: d.max_cycle ?? d.maxCycle,
-        description: d.description || '',
-        is_active: d.is_active ?? true,
-      })),
-    }));
-    setProducts(loadedProducts);
-    setFilteredProducts(loadedProducts);
+  // Fetch discount codes function - moved outside useEffect so it can be called elsewhere
+  const fetchDiscountCodes = async () => {
+    try {
+      setLoadingDiscountCodes(true);
+      const res = await discountService.list();
+      const codes = res.data || [];
+      setAllDiscountCodes(codes);
+    } catch (err) {
+      console.error('Fetch discount codes failed, fallback to mock', err);
+      // Fallback: collect unique from mock products
+      const mockProducts = hostingData.products || [];
+      const allCodes = [];
+      const codeMap = new Map();
+      mockProducts.forEach(product => {
+        if (product.discountCodes && Array.isArray(product.discountCodes)) {
+          product.discountCodes.forEach(code => {
+            if (!codeMap.has(code.code)) {
+              codeMap.set(code.code, code);
+              allCodes.push(code);
+            }
+          });
+        }
+      });
+      console.log(allCodes);
+      setAllDiscountCodes(allCodes);
+    } finally {
+      setLoadingDiscountCodes(false);
+    }
+  };
 
-    const fetchDiscountCodes = async () => {
-      try {
-        setLoadingDiscountCodes(true);
-        const res = await discountService.list();
-        const codes = res.data || [];
-        setAllDiscountCodes(codes);
-      } catch (err) {
-        console.error('Fetch discount codes failed, fallback to mock', err);
-        // Fallback: collect unique from products
-        const allCodes = [];
-        const codeMap = new Map();
-        loadedProducts.forEach(product => {
-          if (product.discountCodes && Array.isArray(product.discountCodes)) {
-            product.discountCodes.forEach(code => {
-              if (!codeMap.has(code.code)) {
-                codeMap.set(code.code, code);
-                allCodes.push(code);
-              }
-            });
-          }
-        });
-        console.log(allCodes);
-        setAllDiscountCodes(allCodes);
-      } finally {
-        setLoadingDiscountCodes(false);
+  // Fetch products function - moved outside useEffect so it can be called elsewhere
+  const fetchProducts = async (filterParams = null) => {
+    try {
+      setLoadingProducts(true);
+      
+      // Build query parameters
+      const params = filterParams || filters;
+      const queryParams = {
+        page: params.page || 1,
+        limit: params.limit || 20,
+      };
+      
+      // Add optional filters
+      if (params.sort) queryParams.sort = params.sort;
+      if (params.type) queryParams.type = params.type;
+      if (params.min_price) queryParams.min_price = Number(params.min_price);
+      if (params.max_price) queryParams.max_price = Number(params.max_price);
+      
+      // Add search term if exists (client-side search for now, or can be moved to API if supported)
+      
+      const res = await productService.listPublic(queryParams);
+      
+      // Handle different response formats
+      let productsData = [];
+      let total = 0;
+      let pages = 1;
+      
+      if (Array.isArray(res.data)) {
+        productsData = res.data;
+        total = res.data.length;
+      } else if (res.data?.products && Array.isArray(res.data.products)) {
+        productsData = res.data.products;
+        total = res.data.total || res.data.products.length;
+        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
+      } else if (res.data?.data && Array.isArray(res.data.data)) {
+        productsData = res.data.data;
+        total = res.data.total || res.data.data.length;
+        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
+      } else if (res.data?.content && Array.isArray(res.data.content)) {
+        productsData = res.data.content;
+        total = res.data.totalElements || res.data.content.length;
+        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
       }
-    };
+      
+      // Normalize products data to match API format
+      const normalizedProducts = productsData.map((p) => ({
+        id: p.id,
+        name: p.name || '',
+        monthlyPrice: p.monthlyPrice || 0,
+        yearlyPrice: p.yearlyPrice || 0,
+        hot: p.hot || false,
+        discountCodes: Array.isArray(p.discountCodes) ? p.discountCodes : [],
+        features: p.features && typeof p.features === 'object' ? p.features : {},
+      }));
+      
+      setProducts(normalizedProducts);
+      setFilteredProducts(normalizedProducts);
+      setTotalProducts(total);
+      setTotalPages(pages);
+      
+      // Update current page if using API pagination
+      if (filterParams) {
+        setCurrentPage(params.page || 1);
+      }
+    } catch (err) {
+      console.error('Failed to fetch products from API:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Không thể tải danh sách sản phẩm';
+      notifyError(errorMessage);
+      
+      // Set empty state on error
+      setProducts([]);
+      setFilteredProducts([]);
+      setTotalProducts(0);
+      setTotalPages(1);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  useEffect(() => {
 
     const fetchFeatured = async () => {
       try {
@@ -140,12 +211,21 @@ const AdminProductsPage = () => {
       }
     };
 
+    fetchProducts();
     fetchDiscountCodes();
     fetchFeatured();
   }, []);
 
+  // Handle filter changes - fetch products with new filters
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value, page: 1 }; // Reset to page 1 when filter changes
+    setFilters(newFilters);
+    fetchProducts(newFilters);
+  };
+
+  // Handle search - can be client-side or trigger API call
   useEffect(() => {
-    // Filter products based on search term
+    // Client-side search for now
     if (searchTerm.trim() === '') {
       setFilteredProducts(products);
     } else {
@@ -157,6 +237,20 @@ const AdminProductsPage = () => {
     }
     setCurrentPage(1);
   }, [searchTerm, products]);
+
+  // Handle pagination changes
+  const handlePageChange = (newPage) => {
+    const newFilters = { ...filters, page: newPage };
+    setFilters(newFilters);
+    fetchProducts(newFilters);
+  };
+
+  const handleItemsPerPageChange = (newLimit) => {
+    const newFilters = { ...filters, limit: Number(newLimit), page: 1 };
+    setFilters(newFilters);
+    setItemsPerPage(Number(newLimit));
+    fetchProducts(newFilters);
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -184,45 +278,79 @@ const AdminProductsPage = () => {
     );
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+    
+    try {
+      await productService.remove(id);
       setSelectedProducts((prev) => prev.filter((selectedId) => selectedId !== id));
+      // Refresh products list with current filters
+      await fetchProducts(filters);
+      notifySuccess('Đã xóa sản phẩm thành công');
+    } catch (err) {
+      console.error('Delete product failed:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Xóa sản phẩm thất bại';
+      notifyError(errorMessage);
     }
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = async () => {
     if (selectedProducts.length === 0) return;
-    if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn?`)) {
-      setProducts((prev) => prev.filter((p) => !selectedProducts.includes(p.id)));
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.length} sản phẩm đã chọn?`)) return;
+    
+    try {
+      // Delete all selected products
+      const deletePromises = selectedProducts.map(id => productService.remove(id));
+      await Promise.all(deletePromises);
+      
       setSelectedProducts([]);
+      // Refresh products list with current filters
+      await fetchProducts(filters);
+      notifySuccess(`Đã xóa ${selectedProducts.length} sản phẩm thành công`);
+    } catch (err) {
+      console.error('Delete products failed:', err);
+      notifyError('Xóa sản phẩm thất bại');
     }
   };
 
   const handleEdit = (product) => {
     setEditingProduct(product);
+    // Convert features object to array of key-value pairs
+    const featuresArray = product.features && typeof product.features === 'object' && !Array.isArray(product.features)
+      ? Object.entries(product.features).map(([key, value]) => ({ key, value: value || '' }))
+      : Array.isArray(product.features) ? product.features : [];
+    
     setFormData({
       name: product.name || '',
       monthlyPrice: product.monthlyPrice || '',
       yearlyPrice: product.yearlyPrice || '',
       hot: product.hot || false,
       discountCodes: product.discountCodes || [],
-      features: product.features || {
-        ssd: '',
-        ram: '',
-        cpu: '',
-        websites: '',
-        emails: '',
-        bandwidth: '',
-        mysql: '',
-        ssl: '',
-        backup: '',
-        dataTransfer: '',
-        themesPlugins: '',
-      },
+      features: featuresArray,
     });
     setIsModalOpen(true);
   };
+
+  // Format feature label: uppercase acronyms, capitalize first letter for others
+  const formatFeatureLabel = (key) => {
+    if (!key) return '';
+    const acronyms = ['SSD', 'RAM', 'CPU', 'GB', 'MB', 'TB', 'IO', 'DDoS', 'SSL', 'MySQL', 'FTP', 'PHP', 'API', 'HTTP', 'HTTPS', 'DNS', 'CDN', 'VPS', 'IP'];
+    const words = key.split(/\s+/);
+    return words.map(word => {
+      const upperWord = word.toUpperCase();
+      if (acronyms.includes(upperWord)) {
+        return upperWord;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  };
+
+  // Template features for new products
+  const getDefaultFeatures = () => [
+    { key: 'SSD', value: '' },
+    { key: 'RAM', value: '' },
+    { key: 'CPU', value: '' },
+  ];
 
   const handleAddNew = () => {
     setEditingProduct(null);
@@ -232,46 +360,57 @@ const AdminProductsPage = () => {
       yearlyPrice: '',
       hot: false,
       discountCodes: [],
-      features: {
-        ssd: '',
-        ram: '',
-        cpu: '',
-        websites: '',
-        emails: '',
-        bandwidth: '',
-        mysql: '',
-        ssl: '',
-        backup: '',
-        dataTransfer: '',
-        themesPlugins: '',
-      },
+      features: getDefaultFeatures(),
     });
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (editingProduct) {
-      // Update existing product
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? { ...formData, id: editingProduct.id }
-            : p
-        )
-      );
-    } else {
-      // Add new product
-      const newProduct = {
-        ...formData,
-        id: products.length > 0 ? Math.max(...products.map((p) => p.id)) + 1 : 1,
-      };
-      setProducts((prev) => [...prev, newProduct]);
-    }
+    // Convert features array to object
+    const featuresObject = formData.features.reduce((acc, item) => {
+      if (item.key && item.key.trim()) {
+        acc[item.key] = item.value || '';
+      }
+      return acc;
+    }, {});
+    
+    // Prepare product data according to API format
+    const productData = {
+      name: formData.name.trim(),
+      monthlyPrice: Number(formData.monthlyPrice) || 0,
+      yearlyPrice: Number(formData.yearlyPrice) || 0,
+      hot: formData.hot || false,
+      discountCodes: formData.discountCodes || [],
+      features: featuresObject,
+    };
+    
+    try {
+      if (editingProduct) {
+        // Update existing product
+        await productService.update(editingProduct.id, productData);
+        
+        // Refresh products list with current filters
+        await fetchProducts(filters);
+        notifySuccess('Đã cập nhật sản phẩm thành công');
+      } else {
+        // Create new product
+        const res = await productService.create(productData);
+        const newProduct = res.data || productData;
+        
+        // Refresh products list with current filters
+        await fetchProducts(filters);
+        notifySuccess('Đã tạo sản phẩm mới thành công');
+      }
 
-    setIsModalOpen(false);
-    setEditingProduct(null);
+      setIsModalOpen(false);
+      setEditingProduct(null);
+    } catch (err) {
+      console.error('Submit product failed:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Lưu sản phẩm thất bại';
+      notifyError(errorMessage);
+    }
   };
 
   const handleExport = () => {
@@ -368,24 +507,46 @@ const AdminProductsPage = () => {
 
     discountService.create(payload)
       .then((res) => {
-        const created = res.data || payload;
+        // Handle different response formats
+        let created = payload;
+        if (res.data) {
+          created = res.data.data || res.data || payload;
+        }
+        
+        // Normalize the created discount code to ensure all required fields
+        const normalizedDiscount = {
+          discount_code_id: created.discount_code_id || created.id,
+          code: created.code || payload.code,
+          discount_percent: created.discount_percent ?? created.discount_percent ?? payload.discount_percent,
+          max_cycle: created.max_cycle ?? payload.max_cycle,
+          description: created.description || payload.description || '',
+          is_active: created.is_active ?? true,
+        };
+        
+        // Update form data with new discount code
         setFormData(prev => ({
           ...prev,
-          discountCodes: [...prev.discountCodes, created]
+          discountCodes: [...prev.discountCodes, normalizedDiscount]
         }));
 
-        // Add to all discount codes if not exists
-        const existsInAll = allDiscountCodes.some(d => d.code === created.code);
-        if (!existsInAll) {
-          setAllDiscountCodes(prev => [...prev, created]);
-        }
-
-        setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
-        notifySuccess('Đã tạo mã giảm giá mới!');
+        // Refresh the discount codes list from API
+        fetchDiscountCodes().then(() => {
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+        }).catch(() => {
+          // If refresh fails, still update local state
+          const existsInAll = allDiscountCodes.some(d => d.code === normalizedDiscount.code);
+          if (!existsInAll) {
+            setAllDiscountCodes(prev => [...prev, normalizedDiscount]);
+          }
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+        });
       })
       .catch((err) => {
         console.error('Create discount failed', err);
-        notifyError(err.response.data.message);
+        const errorMessage = err?.response?.data?.message || err?.message || 'Tạo mã giảm giá thất bại';
+        notifyError(errorMessage);
       });
   };
 
@@ -508,11 +669,13 @@ const AdminProductsPage = () => {
     (discount.description || '').toLowerCase().includes(discountSearchTerm.toLowerCase())
   );
 
-  // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+  // Use products directly from API (already paginated), apply client-side search filter if needed
+  const currentProducts = searchTerm.trim() 
+    ? filteredProducts.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toString().includes(searchTerm)
+      )
+    : filteredProducts;
 
   return (
     <div className="dashboard-overview">
@@ -528,6 +691,9 @@ const AdminProductsPage = () => {
           </button>
           <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
             <i className="fas fa-star"></i> Sản phẩm nổi bật
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/admin/configuration/hosting-banner')}>
+            <i className="fas fa-image"></i> Banner Hosting
           </button>
           <div className="btn-group">
             <button className="btn btn-primary" onClick={handleAddNew}>
@@ -552,52 +718,97 @@ const AdminProductsPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select className="filter-select">
-            <option>Kênh bán hàng</option>
+          <select 
+            className="filter-select"
+            value={filters.type}
+            onChange={(e) => handleFilterChange('type', e.target.value)}
+          >
+            <option value="">Tất cả loại</option>
+            <option value="VPS">VPS</option>
+            <option value="Hosting">Hosting</option>
+            <option value="Cloud_Compute">Cloud Compute</option>
           </select>
-          <select className="filter-select">
-            <option>Loại sản phẩm</option>
+          <select 
+            className="filter-select"
+            value={filters.sort}
+            onChange={(e) => handleFilterChange('sort', e.target.value)}
+          >
+            <option value="">Sắp xếp</option>
+            <option value="price_asc">Giá tăng dần</option>
+            <option value="price_desc">Giá giảm dần</option>
           </select>
-          <select className="filter-select">
-            <option>Tag</option>
-          </select>
-          <button className="btn btn-secondary">
-            <i className="fas fa-filter"></i> Bộ lọc khác
-          </button>
-          <button className="btn btn-secondary">
-            Lưu bộ lọc
+          <input
+            type="number"
+            className="filter-select"
+            placeholder="Giá tối thiểu"
+            value={filters.min_price}
+            onChange={(e) => handleFilterChange('min_price', e.target.value)}
+            style={{ width: '150px', padding: '8px' }}
+          />
+          <input
+            type="number"
+            className="filter-select"
+            placeholder="Giá tối đa"
+            value={filters.max_price}
+            onChange={(e) => handleFilterChange('max_price', e.target.value)}
+            style={{ width: '150px', padding: '8px' }}
+          />
+          <button 
+            className="btn btn-secondary"
+            onClick={() => {
+              const resetFilters = {
+                page: 1,
+                limit: 20,
+                sort: '',
+                type: '',
+                min_price: '',
+                max_price: '',
+              };
+              setFilters(resetFilters);
+              fetchProducts(resetFilters);
+            }}
+          >
+            <i className="fas fa-redo"></i> Xóa bộ lọc
           </button>
         </div>
       </div>
 
       {/* Products Table */}
       <div className="products-table-container">
-        <table className="products-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
-                  onChange={handleSelectAll}
-                />
-              </th>
-              <th>Sản phẩm</th>
-              <th>Có thể bán</th>
-              <th>Loại</th>
-              <th>Nhãn hiệu</th>
-              <th>Ngày khởi tạo</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentProducts.length === 0 ? (
+        {loadingProducts ? (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3">Đang tải sản phẩm...</p>
+          </div>
+        ) : (
+          <table className="products-table">
+            <thead>
               <tr>
-                <td colSpan="7" className="empty-state">
-                  Không tìm thấy sản phẩm nào.
-                </td>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th>Sản phẩm</th>
+                <th>Có thể bán</th>
+                <th>Loại</th>
+                <th>Nhãn hiệu</th>
+                <th>Ngày khởi tạo</th>
+                <th>Thao tác</th>
               </tr>
-            ) : (
+            </thead>
+            <tbody>
+              {currentProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="empty-state">
+                    Không tìm thấy sản phẩm nào.
+                  </td>
+                </tr>
+              ) : (
               currentProducts.map((product) => (
                 <tr key={product.id}>
                   <td>
@@ -648,25 +859,26 @@ const AdminProductsPage = () => {
                   </td>
                 </tr>
               ))
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination */}
       <div className="products-pagination">
         <div className="pagination-info">
-          Từ {startIndex + 1} đến {Math.min(endIndex, filteredProducts.length)} trên tổng {filteredProducts.length}
+          {loadingProducts 
+            ? 'Đang tải...'
+            : `Từ ${(currentPage - 1) * itemsPerPage + 1} đến ${Math.min(currentPage * itemsPerPage, totalProducts)} trên tổng ${totalProducts}`
+          }
         </div>
         <div className="pagination-controls">
           <div className="items-per-page">
             <span>Hiển thị</span>
             <select
               value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value));
-                setCurrentPage(1);
-              }}
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -678,8 +890,8 @@ const AdminProductsPage = () => {
           <div className="pagination-buttons">
             <button
               className="pagination-btn"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
+              disabled={currentPage === 1 || loadingProducts}
+              onClick={() => handlePageChange(currentPage - 1)}
             >
               <i className="fas fa-chevron-left"></i>
             </button>
@@ -687,15 +899,16 @@ const AdminProductsPage = () => {
               <button
                 key={page}
                 className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
-                onClick={() => setCurrentPage(page)}
+                onClick={() => handlePageChange(page)}
+                disabled={loadingProducts}
               >
                 {page}
               </button>
             ))}
             <button
               className="pagination-btn"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage === totalPages || loadingProducts}
+              onClick={() => handlePageChange(currentPage + 1)}
             >
               <i className="fas fa-chevron-right"></i>
             </button>
@@ -742,6 +955,8 @@ const AdminProductsPage = () => {
                       required
                     />
                   </div>
+                </div>
+                <div className="form-column">
                   <div className="form-group">
                     <label className="form-label">Giá năm (VNĐ) *</label>
                     <input
@@ -759,68 +974,116 @@ const AdminProductsPage = () => {
                         checked={formData.hot}
                         onChange={(e) => setFormData({ ...formData, hot: e.target.checked })}
                       />
-                      Sản phẩm nổi bật
+                      Nổi bật
                     </label>
                   </div>
                 </div>
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">SSD</label>
-                    <input
-                      type="text"
-                      value={formData.features.ssd}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          features: { ...formData.features, ssd: e.target.value },
-                        })
-                      }
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">RAM</label>
-                    <input
-                      type="text"
-                      value={formData.features.ram}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          features: { ...formData.features, ram: e.target.value },
-                        })
-                      }
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">CPU</label>
-                    <input
-                      type="text"
-                      value={formData.features.cpu}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          features: { ...formData.features, cpu: e.target.value },
-                        })
-                      }
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Số website</label>
-                    <input
-                      type="number"
-                      value={formData.features.websites}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          features: { ...formData.features, websites: e.target.value },
-                        })
-                      }
-                      className="form-input"
-                    />
-                  </div>
+              </div>
+
+              {/* Features Section - Dynamic Key-Value Pairs */}
+              <div className="form-group" style={{ marginTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <label className="form-label" style={{ marginBottom: 0, fontSize: '16px', fontWeight: 600 }}>
+                    Tính năng (Features)
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        features: [...formData.features, { key: '', value: '' }],
+                      });
+                    }}
+                    style={{ padding: '6px 15px', fontSize: '14px' }}
+                  >
+                    <i className="fas fa-plus"></i> Thêm tính năng
+                  </button>
                 </div>
+                
+                {formData.features.length === 0 ? (
+                  <p style={{ color: '#999', fontStyle: 'italic', padding: '15px', textAlign: 'center', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                    Chưa có tính năng nào. Nhấn nút "Thêm tính năng" để thêm.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {formData.features.map((feature, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '8px',
+                          backgroundColor: '#fff',
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={feature.key || ''}
+                          onChange={(e) => {
+                            const updatedFeatures = [...formData.features];
+                            updatedFeatures[index] = { ...updatedFeatures[index], key: e.target.value };
+                            setFormData({ ...formData, features: updatedFeatures });
+                          }}
+                          className="form-input"
+                          placeholder="VD: SSD, RAM, CPU..."
+                          style={{ flex: 1 }}
+                          onBlur={(e) => {
+                            // Format label on blur
+                            const formattedKey = formatFeatureLabel(e.target.value);
+                            if (formattedKey !== e.target.value) {
+                              const updatedFeatures = [...formData.features];
+                              updatedFeatures[index] = { ...updatedFeatures[index], key: formattedKey };
+                              setFormData({ ...formData, features: updatedFeatures });
+                            }
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={feature.value || ''}
+                          onChange={(e) => {
+                            const updatedFeatures = [...formData.features];
+                            updatedFeatures[index] = { ...updatedFeatures[index], value: e.target.value };
+                            setFormData({ ...formData, features: updatedFeatures });
+                          }}
+                          className="form-input"
+                          placeholder="VD: 50 GB, 4.0 GB..."
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedFeatures = formData.features.filter((_, i) => i !== index);
+                            setFormData({ ...formData, features: updatedFeatures });
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: '#fff',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            color: '#dc3545',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fee';
+                            e.currentTarget.style.borderColor = '#dc3545';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fff';
+                            e.currentTarget.style.borderColor = '#e0e0e0';
+                          }}
+                          title="Xóa"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Discount Codes Section */}
@@ -842,49 +1105,63 @@ const AdminProductsPage = () => {
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {formData.discountCodes.map((discount, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px',
-                          border: '1px solid #e0e0e0',
-                          borderRadius: '4px',
-                          backgroundColor: '#f9f9f9'
-                        }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <strong style={{ color: '#1976d2' }}>{discount.code}</strong>
-                          <span style={{ marginLeft: '10px', color: '#4caf50' }}>
-                            -{discount.discount_percent ?? discount.discount ?? 0}%
-                          </span>
-                          {discount.max_cycle && (
-                            <span style={{ marginLeft: '10px', color: '#ff9800', fontSize: '12px' }}>
-                              (Tối đa {discount.max_cycle} tháng)
-                            </span>
-                          )}
-                          {!discount.is_active && (
-                            <span style={{ marginLeft: '10px', color: '#f44336', fontSize: '12px' }}>
-                              (Ngừng kích hoạt)
-                            </span>
-                          )}
-                          <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#666' }}>
-                            {discount.description}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-icon btn-delete"
-                          onClick={() => handleRemoveDiscount(discount.code)}
-                          title="Xóa"
-                          style={{ marginLeft: '10px' }}
+                    {formData.discountCodes.map((discount, index) => {
+                      // Use a unique key - prefer discount_code_id or id, fallback to code + index
+                      const uniqueKey = discount.discount_code_id || discount.id || `${discount.code}-${index}`;
+                      const discountPercent = discount.discount_percent ?? discount.discount ?? 0;
+                      const code = discount.code || '';
+                      const description = discount.description || '';
+                      const maxCycle = discount.max_cycle;
+                      const isActive = discount.is_active !== undefined ? discount.is_active : true;
+                      
+                      return (
+                        <div
+                          key={uniqueKey}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '10px',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '4px',
+                            backgroundColor: '#f9f9f9'
+                          }}
                         >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    ))}
+                          <div style={{ flex: 1 }}>
+                            {code && (
+                              <strong style={{ color: '#1976d2' }}>{code}</strong>
+                            )}
+                            <span style={{ marginLeft: code ? '10px' : '0', color: '#4caf50' }}>
+                              -{discountPercent}%
+                            </span>
+                            {maxCycle && (
+                              <span style={{ marginLeft: '10px', color: '#ff9800', fontSize: '12px' }}>
+                                (Tối đa {maxCycle} tháng)
+                              </span>
+                            )}
+                            {!isActive && (
+                              <span style={{ marginLeft: '10px', color: '#f44336', fontSize: '12px' }}>
+                                (Ngừng kích hoạt)
+                              </span>
+                            )}
+                            {description && (
+                              <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#666' }}>
+                                {description}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn-icon btn-delete"
+                            onClick={() => handleRemoveDiscount(code)}
+                            title="Xóa"
+                            style={{ marginLeft: '10px' }}
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

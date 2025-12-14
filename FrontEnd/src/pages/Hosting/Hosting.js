@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Container, 
   Row, 
@@ -13,10 +13,71 @@ import {
 } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import hostingMockData from '../../mockData/hosting.json';
+import { hostingBannerService } from '../../services/bannerService';
+import { baseUrl } from '../../utils/api';
 import './Hosting.css';
 import hostingImage from '../../assets/hosting.png';
+
 const Hosting = () => {
   const navigate = useNavigate();
+  const [banner, setBanner] = useState(null);
+  const [loadingBanner, setLoadingBanner] = useState(true);
+
+  useEffect(() => {
+    const fetchBanner = async () => {
+      try {
+        setLoadingBanner(true);
+        const res = await hostingBannerService.list();
+        const bannersData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        
+        if (bannersData.length > 0) {
+          // Sort by created_at (newest first) or by id (largest first) to get the newest banner
+          const sortedBanners = [...bannersData].sort((a, b) => {
+            // If created_at exists, sort by it (newest first)
+            if (a.created_at && b.created_at) {
+              return new Date(b.created_at) - new Date(a.created_at);
+            }
+            // Otherwise sort by id (assuming larger id = newer)
+            const aId = typeof a.id === 'string' ? parseInt(a.id) || 0 : a.id || 0;
+            const bId = typeof b.id === 'string' ? parseInt(b.id) || 0 : b.id || 0;
+            return bId - aId;
+          });
+          
+          // Get the newest banner (first in sorted array)
+          const newestBanner = sortedBanners[0];
+          
+          setBanner({
+            ...newestBanner,
+            image: newestBanner.image 
+              ? (newestBanner.image_type === 'URL' || newestBanner.image_type === 'url'
+                ? newestBanner.image 
+                : `${baseUrl}${newestBanner.image}`)
+              : hostingImage,
+            features: Array.isArray(newestBanner.features) ? newestBanner.features : [],
+            promotions: Array.isArray(newestBanner.promotions) ? newestBanner.promotions : [],
+            priceUnit: newestBanner.price_unit || newestBanner.priceUnit,
+          });
+        } else {
+          // No banners from API, fallback to mock data
+          setBanner({
+            ...hostingMockData.banner,
+            image: hostingImage,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch hosting banner:', err);
+        // Fallback to mock data on error
+        setBanner({
+          ...hostingMockData.banner,
+          image: hostingImage,
+        });
+      } finally {
+        setLoadingBanner(false);
+      }
+    };
+    
+    fetchBanner();
+  }, []);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -27,6 +88,12 @@ const Hosting = () => {
     navigate(`/config-product/${productId}`);
   };
 
+  // Use banner from API or fallback to mock
+  const displayBanner = banner || {
+    ...hostingMockData.banner,
+    image: hostingImage,
+  };
+
   return (
     <div className="hosting-page">
       {/* Banner Section */}
@@ -34,45 +101,71 @@ const Hosting = () => {
         <Container>
           <Row>
             <Col lg={7}>
-              <div className="banner-content">
-                <h1 className="banner-title">{hostingMockData.banner.title}</h1>
-                <h2 className="banner-subtitle">{hostingMockData.banner.subtitle}</h2>
-                <p className="banner-description">{hostingMockData.banner.description}</p>
-                
-                <div className="banner-features">
-                  {hostingMockData.banner.features.map((feature, index) => (
-                    <div key={index} className="feature-item">
-                      <i className="fas fa-check text-success me-2"></i>
-                      <span>{feature}</span>
+              {loadingBanner ? (
+                <div className="text-center py-5">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="banner-content">
+                  {displayBanner.title && (
+                    <h1 className="banner-title">{displayBanner.title}</h1>
+                  )}
+                  {displayBanner.subtitle && (
+                    <h2 className="banner-subtitle">{displayBanner.subtitle}</h2>
+                  )}
+                  {displayBanner.description && (
+                    <p className="banner-description">{displayBanner.description}</p>
+                  )}
+                  
+                  {displayBanner.features && displayBanner.features.length > 0 && (
+                    <div className="banner-features">
+                      {displayBanner.features.map((feature, index) => (
+                        <div key={index} className="feature-item">
+                          <i className="fas fa-check text-success me-2"></i>
+                          <span>{feature}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                <div className="banner-price">
-                  <span className="price-label">CHỈ TỪ</span>
-                  <span className="price-value">{hostingMockData.banner.price}</span>
-                  <span className="price-unit">{hostingMockData.banner.priceUnit}</span>
-                </div>
+                  {(displayBanner.price || displayBanner.priceUnit) && (
+                    <div className="banner-price">
+                      {displayBanner.price && (
+                        <>
+                          <span className="price-label">CHỈ TỪ</span>
+                          <span className="price-value">{displayBanner.price}</span>
+                        </>
+                      )}
+                      {displayBanner.priceUnit && (
+                        <span className="price-unit">{displayBanner.priceUnit}</span>
+                      )}
+                    </div>
+                  )}
 
-                <div className="banner-promotions">
-                  {hostingMockData.banner.promotions.map((promo, index) => (
-                    <p key={index} className="promo-text">{promo}</p>
-                  ))}
-                </div>
+                  {displayBanner.promotions && displayBanner.promotions.length > 0 && (
+                    <div className="banner-promotions">
+                      {displayBanner.promotions.map((promo, index) => (
+                        <p key={index} className="promo-text">{promo}</p>
+                      ))}
+                    </div>
+                  )}
 
-                <div className="banner-buttons">
-                  <Button as={Link} to="/pricing" variant="primary" size="lg" className="btn-primary-custom me-3">
-                    XEM BẢNG GIÁ
-                  </Button>
-                  <Button as={Link} to="/contact" variant="warning" size="lg">
-                    LIÊN HỆ TƯ VẤN NGAY
-                  </Button>
+                  <div className="banner-buttons">
+                    <Button as={Link} to="/pricing" variant="primary" size="lg" className="btn-primary-custom me-3">
+                      XEM BẢNG GIÁ
+                    </Button>
+                    <Button as={Link} to="/contact" variant="warning" size="lg">
+                      LIÊN HỆ TƯ VẤN NGAY
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </Col>
             <Col lg={5}>
               <div className="banner-image">
-                <img className="img-fluid" src={hostingImage} alt="Hosting" />
+                <img className="img-fluid" src={displayBanner.image || hostingImage} alt="Hosting" />
               </div>
             </Col>
           </Row>

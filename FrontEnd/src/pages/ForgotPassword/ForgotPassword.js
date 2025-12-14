@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Container, Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
+import loginImage from '../../assets/login.jpg';
 import './ForgotPassword.css';
 
 const ForgotPassword = () => {
@@ -28,7 +29,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="forgot-password-page">
+    <div className="forgot-password-page" style={{ backgroundImage: `url(${loginImage})` }}>
       <Container className="py-5">
         <Row className="justify-content-center">
           <Col md={6} lg={5}>
