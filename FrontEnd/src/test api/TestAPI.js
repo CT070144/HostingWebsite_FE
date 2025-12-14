@@ -330,7 +330,10 @@ const TestAPI = () => {
 
   const handleTestAPI = async () => {
     if (!selectedService || !selectedMethod) {
-      setError('Vui lòng chọn service và method');
+      setError({
+        message: 'Vui lòng chọn service và method',
+        type: 'validation',
+      });
       return;
     }
 
@@ -348,14 +351,31 @@ const TestAPI = () => {
         headers: result.headers,
       });
     } catch (err) {
-      setError({
-        message: err.message,
-        response: err.response ? {
-          status: err.response.status,
-          statusText: err.response.statusText,
-          data: err.response.data,
-        } : null,
-      });
+      // Check for CORS error
+      const isCorsError = err.message?.includes('CORS') || 
+                         err.message?.includes('Network Error') ||
+                         err.code === 'ERR_NETWORK' ||
+                         (!err.response && err.request);
+
+      if (isCorsError) {
+        setError({
+          message: 'CORS Error: Không thể kết nối đến API',
+          type: 'cors',
+          details: 'Backend chưa cho phép CORS từ origin này. Vui lòng cấu hình CORS trên backend để cho phép origin: ' + window.location.origin,
+          originalError: err.message,
+        });
+      } else {
+        setError({
+          message: err.message,
+          type: 'api',
+          response: err.response ? {
+            status: err.response.status,
+            statusText: err.response.statusText,
+            data: err.response.data,
+          } : null,
+          originalError: err.message,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -451,14 +471,46 @@ const TestAPI = () => {
 
               {error && (
                 <div className="response-section error">
-                  <h3>Error Response</h3>
+                  <h3>
+                    {error.type === 'cors' ? (
+                      <>
+                        <i className="fas fa-exclamation-triangle"></i> CORS Error
+                      </>
+                    ) : (
+                      'Error Response'
+                    )}
+                  </h3>
                   <div className="response-info">
                     <p><strong>Message:</strong> {error.message}</p>
+                    {error.details && (
+                      <div className="error-details">
+                        <p><strong>Chi tiết:</strong></p>
+                        <p>{error.details}</p>
+                      </div>
+                    )}
                     {error.response && (
                       <>
                         <p><strong>Status:</strong> {error.response.status} {error.response.statusText}</p>
                         <pre>{JSON.stringify(error.response.data, null, 2)}</pre>
                       </>
+                    )}
+                    {error.type === 'cors' && (
+                      <div className="cors-help">
+                        <p><strong>Giải pháp:</strong></p>
+                        <ul>
+                          <li>Kiểm tra backend có chạy đúng không</li>
+                          <li>Cấu hình CORS trên backend để cho phép origin: <code>{window.location.origin}</code></li>
+                          <li>Đảm bảo API endpoint đúng: <code>http://localhost:8084</code></li>
+                        </ul>
+                        {error.originalError && (
+                          <details style={{ marginTop: '12px' }}>
+                            <summary style={{ cursor: 'pointer', fontWeight: 600 }}>Chi tiết lỗi gốc</summary>
+                            <pre style={{ marginTop: '8px', fontSize: '12px', background: '#fff', padding: '8px', borderRadius: '4px' }}>
+                              {error.originalError}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
