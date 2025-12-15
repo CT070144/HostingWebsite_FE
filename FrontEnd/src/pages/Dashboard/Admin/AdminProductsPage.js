@@ -25,12 +25,17 @@ const AdminProductsPage = () => {
     page: 1,
     limit: 20,
     sort: '',
-    type: '',
+    service_type: '',
+    spec_type: '',
+    location: '',
+    is_active: '',
+    has_discount: '',
     min_price: '',
     max_price: '',
   });
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -45,11 +50,18 @@ const AdminProductsPage = () => {
   });
   const [formData, setFormData] = useState({
     name: '',
-    monthlyPrice: '',
-    yearlyPrice: '',
-    hot: false,
-    discountCodes: [],
-    features: [], // Array of { key: '', value: '' }
+    price_monthly: '',
+    price_annually: '',
+    is_hot: false,
+    is_active: true,
+    service_type: '',
+    // spec
+    spec_name: '',
+    spec_type: '',
+    spec_location: '',
+    spec_attributes: [], // Array of { key: '', value: '' }
+    // discount: only one code per product
+    discount_code_id: '',
   });
   // Featured products (Home page)
   const [featuredProducts, setFeaturedProducts] = useState(homeMockData.featuredProducts || []);
@@ -127,7 +139,11 @@ const AdminProductsPage = () => {
       
       // Add optional filters
       if (params.sort) queryParams.sort = params.sort;
-      if (params.type) queryParams.type = params.type;
+      if (params.service_type) queryParams.service_type = params.service_type;
+      if (params.spec_type) queryParams.spec_type = params.spec_type;
+      if (params.location) queryParams.location = params.location;
+      if (params.is_active !== '') queryParams.is_active = params.is_active;
+      if (params.has_discount !== '') queryParams.has_discount = params.has_discount;
       if (params.min_price) queryParams.min_price = Number(params.min_price);
       if (params.max_price) queryParams.max_price = Number(params.max_price);
       
@@ -157,29 +173,20 @@ const AdminProductsPage = () => {
         pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
       }
       
-      // Normalize products data to match API format
+      // Normalize products data to match new API format
       const normalizedProducts = productsData.map((p) => {
-        // Handle discountCodes: can be array of strings or array of objects
-        let discountCodes = [];
-        if (Array.isArray(p.discountCodes)) {
-          discountCodes = p.discountCodes.map(code => {
-            // If it's already a string, return it
-            if (typeof code === 'string') return code;
-            // If it's an object, extract the code string
-            if (typeof code === 'object' && code.code) return code.code;
-            return String(code);
-          });
-        }
-        
         return {
           id: p.id,
           name: p.name || '',
-          monthlyPrice: p.monthlyPrice || 0,
-          yearlyPrice: p.yearlyPrice || 0,
-          hot: p.hot || false,
-          discountCodes: discountCodes,
-          features: p.features && typeof p.features === 'object' ? p.features : {},
-          created_at: p.created_at || p.createdAt || p.created_at || null,
+          service_type: p.service_type || p.type || '',
+          monthlyPrice: p.monthlyPrice ?? p.price_monthly ?? 0,
+          yearlyPrice: p.yearlyPrice ?? p.price_annually ?? 0,
+          hot: p.hot ?? p.is_hot ?? false,
+          is_active: p.is_active ?? true,
+          discount: p.discount || null,
+          spec: p.spec || null,
+          created_at: p.created_at || p.createdAt || null,
+          updated_at: p.updated_at || p.updatedAt || null,
         };
       });
       
@@ -330,28 +337,36 @@ const AdminProductsPage = () => {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    // Convert features object to array of key-value pairs
-    const featuresArray = product.features && typeof product.features === 'object' && !Array.isArray(product.features)
-      ? Object.entries(product.features).map(([key, value]) => ({ key, value: value || '' }))
-      : Array.isArray(product.features) ? product.features : [];
-    
-    // Handle discountCodes: ensure it's array of strings
-    let discountCodes = [];
-    if (Array.isArray(product.discountCodes)) {
-      discountCodes = product.discountCodes.map(code => {
-        if (typeof code === 'string') return code;
-        if (typeof code === 'object' && code.code) return code.code;
-        return String(code);
-      });
-    }
-    
+    // Convert spec.attributes object to array of key-value pairs
+    const attributesArray =
+      product.spec &&
+      product.spec.attributes &&
+      typeof product.spec.attributes === 'object' &&
+      !Array.isArray(product.spec.attributes)
+        ? Object.entries(product.spec.attributes).map(([key, value]) => ({
+            key,
+            value: value ?? '',
+          }))
+        : [];
+
+    // Map discount object to discount_code_id (only one discount per product)
+    const discount_code_id =
+      product.discount && (product.discount.discount_code_id || product.discount.id)
+        ? product.discount.discount_code_id || product.discount.id
+        : '';
+
     setFormData({
       name: product.name || '',
-      monthlyPrice: product.monthlyPrice || '',
-      yearlyPrice: product.yearlyPrice || '',
-      hot: product.hot || false,
-      discountCodes: discountCodes, // Array of strings
-      features: featuresArray,
+      price_monthly: product.monthlyPrice || '',
+      price_annually: product.yearlyPrice || '',
+      is_hot: product.hot || false,
+      is_active: product.is_active ?? true,
+      service_type: product.service_type || '',
+      spec_name: product.spec?.spec_name || '',
+      spec_type: product.spec?.type || '',
+      spec_location: product.spec?.location || '',
+      spec_attributes: attributesArray,
+      discount_code_id,
     });
     setIsModalOpen(true);
   };
@@ -372,20 +387,25 @@ const AdminProductsPage = () => {
 
   // Template features for new products
   const getDefaultFeatures = () => [
-    { key: 'SSD', value: '' },
-    { key: 'RAM', value: '' },
-    { key: 'CPU', value: '' },
+    { key: 'cpuCores', value: '' },
+    { key: 'ramGB', value: '' },
+    { key: 'storageGB', value: '' },
   ];
 
   const handleAddNew = () => {
     setEditingProduct(null);
     setFormData({
       name: '',
-      monthlyPrice: '',
-      yearlyPrice: '',
-      hot: false,
-      discountCodes: [],
-      features: getDefaultFeatures(),
+      price_monthly: '',
+      price_annually: '',
+      is_hot: false,
+      is_active: true,
+      service_type: '',
+      spec_name: '',
+      spec_type: '',
+      spec_location: '',
+      spec_attributes: getDefaultFeatures(),
+      discount_code_id: '',
     });
     setIsModalOpen(true);
   };
@@ -393,33 +413,29 @@ const AdminProductsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Convert features array to object
-    const featuresObject = formData.features.reduce((acc, item) => {
+    // Convert spec_attributes array to attributes object
+    const attributesObject = (formData.spec_attributes || []).reduce((acc, item) => {
       if (item.key && item.key.trim()) {
         acc[item.key] = item.value || '';
       }
       return acc;
     }, {});
     
-    // Prepare product data according to API format
-    // Ensure discountCodes is array of strings
-    const discountCodesArray = Array.isArray(formData.discountCodes)
-      ? formData.discountCodes.map(code => {
-          // If it's already a string, return it
-          if (typeof code === 'string') return code;
-          // If it's an object, extract the code string
-          if (typeof code === 'object' && code.code) return code.code;
-          return String(code);
-        })
-      : [];
-    
+    // Prepare product data according to new API format
     const productData = {
       name: formData.name.trim(),
-      monthlyPrice: Number(formData.monthlyPrice) || 0,
-      yearlyPrice: Number(formData.yearlyPrice) || 0,
-      hot: formData.hot || false,
-      discountCodes: discountCodesArray, // Array of strings
-      features: featuresObject,
+      price_monthly: Number(formData.price_monthly) || 0,
+      price_annually: Number(formData.price_annually) || 0,
+      is_hot: formData.is_hot || false,
+      is_active: formData.is_active ?? true,
+      service_type: formData.service_type || '',
+      discount_code_id: formData.discount_code_id || undefined,
+      spec: {
+        spec_name: formData.spec_name || '',
+        type: formData.spec_type || '',
+        location: formData.spec_location || '',
+        attributes: attributesObject,
+      },
     };
     
     try {
@@ -495,27 +511,18 @@ const AdminProductsPage = () => {
   const handleCloseDiscountModal = () => {
     setIsDiscountModalOpen(false);
     setDiscountSearchTerm('');
-    setNewDiscountCode({ code: '', discount: '', maxCycle: '', description: '' });
+    setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
   };
 
   const handleAddExistingDiscount = (discount) => {
-    // Extract code string from discount object
-    const codeString = discount.code || (typeof discount === 'string' ? discount : String(discount));
-    
-    // Check if code already exists in current product (discountCodes is now array of strings)
-    const exists = formData.discountCodes.some(d => {
-      const existingCode = typeof d === 'string' ? d : (d.code || String(d));
-      return existingCode === codeString;
-    });
-    
-    if (exists) {
-      notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
-      return;
-    }
-    
-    setFormData(prev => ({
+    // Extract id from discount object
+    const id = discount.discount_code_id || discount.id;
+    if (!id) return;
+
+    // Gán trực tiếp discount_code_id (mỗi sản phẩm chỉ 1 mã)
+    setFormData((prev) => ({
       ...prev,
-      discountCodes: [...prev.discountCodes, codeString] // Add as string
+      discount_code_id: id,
     }));
     notifySuccess('Đã thêm mã giảm giá!');
   };
@@ -532,12 +539,9 @@ const AdminProductsPage = () => {
       return;
     }
 
-    // Check if code already exists (discountCodes is now array of strings)
+    // Check if code already exists (by code)
     const codeString = newDiscountCode.code.toUpperCase();
-    const exists = formData.discountCodes.some(d => {
-      const existingCode = typeof d === 'string' ? d : (d.code || String(d));
-      return existingCode === codeString;
-    });
+    const exists = allDiscountCodes.some((d) => d.code === codeString);
     
     if (exists) {
       notifyWarning('Mã giảm giá này đã tồn tại trong sản phẩm!');
@@ -562,13 +566,19 @@ const AdminProductsPage = () => {
           created = res.data.data || res.data || payload;
         }
         
-        // Extract code string to add to product's discountCodes array
-        const codeToAdd = created.code || payload.code;
+        // Extract id to set to product's discount_code_id
+        const idToAdd = created.discount_code_id || created.id;
+        if (!idToAdd) {
+          fetchDiscountCodes();
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới!');
+          return;
+        }
         
-        // Update form data with new discount code (as string)
+        // Update form data with new discount id (mỗi sản phẩm chỉ 1 mã)
         setFormData(prev => ({
           ...prev,
-          discountCodes: [...prev.discountCodes, codeToAdd] // Add as string
+          discount_code_id: idToAdd,
         }));
 
         // Refresh the discount codes list from API
@@ -579,13 +589,13 @@ const AdminProductsPage = () => {
           // If refresh fails, still update local state
           const normalizedDiscount = {
             discount_code_id: created.discount_code_id || created.id,
-            code: codeToAdd,
+            code: created.code || payload.code,
             discount_percent: created.discount_percent ?? payload.discount_percent,
             max_cycle: created.max_cycle ?? payload.max_cycle,
             description: created.description || payload.description || '',
             is_active: created.is_active ?? true,
           };
-          const existsInAll = allDiscountCodes.some(d => d.code === codeToAdd);
+          const existsInAll = allDiscountCodes.some(d => d.discount_code_id === normalizedDiscount.discount_code_id);
           if (!existsInAll) {
             setAllDiscountCodes(prev => [...prev, normalizedDiscount]);
           }
@@ -603,11 +613,7 @@ const AdminProductsPage = () => {
   const handleRemoveDiscount = (codeToRemove) => {
     setFormData(prev => ({
       ...prev,
-      discountCodes: prev.discountCodes.filter(d => {
-        // Handle both string and object formats
-        const existingCode = typeof d === 'string' ? d : (d.code || String(d));
-        return existingCode !== codeToRemove;
-      })
+      discount_code_id: '',
     }));
   };
 
@@ -772,16 +778,28 @@ const AdminProductsPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          {/* Service type filter (simple) */}
           <select 
             className="filter-select"
-            value={filters.type}
-            onChange={(e) => handleFilterChange('type', e.target.value)}
+            value={filters.service_type}
+            onChange={(e) => handleFilterChange('service_type', e.target.value)}
           >
-            <option value="">Tất cả loại</option>
+            <option value="">Tất cả loại dịch vụ</option>
             <option value="VPS">VPS</option>
             <option value="Hosting">Hosting</option>
             <option value="Cloud_Compute">Cloud Compute</option>
           </select>
+          {/* Has discount filter (simple) */}
+          <select
+            className="filter-select"
+            value={filters.has_discount}
+            onChange={(e) => handleFilterChange('has_discount', e.target.value)}
+          >
+            <option value="">Tất cả khuyến mãi</option>
+            <option value="true">Có mã giảm giá</option>
+            <option value="false">Không có mã giảm giá</option>
+          </select>
+          {/* Sort (simple) */}
           <select 
             className="filter-select"
             value={filters.sort}
@@ -791,22 +809,71 @@ const AdminProductsPage = () => {
             <option value="price_asc">Giá tăng dần</option>
             <option value="price_desc">Giá giảm dần</option>
           </select>
-          <input
-            type="number"
-            className="filter-select"
-            placeholder="Giá tối thiểu"
-            value={filters.min_price}
-            onChange={(e) => handleFilterChange('min_price', e.target.value)}
-            style={{ width: '150px', padding: '8px' }}
-          />
-          <input
-            type="number"
-            className="filter-select"
-            placeholder="Giá tối đa"
-            value={filters.max_price}
-            onChange={(e) => handleFilterChange('max_price', e.target.value)}
-            style={{ width: '150px', padding: '8px' }}
-          />
+
+          {/* Toggle advanced filters */}
+          <button
+            className="btn btn-secondary"
+            type="button"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+          >
+            <i className={`fas fa-${showAdvancedFilters ? 'chevron-up' : 'chevron-down'}`}></i>{' '}
+            Bộ lọc nâng cao
+          </button>
+
+          {/* Advanced filters: hiển thị khi cần */}
+          {showAdvancedFilters && (
+            <>
+              {/* Spec type filter */}
+              <select
+                className="filter-select"
+                value={filters.spec_type}
+                onChange={(e) => handleFilterChange('spec_type', e.target.value)}
+              >
+                <option value="">Tất cả loại gói/spec</option>
+                <option value="Package">Package</option>
+                <option value="Usage_Unit">Usage Unit</option>
+              </select>
+              {/* Location filter */}
+              <select
+                className="filter-select"
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+              >
+                <option value="">Tất cả location</option>
+                <option value="HCMC">HCMC</option>
+                <option value="Hanoi">Hanoi</option>
+                <option value="DaNang">DaNang</option>
+              </select>
+              {/* Active status filter */}
+              <select
+                className="filter-select"
+                value={filters.is_active}
+                onChange={(e) => handleFilterChange('is_active', e.target.value)}
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Ngừng hoạt động</option>
+              </select>
+              {/* Price range */}
+              <input
+                type="number"
+                className="filter-select"
+                placeholder="Giá tối thiểu"
+                value={filters.min_price}
+                onChange={(e) => handleFilterChange('min_price', e.target.value)}
+                style={{ width: '150px', padding: '8px' }}
+              />
+              <input
+                type="number"
+                className="filter-select"
+                placeholder="Giá tối đa"
+                value={filters.max_price}
+                onChange={(e) => handleFilterChange('max_price', e.target.value)}
+                style={{ width: '150px', padding: '8px' }}
+              />
+            </>
+          )}
+
           <button 
             className="btn btn-secondary"
             onClick={() => {
@@ -814,7 +881,11 @@ const AdminProductsPage = () => {
                 page: 1,
                 limit: 20,
                 sort: '',
-                type: '',
+                service_type: '',
+                spec_type: '',
+                location: '',
+                is_active: '',
+                has_discount: '',
                 min_price: '',
                 max_price: '',
               };
@@ -900,11 +971,16 @@ const AdminProductsPage = () => {
                   </td>
                   <td>
                     <div className="discount-codes-cell">
-                      {product.discountCodes && product.discountCodes.length > 0 ? (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                          {product.discountCodes.slice(0, 3).map((code, idx) => (
+                      {product.discount ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <div>
                             <span
-                              key={idx}
                               className="discount-code-badge"
                               style={{
                                 display: 'inline-block',
@@ -916,17 +992,62 @@ const AdminProductsPage = () => {
                                 fontWeight: '500',
                               }}
                             >
-                              {typeof code === 'string' ? code : (code.code || String(code))}
+                              {product.discount.code}
                             </span>
-                          ))}
-                          {product.discountCodes.length > 3 && (
-                            <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                              +{product.discountCodes.length - 3}
-                            </span>
+                            {typeof product.discount.discount_percent === 'number' && (
+                              <span
+                                style={{
+                                  marginLeft: '8px',
+                                  fontSize: '0.6875rem',
+                                  color: '#16a34a',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                -{product.discount.discount_percent}%
+                              </span>
+                            )}
+                            {product.discount.max_cycle && (
+                              <span
+                                style={{
+                                  marginLeft: '8px',
+                                  fontSize: '0.6875rem',
+                                  color: '#f59e0b',
+                                }}
+                              >
+                                (Tối đa {product.discount.max_cycle} tháng)
+                              </span>
+                            )}
+                            {product.discount.is_active === false && (
+                              <span
+                                style={{
+                                  marginLeft: '8px',
+                                  fontSize: '0.6875rem',
+                                  color: '#ef4444',
+                                }}
+                              >
+                                (Ngừng kích hoạt)
+                              </span>
+                            )}
+                          </div>
+                          {product.discount.description && (
+                            <div
+                              style={{
+                                fontSize: '0.6875rem',
+                                color: '#6b7280',
+                              }}
+                            >
+                              {product.discount.description}
+                            </div>
                           )}
                         </div>
                       ) : (
-                        <span style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.75rem' }}>
+                        <span
+                          style={{
+                            color: '#9ca3af',
+                            fontStyle: 'italic',
+                            fontSize: '0.75rem',
+                          }}
+                        >
                           Không có
                         </span>
                       )}
@@ -934,9 +1055,9 @@ const AdminProductsPage = () => {
                   </td>
                   <td>
                     <div className="features-cell">
-                      {product.features && Object.keys(product.features).length > 0 ? (
+                      {product.spec && product.spec.attributes && Object.keys(product.spec.attributes).length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          {Object.entries(product.features).slice(0, 3).map(([key, value], idx) => (
+                          {Object.entries(product.spec.attributes).slice(0, 3).map(([key, value], idx) => (
                             <span
                               key={idx}
                               style={{
@@ -944,12 +1065,12 @@ const AdminProductsPage = () => {
                                 color: '#374151',
                               }}
                             >
-                              <strong>{formatFeatureLabel(key)}:</strong> {value}
+                              <strong>{formatFeatureLabel(key)}:</strong> {String(value)}
                             </span>
                           ))}
-                          {Object.keys(product.features).length > 3 && (
+                          {Object.keys(product.spec.attributes).length > 3 && (
                             <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>
-                              +{Object.keys(product.features).length - 3} tính năng khác
+                              +{Object.keys(product.spec.attributes).length - 3} thông số khác
                             </span>
                           )}
                         </div>
@@ -1075,8 +1196,8 @@ const AdminProductsPage = () => {
                     <label className="form-label">Giá tháng (VNĐ) *</label>
                     <input
                       type="number"
-                      value={formData.monthlyPrice}
-                      onChange={(e) => setFormData({ ...formData, monthlyPrice: e.target.value })}
+                      value={formData.price_monthly}
+                      onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1087,8 +1208,8 @@ const AdminProductsPage = () => {
                     <label className="form-label">Giá năm (VNĐ) *</label>
                     <input
                       type="number"
-                      value={formData.yearlyPrice}
-                      onChange={(e) => setFormData({ ...formData, yearlyPrice: e.target.value })}
+                      value={formData.price_annually}
+                      onChange={(e) => setFormData({ ...formData, price_annually: e.target.value })}
                       className="form-input"
                       required
                     />
@@ -1097,11 +1218,87 @@ const AdminProductsPage = () => {
                     <label className="form-label">
                       <input
                         type="checkbox"
-                        checked={formData.hot}
-                        onChange={(e) => setFormData({ ...formData, hot: e.target.checked })}
+                        checked={formData.is_hot}
+                        onChange={(e) => setFormData({ ...formData, is_hot: e.target.checked })}
                       />
                       Nổi bật
                     </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic spec info */}
+              <div className="form-row">
+                <div className="form-column">
+                  <div className="form-group">
+                    <label className="form-label">Loại dịch vụ *</label>
+                    <select
+                      className="form-input"
+                      value={formData.service_type}
+                      onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                      required
+                    >
+                      <option value="">-- Chọn loại dịch vụ --</option>
+                      <option value="VPS">VPS</option>
+                      <option value="Hosting">Hosting</option>
+                      <option value="Cloud_Compute">Cloud Compute</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-column">
+                  <div className="form-group">
+                    <label className="form-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      />
+                      Đang hoạt động
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Spec meta info */}
+              <div className="form-row">
+                <div className="form-column">
+                  <div className="form-group">
+                    <label className="form-label">Tên gói / Spec name</label>
+                    <input
+                      type="text"
+                      value={formData.spec_name}
+                      onChange={(e) => setFormData({ ...formData, spec_name: e.target.value })}
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+                <div className="form-column">
+                  <div className="form-group">
+                    <label className="form-label">Loại gói (type)</label>
+                    <select
+                      className="form-input"
+                      value={formData.spec_type}
+                      onChange={(e) => setFormData({ ...formData, spec_type: e.target.value })}
+                    >
+                      <option value="">-- Chọn --</option>
+                      <option value="Package">Package</option>
+                      <option value="Usage_Unit">Usage Unit</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-column">
+                  <div className="form-group">
+                    <label className="form-label">Location</label>
+                    <input
+                      type="text"
+                      value={formData.spec_location}
+                      onChange={(e) => setFormData({ ...formData, spec_location: e.target.value })}
+                      className="form-input"
+                      placeholder="VD: HCMC, Hanoi..."
+                    />
                   </div>
                 </div>
               </div>
@@ -1110,7 +1307,7 @@ const AdminProductsPage = () => {
               <div className="form-group" style={{ marginTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                   <label className="form-label" style={{ marginBottom: 0, fontSize: '16px', fontWeight: 600 }}>
-                    Tính năng (Features)
+                    Thuộc tính kỹ thuật (spec.attributes)
                   </label>
                   <button
                     type="button"
@@ -1118,22 +1315,22 @@ const AdminProductsPage = () => {
                     onClick={() => {
                       setFormData({
                         ...formData,
-                        features: [...formData.features, { key: '', value: '' }],
+                        spec_attributes: [...(formData.spec_attributes || []), { key: '', value: '' }],
                       });
                     }}
                     style={{ padding: '6px 15px', fontSize: '14px' }}
                   >
-                    <i className="fas fa-plus"></i> Thêm tính năng
+                    <i className="fas fa-plus"></i> Thêm thuộc tính
                   </button>
                 </div>
                 
-                {formData.features.length === 0 ? (
+                {(formData.spec_attributes || []).length === 0 ? (
                   <p style={{ color: '#999', fontStyle: 'italic', padding: '15px', textAlign: 'center', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                    Chưa có tính năng nào. Nhấn nút "Thêm tính năng" để thêm.
+                    Chưa có thuộc tính nào. Nhấn nút "Thêm thuộc tính" để thêm.
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {formData.features.map((feature, index) => (
+                    {(formData.spec_attributes || []).map((feature, index) => (
                       <div
                         key={index}
                         style={{
@@ -1150,20 +1347,20 @@ const AdminProductsPage = () => {
                           type="text"
                           value={feature.key || ''}
                           onChange={(e) => {
-                            const updatedFeatures = [...formData.features];
-                            updatedFeatures[index] = { ...updatedFeatures[index], key: e.target.value };
-                            setFormData({ ...formData, features: updatedFeatures });
+                            const updated = [...(formData.spec_attributes || [])];
+                            updated[index] = { ...updated[index], key: e.target.value };
+                            setFormData({ ...formData, spec_attributes: updated });
                           }}
                           className="form-input"
-                          placeholder="VD: SSD, RAM, CPU..."
+                          placeholder="VD: cpuCores, ramGB, storageGB..."
                           style={{ flex: 1 }}
                           onBlur={(e) => {
                             // Format label on blur
                             const formattedKey = formatFeatureLabel(e.target.value);
                             if (formattedKey !== e.target.value) {
-                              const updatedFeatures = [...formData.features];
-                              updatedFeatures[index] = { ...updatedFeatures[index], key: formattedKey };
-                              setFormData({ ...formData, features: updatedFeatures });
+                              const updated = [...(formData.spec_attributes || [])];
+                              updated[index] = { ...updated[index], key: formattedKey };
+                              setFormData({ ...formData, spec_attributes: updated });
                             }
                           }}
                         />
@@ -1171,9 +1368,9 @@ const AdminProductsPage = () => {
                           type="text"
                           value={feature.value || ''}
                           onChange={(e) => {
-                            const updatedFeatures = [...formData.features];
-                            updatedFeatures[index] = { ...updatedFeatures[index], value: e.target.value };
-                            setFormData({ ...formData, features: updatedFeatures });
+                            const updated = [...(formData.spec_attributes || [])];
+                            updated[index] = { ...updated[index], value: e.target.value };
+                            setFormData({ ...formData, spec_attributes: updated });
                           }}
                           className="form-input"
                           placeholder="VD: 50 GB, 4.0 GB..."
@@ -1182,8 +1379,8 @@ const AdminProductsPage = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            const updatedFeatures = formData.features.filter((_, i) => i !== index);
-                            setFormData({ ...formData, features: updatedFeatures });
+                            const updated = (formData.spec_attributes || []).filter((_, i) => i !== index);
+                            setFormData({ ...formData, spec_attributes: updated });
                           }}
                           style={{
                             padding: '8px 12px',
@@ -1215,36 +1412,37 @@ const AdminProductsPage = () => {
               {/* Discount Codes Section */}
               <div className="form-group" style={{ marginTop: '20px' }}>
                 <label className="form-label">
-                  Mã giảm giá
+                  Mã giảm giá (mỗi sản phẩm chỉ 1 mã)
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={handleOpenDiscountModal}
                     style={{ marginLeft: '10px', padding: '5px 15px', fontSize: '14px' }}
                   >
-                    <i className="fas fa-plus"></i> Thêm mã giảm giá
+                    <i className="fas fa-plus"></i> Chọn / tạo mã giảm giá
                   </button>
                 </label>
-                {formData.discountCodes.length === 0 ? (
+                {!formData.discount_code_id ? (
                   <p style={{ color: '#999', fontStyle: 'italic' }}>
-                    Chưa có mã giảm giá nào. Nhấn nút "Thêm mã giảm giá" để thêm.
+                    Chưa có mã giảm giá nào. Nhấn nút để chọn hoặc tạo mới.
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {formData.discountCodes.map((discountCode, index) => {
-                      // discountCodes is now array of strings
-                      const codeString = typeof discountCode === 'string' ? discountCode : (discountCode.code || String(discountCode));
-                      
-                      // Try to find full discount info from allDiscountCodes for display
-                      const fullDiscountInfo = allDiscountCodes.find(d => d.code === codeString);
-                      const discountPercent = fullDiscountInfo?.discount_percent ?? fullDiscountInfo?.discount ?? 0;
+                    {(() => {
+                      const discountId = formData.discount_code_id;
+                      const fullDiscountInfo = allDiscountCodes.find(
+                        (d) => (d.discount_code_id || d.id) === discountId
+                      );
+                      const codeString = fullDiscountInfo?.code || discountId;
+                      const discountPercent =
+                        fullDiscountInfo?.discount_percent ?? fullDiscountInfo?.discount ?? 0;
                       const description = fullDiscountInfo?.description || '';
                       const maxCycle = fullDiscountInfo?.max_cycle;
-                      const isActive = fullDiscountInfo?.is_active !== undefined ? fullDiscountInfo.is_active : true;
-                      
+                      const isActive =
+                        fullDiscountInfo?.is_active !== undefined ? fullDiscountInfo.is_active : true;
+
                       return (
                         <div
-                          key={`${codeString}-${index}`}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -1252,7 +1450,7 @@ const AdminProductsPage = () => {
                             padding: '10px',
                             border: '1px solid #e0e0e0',
                             borderRadius: '4px',
-                            backgroundColor: '#f9f9f9'
+                            backgroundColor: '#f9f9f9',
                           }}
                         >
                           <div style={{ flex: 1 }}>
@@ -1281,7 +1479,7 @@ const AdminProductsPage = () => {
                           <button
                             type="button"
                             className="btn-icon btn-delete"
-                            onClick={() => handleRemoveDiscount(codeString)}
+                            onClick={() => handleRemoveDiscount(discountId)}
                             title="Xóa"
                             style={{ marginLeft: '10px' }}
                           >
@@ -1289,7 +1487,7 @@ const AdminProductsPage = () => {
                           </button>
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
                 )}
               </div>
