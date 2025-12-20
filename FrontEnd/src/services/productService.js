@@ -10,6 +10,7 @@ const getAuthHeaders = () => {
 export const productService = {
   // Public endpoints (no auth required)
   listPublic: (params = {}) => api.get('/public/products', { params }),
+  getByIdPublic: (id) => api.get(`/public/products/${id}`),
   
   // Admin endpoints (require auth)
   list: (params = {}) => {

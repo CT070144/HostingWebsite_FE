@@ -7,6 +7,9 @@ export const userService = {
   create: (payload) => api.post('/admin/users', payload),
   update: (id, payload) => api.put(`/admin/users/${id}`, payload),
   remove: (id) => api.delete(`/admin/users/${id}`),
+  
+  // Get user profile (for authenticated user)
+  getProfile: () => api.get('/user/profile'),
 };
 
 

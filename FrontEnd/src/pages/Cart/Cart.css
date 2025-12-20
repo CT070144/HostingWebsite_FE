@@ -130,12 +130,14 @@
 
 .order-item-name {
   font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  color: rgb(0 0 0 / 90%);
 }
 
 .order-item-price {
-  font-weight: 600;
-  color: white;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: rgb(0 0 0 / 90%);
 }
 
 .order-renewal {
@@ -222,7 +224,7 @@
 /* Form Styling */
 .form-label {
   font-weight: 500;
-  color: #333;
+  color: #ffffff;
   margin-bottom: 5px;
 }
 

@@ -46,6 +46,7 @@ const Header = () => {
               className={isActive('/')}
               onClick={() => setExpanded(false)}
             >
+              <i className="fas fa-home me-2"></i>
               Trang chủ
             </Nav.Link>
          
@@ -55,6 +56,7 @@ const Header = () => {
               className={isActive('/hosting')}
               onClick={() => setExpanded(false)}
             >
+              <i className="fas fa-server me-2"></i>
               Hosting
             </Nav.Link>
             <Nav.Link 
@@ -63,6 +65,7 @@ const Header = () => {
               className={isActive('/pricing')}
               onClick={() => setExpanded(false)}
             >
+              <i className="fas fa-tags me-2"></i>
               Bảng giá
             </Nav.Link>
             <Nav.Link 
@@ -71,6 +74,7 @@ const Header = () => {
               className={isActive('/contact')}
               onClick={() => setExpanded(false)}
             >
+              <i className="fas fa-envelope me-2"></i>
               Liên hệ
             </Nav.Link>
             
@@ -87,8 +91,16 @@ const Header = () => {
                 align="end"
               >
                 <NavDropdown.Item as={Link} to="/admin/dashboard" onClick={() => setExpanded(false)}>
-                  <i className="fas fa-tachometer-alt me-2"></i>
-                  Dashboard
+                  <i className="fas fa-cog me-2"></i>
+                  Trang quản trị
+                </NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/cart" onClick={() => setExpanded(false)}>
+                  <i className="fas fa-shopping-cart me-2"></i>
+                  Giỏ hàng
+                </NavDropdown.Item>
+                <NavDropdown.Item as={Link} to="/profile" onClick={() => setExpanded(false)}>
+                  <i className="fas fa-user me-2"></i>
+                  Tài khoản
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={handleLogout}>

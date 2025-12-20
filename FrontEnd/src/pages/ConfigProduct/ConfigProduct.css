@@ -41,25 +41,40 @@
 }
 
 .payment-cycle-radio {
-  padding: 15px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #b6d7ff;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
 }
 
 .payment-cycle-radio:hover {
   border-color: var(--primary-color);
-  background-color: #fff5f2;
+  background-color: #f2f6ff;
 }
 
-.payment-cycle-radio input[type="radio"]:checked + label {
-  border-color: var(--primary-color);
-  background-color: #fff5f2;
+.payment-cycle-radio input[type="radio"] {
+  margin-right: 10px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
 }
 
 .payment-cycle-radio input[type="radio"]:checked {
   accent-color: var(--primary-color);
+}
+
+.payment-cycle-radio:has(input[type="radio"]:checked) {
+  border-color: var(--primary-color);
+  background-color: #f1f1ff;
+}
+
+.payment-cycle-radio label {
+  cursor: pointer;
+  margin-bottom: 0;
+  width: 100%;
+  flex: 1;
 }
 
 .payment-cycle-item {
@@ -67,6 +82,8 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 15px 15px;
+  cursor: pointer;
 }
 
 .cycle-label {

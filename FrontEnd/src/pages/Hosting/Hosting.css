@@ -9,7 +9,7 @@
 }
 
 .btn-primary-custom{
-  color: var(--text-white);
+  color: var(--text-white) !important;
 }
 
 .banner-title {
@@ -436,6 +436,7 @@
   font-weight: 600;
   text-align: center;
   vertical-align: middle;
+  width: 160px;
 }
 
 
@@ -446,6 +447,28 @@
 
 .comparison-table tbody tr:nth-child(even) {
   background-color: var(--bg-secondary);
+}
+
+.comparison-table tbody tr:last-child {
+  background-color: transparent !important;
+}
+
+.comparison-table tbody tr:last-child td {
+  border-top: 2px solid var(--border-color);
+  padding: 20px !important;
+}
+
+
+
+.comparison-table th:first-child {
+  background-color: #e3f2fd !important;
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.comparison-table td:first-child {
+  background-color: #f5f5f5 !important;
+  font-weight: 500;
 }
 
 /* Hosting Lines Comparison Section */

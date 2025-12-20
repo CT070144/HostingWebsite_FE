@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Container, 
   Row, 
@@ -18,13 +18,16 @@ import { productService } from '../../services/productService';
 import { baseUrl } from '../../utils/api';
 import './Hosting.css';
 import hostingImage from '../../assets/hosting.png';
+import { useLocation } from 'react-router-dom';
 
 const Hosting = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [banner, setBanner] = useState(null);
   const [loadingBanner, setLoadingBanner] = useState(true);
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const productsSectionRef = useRef(null);
 
   useEffect(() => {
     const fetchBanner = async () => {
@@ -97,15 +100,19 @@ const Hosting = () => {
           productsData = res.data.data;
         }
         
-        // Normalize products data
+        // Normalize products data according to new API format
         const normalizedProducts = productsData.map((p) => ({
           id: p.id,
           name: p.name || '',
-          monthlyPrice: p.monthlyPrice || 0,
-          yearlyPrice: p.yearlyPrice || 0,
-          hot: p.hot || false,
-          discountCodes: Array.isArray(p.discountCodes) ? p.discountCodes : [],
-          features: p.features && typeof p.features === 'object' ? p.features : {},
+          service_type: p.service_type || '',
+          monthlyPrice: p.monthlyPrice ?? p.price_monthly ?? 0,
+          yearlyPrice: p.yearlyPrice ?? p.price_annually ?? 0,
+          hot: p.hot ?? p.is_hot ?? false,
+          is_active: p.is_active ?? true,
+          discount: p.discount || null, // discount is now an object, not array
+          spec: p.spec || null, // spec object with attributes
+          // Map spec.attributes to features for backward compatibility
+          features: p.spec?.attributes && typeof p.spec.attributes === 'object' ? p.spec.attributes : {},
         }));
         
         setProducts(normalizedProducts);
@@ -120,6 +127,13 @@ const Hosting = () => {
     
     fetchProducts();
   }, []);
+
+  // Scroll to products section if hash is #products
+  useEffect(() => {
+    if (location.hash === '#products' && productsSectionRef.current) {
+      productsSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [location.hash]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -215,7 +229,11 @@ const Hosting = () => {
       </section>
 
       {/* Products Section */}
-      <section className="hosting-products-section py-5">
+      <section
+        className="hosting-products-section py-5"
+        id="hosting-products-section"
+        ref={productsSectionRef}
+      >
         <Container>
           <div className="text-center mb-5">
             <h2 className="section-title">BẢNG GIÁ THUÊ HOSTING GIÁ RẺ</h2>
@@ -253,62 +271,109 @@ const Hosting = () => {
                     </div>
 
                     <div className="discount-codes mb-3">
-                      {product.discountCodes.map((code, idx) => (
-                        <div key={idx} className="discount-code">
-                          <small>Nhập Mã {code.code} {code.description}</small>
+                      {product.discount && product.discount.code && (
+                        <div className="discount-code">
+                          <small>
+                            Nhập Mã <strong>{product.discount.code}</strong>
+                            {product.discount.discount_percent && (
+                              <span className="ms-1">-{product.discount.discount_percent}%</span>
+                            )}
+                            {product.discount.description && (
+                              <span className="ms-1">({product.discount.description})</span>
+                            )}
+                            {product.discount.max_cycle && (
+                              <span className="ms-1">- Tối đa {product.discount.max_cycle} tháng</span>
+                            )}
+                          </small>
                         </div>
-                      ))}
+                      )}
                     </div>
 
                     <ListGroup variant="flush" className="product-features mb-auto">
-                      {product.features.ssd && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          SSD: <strong>{product.features.ssd}</strong>
-                          {product.hot && <i className="fas fa-fire text-danger ms-2"></i>}
-                        </ListGroupItem>
-                      )}
-                      {product.features.ram && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          RAM: <strong>{product.features.ram}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.cpu && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          CPU: <strong>{product.features.cpu}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.websites !== undefined && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          Website: <strong>{product.features.websites}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.emails !== undefined && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          Tài Khoản Emails: <strong>{product.features.emails}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.bandwidth && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          Băng thông, MySQL: <strong>{product.features.bandwidth}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.ssl && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          SSL, Backup, Chuyển dữ liệu: <strong>{product.features.ssl}</strong>
-                        </ListGroupItem>
-                      )}
-                      {product.features.themesPlugins && (
-                        <ListGroupItem>
-                          <i className="fas fa-check text-success me-2"></i>
-                          Kho Themes & Plugins mới nhất: <strong>{product.features.themesPlugins}</strong>
-                        </ListGroupItem>
+                      {/* Display features from spec.attributes dynamically */}
+                      {product.spec?.attributes && typeof product.spec.attributes === 'object' && Object.keys(product.spec.attributes).length > 0 ? (
+                        Object.entries(product.spec.attributes).map(([key, value]) => {
+                          // Format key labels
+                          const formatLabel = (k) => {
+                            const labelMap = {
+                              cpuCores: 'CPU Cores',
+                              ramGB: 'RAM',
+                              storageGB: 'Storage',
+                              bandwidthTB: 'Băng thông',
+                              storagePoolType: 'Loại ổ cứng',
+                              addonDomains: 'Addon Domains',
+                              controlPanel: 'Control Panel',
+                              databaseLimit: 'Database Limit',
+                              diskSpaceGB: 'Disk Space',
+                              websites: 'Website',
+                              emails: 'Tài Khoản Emails',
+                              ssl: 'SSL, Backup',
+                              themesPlugins: 'Themes & Plugins',
+                            };
+                            return labelMap[k] || k;
+                          };
+                          
+                          return value !== null && value !== undefined && value !== '' ? (
+                            <ListGroupItem key={key}>
+                              <i className="fas fa-check text-success me-2"></i>
+                              {formatLabel(key)}: <strong>{value}</strong>
+                              {product.hot && key === 'storageGB' && <i className="fas fa-fire text-danger ms-2"></i>}
+                            </ListGroupItem>
+                          ) : null;
+                        })
+                      ) : (
+                        // Fallback to old features format for backward compatibility
+                        <>
+                          {product.features.ssd && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              SSD: <strong>{product.features.ssd}</strong>
+                              {product.hot && <i className="fas fa-fire text-danger ms-2"></i>}
+                            </ListGroupItem>
+                          )}
+                          {product.features.ram && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              RAM: <strong>{product.features.ram}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.cpu && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              CPU: <strong>{product.features.cpu}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.websites !== undefined && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              Website: <strong>{product.features.websites}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.emails !== undefined && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              Tài Khoản Emails: <strong>{product.features.emails}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.bandwidth && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              Băng thông, MySQL: <strong>{product.features.bandwidth}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.ssl && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              SSL, Backup, Chuyển dữ liệu: <strong>{product.features.ssl}</strong>
+                            </ListGroupItem>
+                          )}
+                          {product.features.themesPlugins && (
+                            <ListGroupItem>
+                              <i className="fas fa-check text-success me-2"></i>
+                              Kho Themes & Plugins mới nhất: <strong>{product.features.themesPlugins}</strong>
+                            </ListGroupItem>
+                          )}
+                        </>
                       )}
                     </ListGroup>
 
@@ -440,79 +505,192 @@ const Hosting = () => {
           <h2 className="section-title text-center mb-5">
             {hostingMockData.comparisonTable.title}
           </h2>
-          <div className="table-responsive">
-            <Table striped bordered hover className="comparison-table">
-              <thead>
-                <tr>
-                  <th>Gói Dịch Vụ</th>
-                  {products.map((product) => (
-                    <th key={product.id} className={product.hot ? 'hot-column' : ''}>
-                      {product.name}
-                      {product.hot && <Badge bg="danger" className="ms-2">HOT</Badge>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Giá</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>
-                      {formatPrice(product.monthlyPrice)} vnđ/tháng
-                    </td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>SSD</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.ssd || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>RAM</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.ram || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>CPU</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.cpu || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>Website</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.websites !== undefined ? product.features.websites : '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>Tài Khoản Emails</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.emails !== undefined ? product.features.emails : '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>Băng thông, MySQL</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.bandwidth || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>SSL, Backup, Chuyển dữ liệu</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.ssl || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td><strong>Kho Themes & Plugins mới nhất</strong></td>
-                  {products.map((product) => (
-                    <td key={product.id}>{product.features.themesPlugins || '-'}</td>
-                  ))}
-                </tr>
-              </tbody>
-            </Table>
-          </div>
+          {products.length === 0 ? (
+            <div className="text-center py-5">
+              <p className="text-muted">Chưa có sản phẩm để so sánh</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <Table striped bordered hover className="comparison-table">
+                <thead>
+                  <tr>
+                    <th style={{ backgroundColor: '#e3f2fd', minWidth: '200px' }}>Gói Dịch Vụ</th>
+                    {products.map((product) => (
+                      <th key={product.id} className={product.hot ? 'hot-column' : ''} style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                        <div>
+                          <strong>{product.name}</strong>
+                          {product.hot && <Badge bg="danger" className="ms-2">HOT</Badge>}
+                        </div>
+                        {product.discount && product.discount.code && (
+                          <div className="mt-2">
+                            <Badge bg="success" className="small">
+                              Mã: {product.discount.code} (-{product.discount.discount_percent}%)
+                            </Badge>
+                          </div>
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Price Row */}
+                  <tr>
+                    <td style={{ backgroundColor: '#f5f5f5' }}><strong>Giá</strong></td>
+                    {products.map((product) => (
+                      <td key={product.id} style={{ textAlign: 'center' }}>
+                        <div>
+                          <strong className="text-primary">{formatPrice(product.monthlyPrice)}</strong> vnđ/tháng
+                        </div>
+                        {product.yearlyPrice > 0 && (
+                          <div className="text-muted small mt-1">
+                            {formatPrice(product.yearlyPrice)} vnđ/năm
+                          </div>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {/* Service Type Row */}
+                  <tr>
+                    <td style={{ backgroundColor: '#f5f5f5' }}><strong>Loại dịch vụ</strong></td>
+                    {products.map((product) => (
+                      <td key={product.id} style={{ textAlign: 'center' }}>
+                        {product.service_type || '-'}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {/* Spec Name Row */}
+                  {products.some(p => p.spec?.spec_name) && (
+                    <tr>
+                      <td style={{ backgroundColor: '#f5f5f5' }}><strong>Tên gói</strong></td>
+                      {products.map((product) => (
+                        <td key={product.id} style={{ textAlign: 'center' }}>
+                          {product.spec?.spec_name || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
+
+                  {/* Location Row */}
+                  {products.some(p => p.spec?.location) && (
+                    <tr>
+                      <td style={{ backgroundColor: '#f5f5f5' }}><strong>Vị trí</strong></td>
+                      {products.map((product) => (
+                        <td key={product.id} style={{ textAlign: 'center' }}>
+                          {product.spec?.location || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  )}
+
+                  {/* Dynamic Attributes Rows */}
+                  {(() => {
+                    // Collect all unique attribute keys from all products
+                    const allAttributeKeys = new Set();
+                    products.forEach(product => {
+                      if (product.spec?.attributes && typeof product.spec.attributes === 'object') {
+                        Object.keys(product.spec.attributes).forEach(key => {
+                          allAttributeKeys.add(key);
+                        });
+                      }
+                      // Also check old features format for backward compatibility
+                      if (product.features && typeof product.features === 'object') {
+                        Object.keys(product.features).forEach(key => {
+                          allAttributeKeys.add(key);
+                        });
+                      }
+                    });
+
+                    // Format attribute label
+                    const formatAttributeLabel = (key) => {
+                      const labelMap = {
+                        cpuCores: 'CPU Cores',
+                        ramGB: 'RAM (GB)',
+                        storageGB: 'Storage (GB)',
+                        diskSpaceGB: 'Disk Space (GB)',
+                        bandwidthTB: 'Băng thông (TB)',
+                        storagePoolType: 'Loại ổ cứng',
+                        addonDomains: 'Addon Domains',
+                        controlPanel: 'Control Panel',
+                        databaseLimit: 'Database Limit',
+                        websites: 'Website',
+                        emails: 'Tài Khoản Emails',
+                        ssl: 'SSL, Backup',
+                        themesPlugins: 'Themes & Plugins',
+                        ssd: 'SSD',
+                        ram: 'RAM',
+                        cpu: 'CPU',
+                        bandwidth: 'Băng thông, MySQL',
+                        resourceIdentifier: 'Resource Identifier',
+                        unitOfMeasure: 'Đơn vị đo',
+                        unitPrice: 'Giá đơn vị',
+                      };
+                      return labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                    };
+
+                    // Format attribute value
+                    const formatAttributeValue = (key, value) => {
+                      if (value === null || value === undefined || value === '') return '-';
+                      
+                      // Add units based on key
+                      if (key === 'ramGB' || key === 'storageGB' || key === 'diskSpaceGB') {
+                        return `${value} GB`;
+                      }
+                      if (key === 'bandwidthTB') {
+                        return `${value} TB`;
+                      }
+                      if (key === 'cpuCores') {
+                        return `${value} cores`;
+                      }
+                      if (key === 'unitPrice') {
+                        return formatPrice(value);
+                      }
+                      
+                      return String(value);
+                    };
+
+                    // Convert Set to Array and sort
+                    const sortedKeys = Array.from(allAttributeKeys).sort();
+
+                    return sortedKeys.map(attrKey => (
+                      <tr key={attrKey}>
+                        <td style={{ backgroundColor: '#f5f5f5' }}>
+                          <strong>{formatAttributeLabel(attrKey)}</strong>
+                        </td>
+                        {products.map((product) => {
+                          // Try to get value from spec.attributes first, then features
+                          const value = product.spec?.attributes?.[attrKey] ?? product.features?.[attrKey];
+                          return (
+                            <td key={product.id} style={{ textAlign: 'center' }}>
+                              {formatAttributeValue(attrKey, value)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ));
+                  })()}
+
+                  {/* Order Button Row */}
+                  <tr>
+                    <td style={{ backgroundColor: '#f5f5f5', border: 'none' }}></td>
+                    {products.map((product) => (
+                      <td key={product.id} style={{ textAlign: 'center', padding: '20px', border: 'none' }}>
+                        <Button
+                          variant="primary"
+                          className="btn-primary-custom"
+                          onClick={() => handleOrder(product.id)}
+                          style={{ width: '100%', maxWidth: '200px' }}
+                        >
+                          ĐẶT HÀNG
+                        </Button>
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </Table>
+            </div>
+          )}
         </Container>
       </section>
 

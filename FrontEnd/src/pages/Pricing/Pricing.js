@@ -35,15 +35,19 @@ const Pricing = () => {
           productsData = res.data.data;
         }
         
-        // Normalize products data
+        // Normalize products data to new API format
         const normalizedProducts = productsData.map((p) => ({
           id: p.id,
           name: p.name || '',
-          monthlyPrice: p.monthlyPrice || 0,
-          yearlyPrice: p.yearlyPrice || 0,
-          hot: p.hot || false,
-          discountCodes: Array.isArray(p.discountCodes) ? p.discountCodes : [],
-          features: p.features && typeof p.features === 'object' ? p.features : {},
+          service_type: p.service_type || '',
+          monthlyPrice: p.monthlyPrice ?? p.price_monthly ?? 0,
+          yearlyPrice: p.yearlyPrice ?? p.price_annually ?? 0,
+          hot: p.hot ?? p.is_hot ?? false,
+          is_active: p.is_active ?? true,
+          discount: p.discount || null,
+          spec: p.spec || null,
+          // Map spec.attributes to features for backward compatibility
+          features: p.spec?.attributes && typeof p.spec.attributes === 'object' ? p.spec.attributes : (p.features && typeof p.features === 'object' ? p.features : {}),
         }));
         
         setProducts(normalizedProducts);
@@ -143,70 +147,157 @@ const Pricing = () => {
                 <Table striped bordered hover className="comparison-table">
                   <thead>
                     <tr>
-                      <th>Gói Dịch Vụ</th>
+                      <th style={{ backgroundColor: '#e3f2fd', minWidth: '200px' }}>Gói Dịch Vụ</th>
                       {products.map((product) => (
-                        <th key={product.id} className={product.hot ? 'hot-column' : ''}>
-                          {product.name}
-                          {product.hot && <Badge bg="danger" className="ms-2">HOT</Badge>}
+                        <th key={product.id} className={product.hot ? 'hot-column' : ''} style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                          <div>
+                            <strong>{product.name}</strong>
+                            {product.hot && <Badge bg="danger" className="ms-2">HOT</Badge>}
+                          </div>
+                          {product.discount && product.discount.code && (
+                            <div className="mt-2">
+                              <Badge bg="success" className="small">
+                                Mã: {product.discount.code} (-{product.discount.discount_percent}%)
+                              </Badge>
+                            </div>
+                          )}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Giá */}
                     <tr>
-                      <td><strong>Giá</strong></td>
+                      <td style={{ backgroundColor: '#f5f5f5' }}><strong>Giá</strong></td>
                       {products.map((product) => (
-                        <td key={product.id}>
-                          {formatPrice(product.monthlyPrice)} vnđ/tháng
+                        <td key={product.id} style={{ textAlign: 'center' }}>
+                          <div>
+                            <strong className="text-primary">{formatPrice(product.monthlyPrice)}</strong> vnđ/tháng
+                          </div>
+                          {product.yearlyPrice > 0 && (
+                            <div className="text-muted small mt-1">
+                              {formatPrice(product.yearlyPrice)} vnđ/năm
+                            </div>
+                          )}
                         </td>
                       ))}
                     </tr>
+
+                    {/* Loại dịch vụ */}
                     <tr>
-                      <td><strong>SSD</strong></td>
+                      <td style={{ backgroundColor: '#f5f5f5' }}><strong>Loại dịch vụ</strong></td>
                       {products.map((product) => (
-                        <td key={product.id}>{product.features.ssd || '-'}</td>
+                        <td key={product.id} style={{ textAlign: 'center' }}>
+                          {product.service_type || '-'}
+                        </td>
                       ))}
                     </tr>
+
+                    {/* Tên gói */}
+                    {products.some(p => p.spec?.spec_name) && (
+                      <tr>
+                        <td style={{ backgroundColor: '#f5f5f5' }}><strong>Tên gói</strong></td>
+                        {products.map((product) => (
+                          <td key={product.id} style={{ textAlign: 'center' }}>
+                            {product.spec?.spec_name || '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
+
+                    {/* Vị trí */}
+                    {products.some(p => p.spec?.location) && (
+                      <tr>
+                        <td style={{ backgroundColor: '#f5f5f5' }}><strong>Vị trí</strong></td>
+                        {products.map((product) => (
+                          <td key={product.id} style={{ textAlign: 'center' }}>
+                            {product.spec?.location || '-'}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
+
+                    {/* Attributes động */}
+                    {(() => {
+                      const allAttributeKeys = new Set();
+                      products.forEach(product => {
+                        if (product.spec?.attributes && typeof product.spec.attributes === 'object') {
+                          Object.keys(product.spec.attributes).forEach(key => allAttributeKeys.add(key));
+                        }
+                        if (product.features && typeof product.features === 'object') {
+                          Object.keys(product.features).forEach(key => allAttributeKeys.add(key));
+                        }
+                      });
+
+                      const formatAttributeLabel = (key) => {
+                        const labelMap = {
+                          cpuCores: 'CPU Cores',
+                          ramGB: 'RAM (GB)',
+                          storageGB: 'Storage (GB)',
+                          diskSpaceGB: 'Disk Space (GB)',
+                          bandwidthTB: 'Băng thông (TB)',
+                          storagePoolType: 'Loại ổ cứng',
+                          addonDomains: 'Addon Domains',
+                          controlPanel: 'Control Panel',
+                          databaseLimit: 'Database Limit',
+                          websites: 'Website',
+                          emails: 'Tài Khoản Emails',
+                          ssl: 'SSL, Backup',
+                          themesPlugins: 'Themes & Plugins',
+                          ssd: 'SSD',
+                          ram: 'RAM',
+                          cpu: 'CPU',
+                          bandwidth: 'Băng thông, MySQL',
+                          resourceIdentifier: 'Resource Identifier',
+                          unitOfMeasure: 'Đơn vị đo',
+                          unitPrice: 'Giá đơn vị',
+                        };
+                        return labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                      };
+
+                      const formatAttributeValue = (key, value) => {
+                        if (value === null || value === undefined || value === '') return '-';
+                        if (key === 'ramGB' || key === 'storageGB' || key === 'diskSpaceGB') return `${value} GB`;
+                        if (key === 'bandwidthTB') return `${value} TB`;
+                        if (key === 'cpuCores') return `${value} cores`;
+                        if (key === 'unitPrice') return formatPrice(value);
+                        return String(value);
+                      };
+
+                      const sortedKeys = Array.from(allAttributeKeys).sort();
+
+                      return sortedKeys.map(attrKey => (
+                        <tr key={attrKey}>
+                          <td style={{ backgroundColor: '#f5f5f5' }}>
+                            <strong>{formatAttributeLabel(attrKey)}</strong>
+                          </td>
+                          {products.map((product) => {
+                            const value = product.spec?.attributes?.[attrKey] ?? product.features?.[attrKey];
+                            return (
+                              <td key={product.id} style={{ textAlign: 'center' }}>
+                                {formatAttributeValue(attrKey, value)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ));
+                    })()}
+
+                    {/* Nút Đặt hàng */}
                     <tr>
-                      <td><strong>RAM</strong></td>
+                      <td style={{ backgroundColor: '#f5f5f5', border: 'none' }}></td>
                       {products.map((product) => (
-                        <td key={product.id}>{product.features.ram || '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>CPU</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.cpu || '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>Website</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.websites !== undefined ? product.features.websites : '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>Tài Khoản Emails</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.emails !== undefined ? product.features.emails : '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>Băng thông, MySQL</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.bandwidth || '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>SSL, Backup, Chuyển dữ liệu</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.ssl || '-'}</td>
-                      ))}
-                    </tr>
-                    <tr>
-                      <td><strong>Kho Themes & Plugins mới nhất</strong></td>
-                      {products.map((product) => (
-                        <td key={product.id}>{product.features.themesPlugins || '-'}</td>
+                        <td key={product.id} style={{ textAlign: 'center', padding: '20px', border: 'none' }}>
+                          <Button
+                            as={Link}
+                            to={`/config-product/${product.id}`}
+                            variant="primary"
+                            className="btn-primary-custom"
+                            style={{ width: '100%', maxWidth: '200px' }}
+                          >
+                            ĐẶT HÀNG
+                          </Button>
+                        </td>
                       ))}
                     </tr>
                   </tbody>

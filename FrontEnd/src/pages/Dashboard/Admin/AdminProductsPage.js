@@ -8,6 +8,7 @@ import homeMockData from '../../../mockData/home.json';
 import { featuredProductService } from '../../../services/featuredProductService';
 import { discountService } from '../../../services/discountService';
 import { productService } from '../../../services/productService';
+import { addonService } from '../../../services/addonService';
 import { useNotify } from '../../../contexts/NotificationContext';
 
 const AdminProductsPage = () => {
@@ -87,6 +88,22 @@ const AdminProductsPage = () => {
     'fas fa-bolt',
     'fas fa-cubes',
   ];
+
+  // Addons management
+  const [addons, setAddons] = useState([]);
+  const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
+  const [loadingAddons, setLoadingAddons] = useState(false);
+  const [editingAddon, setEditingAddon] = useState(null);
+  const [addonForm, setAddonForm] = useState({
+    addon_name: '',
+    addon_type: 'RAM',
+    unit: '',
+    price_per_unit: '',
+    min_quantity: '',
+    max_quantity: '',
+    is_active: true,
+  });
+
 
   const normalizeFeatured = (raw) =>
     (raw || []).map((item) => ({
@@ -214,6 +231,23 @@ const AdminProductsPage = () => {
     }
   };
 
+  // Fetch addons function
+  const fetchAddons = async () => {
+    try {
+      setLoadingAddons(true);
+      const res = await addonService.getAddons();
+      const addonsData = res.data?.addons || [];
+      setAddons(addonsData);
+    } catch (err) {
+      console.error('Failed to fetch addons:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Không thể tải danh sách addons';
+      notifyError(errorMessage);
+      setAddons([]);
+    } finally {
+      setLoadingAddons(false);
+    }
+  };
+
   useEffect(() => {
 
     const fetchFeatured = async () => {
@@ -236,6 +270,7 @@ const AdminProductsPage = () => {
     fetchProducts();
     fetchDiscountCodes();
     fetchFeatured();
+    fetchAddons();
   }, []);
 
   // Handle filter changes - fetch products with new filters
@@ -723,6 +758,121 @@ const AdminProductsPage = () => {
     setIsFeaturedPreviewOpen(true);
   };
 
+  // Addons handlers
+  const handleOpenAddonModal = () => {
+    setIsAddonModalOpen(true);
+  };
+
+  const handleCloseAddonModal = () => {
+    setIsAddonModalOpen(false);
+    setEditingAddon(null);
+    setAddonForm({
+      addon_name: '',
+      addon_type: 'RAM',
+      unit: '',
+      price_per_unit: '',
+      min_quantity: '',
+      max_quantity: '',
+      is_active: true,
+    });
+  };
+
+  const handleEditAddon = (addon) => {
+    setEditingAddon(addon);
+    setAddonForm({
+      addon_name: addon.addon_name || '',
+      addon_type: addon.addon_type || 'RAM',
+      unit: addon.unit || '',
+      price_per_unit: addon.price_per_unit || '',
+      min_quantity: addon.min_quantity || '',
+      max_quantity: addon.max_quantity || '',
+      is_active: addon.is_active !== undefined ? addon.is_active : true,
+    });
+    setIsAddonModalOpen(true);
+  };
+
+  const handleDeleteAddon = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa addon này?')) return;
+    
+    try {
+      await addonService.remove(id);
+      await fetchAddons();
+      notifySuccess('Đã xóa addon thành công');
+    } catch (err) {
+      console.error('Delete addon failed:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Xóa addon thất bại';
+      notifyError(errorMessage);
+    }
+  };
+
+  const handleSubmitAddon = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!addonForm.addon_name || !addonForm.price_per_unit || !addonForm.min_quantity) {
+      notifyWarning('Vui lòng nhập đầy đủ thông tin bắt buộc (Tên, Giá, Số lượng tối thiểu)');
+      return;
+    }
+
+    if (editingAddon) {
+      // Update existing addon - only send fields that can be updated
+      const updatePayload = {
+        addon_name: addonForm.addon_name.trim(),
+        price_per_unit: Number(addonForm.price_per_unit) || 0,
+        min_quantity: Number(addonForm.min_quantity) || 1,
+        is_active: addonForm.is_active !== undefined ? addonForm.is_active : true,
+      };
+
+      // Add max_quantity if provided, otherwise set to null/undefined
+      const maxQuantityStr = String(addonForm.max_quantity || '').trim();
+      if (maxQuantityStr !== '') {
+        updatePayload.max_quantity = Number(addonForm.max_quantity);
+      }
+
+      try {
+        await addonService.update(editingAddon.addon_id, updatePayload);
+        await fetchAddons();
+        notifySuccess('Đã cập nhật addon thành công');
+        handleCloseAddonModal();
+      } catch (err) {
+        console.error('Update addon failed:', err);
+        const errorMessage = err?.response?.data?.message || err?.message || 'Cập nhật addon thất bại';
+        notifyError(errorMessage);
+      }
+    } else {
+      // Create new addon - send all required fields
+      if (!addonForm.unit) {
+        notifyWarning('Vui lòng nhập đơn vị');
+        return;
+      }
+
+      const createPayload = {
+        addon_name: addonForm.addon_name.trim(),
+        addon_type: addonForm.addon_type,
+        unit: addonForm.unit.trim(),
+        price_per_unit: Number(addonForm.price_per_unit) || 0,
+        min_quantity: Number(addonForm.min_quantity) || 1,
+      };
+
+      // Add max_quantity if provided
+      const maxQuantityStr = String(addonForm.max_quantity || '').trim();
+      if (maxQuantityStr !== '') {
+        createPayload.max_quantity = Number(addonForm.max_quantity);
+      }
+
+      try {
+        await addonService.create(createPayload);
+        await fetchAddons();
+        notifySuccess('Đã tạo addon mới thành công');
+        handleCloseAddonModal();
+      } catch (err) {
+        console.error('Create addon failed:', err);
+        const errorMessage = err?.response?.data?.message || err?.message || 'Tạo addon thất bại';
+        notifyError(errorMessage);
+      }
+    }
+  };
+
   // Filter discount codes based on search
   const filteredDiscountCodes = allDiscountCodes.filter(discount => 
     (discount.code || '').toLowerCase().includes(discountSearchTerm.toLowerCase()) ||
@@ -751,6 +901,9 @@ const AdminProductsPage = () => {
           </button>
           <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
             <i className="fas fa-star"></i> Sản phẩm nổi bật
+          </button>
+          <button className="btn btn-secondary" onClick={handleOpenAddonModal}>
+            <i className="fas fa-puzzle-piece"></i> Addons
           </button>
           <button className="btn btn-secondary" onClick={() => navigate('/admin/configuration/hosting-banner')}>
             <i className="fas fa-image"></i> Banner Hosting
@@ -2017,6 +2170,181 @@ const AdminProductsPage = () => {
                   Chi tiết bảng giá
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Addons Modal */}
+      {isAddonModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseAddonModal}>
+          <div
+            className="modal-content product-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '900px' }}
+          >
+            <div className="modal-header">
+              <h2>Quản lý Addons</h2>
+              <button className="modal-close" onClick={handleCloseAddonModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              {/* Current list */}
+              <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                {loadingAddons ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#1976d2' }}>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p style={{ marginTop: '10px' }}>Đang tải addons...</p>
+                  </div>
+                ) : addons.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
+                    <i className="fas fa-inbox" style={{ fontSize: '40px' }}></i>
+                    <div>Chưa có addon nào</div>
+                  </div>
+                ) : (
+                  addons.map((addon) => (
+                    <div
+                      key={addon.addon_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 14px',
+                        borderBottom: '1px solid #e5e7eb'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                          {addon.addon_name}
+                          {!addon.is_active && (
+                            <span style={{ marginLeft: '8px', color: '#ef4444', fontSize: '12px' }}>
+                              (Ngừng kích hoạt)
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '2px' }}>
+                          <strong>Loại:</strong> {addon.addon_type} | <strong>Đơn vị:</strong> {addon.unit}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          <strong>Giá:</strong> {formatPrice(addon.price_per_unit)} VNĐ/{addon.unit} | 
+                          <strong> SL tối thiểu:</strong> {addon.min_quantity}
+                          {addon.max_quantity && <span> | <strong>SL tối đa:</strong> {addon.max_quantity}</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-secondary" onClick={() => handleEditAddon(addon)}>
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        <button className="btn btn-danger" onClick={() => handleDeleteAddon(addon.addon_id)}>
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmitAddon}>
+                <div className="form-row">
+                  <div className="form-column">
+                    <div className="form-group">
+                      <label className="form-label">Tên addon *</label>
+                      <input
+                        type="text"
+                        value={addonForm.addon_name}
+                        onChange={(e) => setAddonForm({ ...addonForm, addon_name: e.target.value })}
+                        className="form-input"
+                        required
+                        placeholder="VD: Additional RAM"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Loại addon *</label>
+                      <input
+                        type="text"
+                        value={addonForm.addon_type}
+                        onChange={(e) => setAddonForm({ ...addonForm, addon_type: e.target.value })}
+                        className="form-input"
+                        required
+                        placeholder="VD: RAM, DISK, BANDWIDTH, IP, CONTROL_PANEL..."
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Đơn vị *</label>
+                      <input
+                        type="text"
+                        value={addonForm.unit}
+                        onChange={(e) => setAddonForm({ ...addonForm, unit: e.target.value })}
+                        className="form-input"
+                        required
+                        placeholder="VD: GB, IP, Panel..."
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-column">
+                    <div className="form-group">
+                      <label className="form-label">Giá mỗi đơn vị (VNĐ) *</label>
+                      <input
+                        type="number"
+                        value={addonForm.price_per_unit}
+                        onChange={(e) => setAddonForm({ ...addonForm, price_per_unit: e.target.value })}
+                        className="form-input"
+                        required
+                        min="0"
+                        placeholder="VD: 28000"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Số lượng tối thiểu *</label>
+                      <input
+                        type="number"
+                        value={addonForm.min_quantity}
+                        onChange={(e) => setAddonForm({ ...addonForm, min_quantity: e.target.value })}
+                        className="form-input"
+                        required
+                        min="1"
+                        placeholder="VD: 1"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Số lượng tối đa (tùy chọn)</label>
+                      <input
+                        type="number"
+                        value={addonForm.max_quantity}
+                        onChange={(e) => setAddonForm({ ...addonForm, max_quantity: e.target.value })}
+                        className="form-input"
+                        min="1"
+                        placeholder="VD: 32 (để trống nếu không giới hạn)"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        <input
+                          type="checkbox"
+                          checked={addonForm.is_active}
+                          onChange={(e) => setAddonForm({ ...addonForm, is_active: e.target.checked })}
+                        />
+                        Đang hoạt động
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn btn-secondary" onClick={handleCloseAddonModal}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="btn btn-primary">
+                    {editingAddon ? 'Cập nhật' : 'Thêm mới'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

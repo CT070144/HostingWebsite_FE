@@ -65,17 +65,51 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Console log request
+    console.log('=== API REQUEST ===');
+    console.log('Method:', config.method?.toUpperCase());
+    console.log('URL:', config.url);
+    console.log('Full URL:', config.baseURL + config.url);
+    console.log('Headers:', config.headers);
+    if (config.data) {
+      console.log('Request Data:', JSON.stringify(config.data, null, 2));
+    }
+    if (config.params) {
+      console.log('Query Params:', config.params);
+    }
+    console.log('==================');
+    
     return config;
   },
   (error) => {
+    console.error('=== REQUEST ERROR ===', error);
     return Promise.reject(error);
   }
 );
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Console log response
+    console.log('=== API RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('URL:', response.config.url);
+    console.log('Response Data:', JSON.stringify(response.data, null, 2));
+    console.log('===================');
+    return response;
+  },
   (error) => {
+    // Console log error response
+    console.error('=== API ERROR ===');
+    console.error('Status:', error.response?.status);
+    console.error('URL:', error.config?.url);
+    if (error.response?.data) {
+      console.error('Error Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    console.error('Error Message:', error.message);
+    console.error('================');
+    
     // Handle errors (both mock and real)
     if (error.response?.status === 401) {
       // Handle unauthorized - clear auth data

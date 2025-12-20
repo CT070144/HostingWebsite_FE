@@ -79,6 +79,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
+  // Helper functions for role checking
+  const isAdmin = () => {
+    return user?.role === 'admin';
+  };
+
+  const isUser = () => {
+    return user?.role === 'user' || user?.role === 'customer';
+  };
+
+  const hasRole = (role) => {
+    return user?.role === role;
+  };
+
   const value = {
     user,
     loading,
@@ -86,7 +99,10 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateUser
+    updateUser,
+    isAdmin,
+    isUser,
+    hasRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

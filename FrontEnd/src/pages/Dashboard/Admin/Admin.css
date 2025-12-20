@@ -470,7 +470,7 @@
   font-weight: 600;
 }
 
-.user-profile {
+.admin-container .user-profile {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -478,7 +478,7 @@
   padding-right: 1rem;
 }
 
-.profile-avatar {
+.admin-container .profile-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -489,7 +489,7 @@
   justify-content: center;
 }
 
-.profile-info {
+.admin-container .profile-info {
   display: none;
 }
 
@@ -1025,17 +1025,17 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .profile-info {
+  .admin-container .profile-info {
     display: block;
   }
 
-  .profile-name {
+  .admin-container .profile-name {
     font-weight: 600;
     color: var(--text-primary);
     font-size: 0.9rem;
   }
 
-  .profile-role {
+  .admin-container .profile-role {
     font-size: 0.75rem;
     color: var(--text-muted);
   }

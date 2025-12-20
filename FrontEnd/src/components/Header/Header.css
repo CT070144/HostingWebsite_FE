@@ -76,23 +76,24 @@
 }
 
 .custom-navbar .nav-link {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 500;
   padding: var(--spacing-sm) var(--spacing-md) !important;
-  transition: all var(--transition-base);
+  transition: color var(--transition-base);
   border-radius: var(--radius-md);
   margin: 0 var(--spacing-xs);
+  background-color: transparent !important;
 }
 
 .custom-navbar .nav-link:hover {
-  color: var(--text-white) !important;
-  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95) !important;
+  background-color: transparent !important;
 }
 
 .custom-navbar .nav-link.active {
-  color: var(--text-white) !important;
-  font-weight: 600;
-  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff !important;
+  font-weight: 700;
+  background-color: transparent !important;
 }
 
 .custom-navbar .nav-link i {

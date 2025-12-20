@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Container, 
   Row, 
@@ -12,14 +12,18 @@ import {
   Alert
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import hostingMockData from '../../mockData/hosting.json';
 import './Cart.css';
 import { useNotify } from '../../contexts/NotificationContext';
+import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { cartService } from '../../services/cartService';
+import { userService } from '../../services/userService';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { notifyWarning } = useNotify();
-  const [cartItems, setCartItems] = useState([]);
+  const { notifyWarning, notifySuccess, notifyError } = useNotify();
+  const { user } = useAuth();
+  const { cartItems, cart, loading: cartLoading, removeFromCart, clearCart, fetchCart, updateCartItem, getCartSubtotal, getCartVAT, getCartTotal } = useCart();
   const [accountType, setAccountType] = useState('new'); // 'existing' or 'new'
   const [customerType, setCustomerType] = useState('individual'); // 'individual' or 'organization'
   const [language, setLanguage] = useState('vi');
@@ -38,23 +42,71 @@ const Cart = () => {
     province: 'TP HCM',
     ward: 'Phường An Hội Tây',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    notes: ''
   });
 
-  useEffect(() => {
-    // Load cart items from localStorage
-    const savedItem = localStorage.getItem('cartItem');
-    if (savedItem) {
-      const item = JSON.parse(savedItem);
-      const product = hostingMockData.products.find(p => p.id === item.productId);
-      if (product) {
-        setCartItems([{
-          ...item,
-          product: product
-        }]);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Fetch user profile from API
+  React.useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          setLoadingProfile(true);
+          const response = await userService.getProfile();
+          const profileData = response.data?.user || response.data;
+          setUserProfile(profileData);
+          
+          // Pre-fill form with profile data
+          if (profileData) {
+            setFormData(prev => ({
+              ...prev,
+              email: profileData.Email || prev.email,
+              fullName: `${profileData.FirstName || ''} ${profileData.LastName || ''}`.trim() || prev.fullName,
+              phone: profileData.PhoneNumber || prev.phone,
+              street: profileData.Address || prev.street,
+              country: profileData.Country || prev.country || 'Viet Nam',
+              province: profileData.City || prev.province || 'TP HCM',
+              ward: profileData.Ward || prev.ward || 'Phường An Hội Tây',
+              idCard: profileData.IdentityNumber || prev.idCard,
+            }));
+            
+            // Set customer type based on AccountType
+            if (profileData.AccountType) {
+              if (profileData.AccountType === 'PERSONAL') {
+                setCustomerType('individual');
+              } else if (profileData.AccountType === 'ORGANIZATION') {
+                setCustomerType('organization');
+              }
+            }
+            
+            // Set account type to existing if user has profile
+            setAccountType('existing');
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error);
+          // If profile fetch fails, still allow form to be filled manually
+        } finally {
+          setLoadingProfile(false);
+        }
       }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  // Pre-fill form with user data if logged in (fallback)
+  React.useEffect(() => {
+    if (user && accountType === 'existing' && !userProfile) {
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || prev.email,
+        fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || prev.fullName,
+      }));
     }
-  }, []);
+  }, [user, accountType, userProfile]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
@@ -74,13 +126,12 @@ const Cart = () => {
     return 'mo';
   };
 
-  // Calculate order summary
-  const orderSummary = cartItems.reduce((acc, item) => {
-    acc.subtotal += item.subtotal || 0;
-    acc.vat += item.vat || 0;
-    acc.total += item.total || 0;
-    return acc;
-  }, { subtotal: 0, vat: 0, total: 0 });
+  // Calculate order summary using cart context
+  const orderSummary = {
+    subtotal: getCartSubtotal(),
+    vat: getCartVAT(),
+    total: getCartTotal(),
+  };
 
   // Promotional codes from hosting.json
   const promotionalCodes = [
@@ -91,11 +142,14 @@ const Cart = () => {
     { code: '30T11', discount: 30, description: 'Giảm 30% VPS & Hosting Việt Nam' }
   ];
 
-  const handleRemoveItem = (index) => {
-    const newItems = cartItems.filter((_, i) => i !== index);
-    setCartItems(newItems);
-    if (newItems.length === 0) {
-      localStorage.removeItem('cartItem');
+  const handleRemoveItem = async (itemId) => {
+    try {
+      await removeFromCart(itemId);
+      notifySuccess('Đã xóa sản phẩm khỏi giỏ hàng');
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Xóa sản phẩm khỏi giỏ hàng thất bại';
+      notifyError(errorMessage);
     }
   };
 
@@ -103,9 +157,17 @@ const Cart = () => {
     navigate('/hosting');
   };
 
-  const handleClearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem('cartItem');
+  const handleClearCart = async () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
+      try {
+        await clearCart();
+        notifySuccess('Đã xóa tất cả sản phẩm khỏi giỏ hàng');
+      } catch (error) {
+        console.error('Failed to clear cart:', error);
+        const errorMessage = error?.response?.data?.message || error?.message || 'Xóa giỏ hàng thất bại';
+        notifyError(errorMessage);
+      }
+    }
   };
 
   const handleVerifyPromoCode = () => {
@@ -113,13 +175,45 @@ const Cart = () => {
     console.log('Verifying promo code:', promoCode);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!agreedToTerms) {
       notifyWarning('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
       return;
     }
-    // Handle payment logic
-    console.log('Processing payment...');
+    
+    if (cartItems.length === 0) {
+      notifyWarning('Giỏ hàng của bạn đang trống');
+      return;
+    }
+
+    try {
+      // Prepare checkout data
+      const cartItemIds = cartItems
+        .filter(item => item.cartItemId)
+        .map(item => item.cartItemId);
+      
+      if (cartItemIds.length === 0) {
+        notifyError('Không có sản phẩm hợp lệ để thanh toán');
+        return;
+      }
+
+      const checkoutData = {
+        cart_item_ids: cartItemIds,
+        payment_method: paymentMethod,
+        notes: formData.notes || '',
+      };
+
+      await cartService.checkout(checkoutData);
+      notifySuccess('Thanh toán thành công!');
+      
+      // Clear cart and redirect
+      await clearCart();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || 'Thanh toán thất bại';
+      notifyError(errorMessage);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -157,7 +251,14 @@ const Cart = () => {
                   <span className="text-muted">Giá/Chu kỳ</span>
                 </div>
                 
-                {cartItems.length === 0 ? (
+                {cartLoading ? (
+                  <div className="text-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-3">Đang tải giỏ hàng...</p>
+                  </div>
+                ) : cartItems.length === 0 ? (
                   <div className="text-center py-5">
                     <p className="text-muted">Giỏ hàng của bạn đang trống</p>
                     <Button variant="primary" onClick={handleContinueShopping}>
@@ -171,25 +272,81 @@ const Cart = () => {
                         <tr>
                           <th>Sản phẩm</th>
                           <th>Giá/Chu kỳ</th>
+                          <th>Số lượng</th>
                           <th>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {cartItems.map((item, index) => (
-                          <tr key={index}>
+                        {cartItems.map((item) => (
+                          <tr key={item.id}>
                             <td>
                               <div>
-                                <strong>Web Hosting - {item.productName}</strong>
-                                <div className="text-muted small">
-                                  Chu kỳ: {getCycleLabel(item.paymentCycle)}
-                                  {item.dedicatedIP && <div>+ Dedicated IP</div>}
+                                <strong>{item.productName || item.product?.name || 'Sản phẩm'}</strong>
+                                <div className="small">
+                                  Chu kỳ: {getCycleLabel(item.paymentCycle || item.billingCycle)}
+                                  
+                                  {/* Display addons */}
+                                  {item.addonsApplied && item.addonsApplied.length > 0 && (
+                                    <div className="mt-2">
+                                      <div className="fw-bold">Add-ons:</div>
+                                      {item.addonsApplied.map((addon, idx) => (
+                                        <div key={idx} className="text-muted">
+                                          + {addon.addon_type}: {addon.quantity} {addon.unit}
+                                          {addon.total_price && (
+                                            <span className="ms-2">({formatPrice(addon.total_price)} VND)</span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Display discount */}
+                                  {item.discountCode && (
+                                    <div className="text-success mt-1">
+                                      <i className="fas fa-tag me-1"></i>
+                                      Mã giảm giá: {item.discountCode} 
+                                      {item.discountPercent > 0 && (
+                                        <span> (-{item.discountPercent}%)</span>
+                                      )}
+                                      {item.discountAmount > 0 && (
+                                        <span className="ms-2">-{formatPrice(item.discountAmount)} VND</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </td>
                             <td>
                               <div>
-                                <div>{formatPrice(item.productPrice)} VND/{getCyclePeriod(item.paymentCycle)}</div>
+                                <div>{formatPrice(item.unitPrice || item.productPrice || 0)} VND/{getCyclePeriod(item.paymentCycle || item.billingCycle)}</div>
+                                
+                                {/* Show unit price breakdown */}
+                                {item.quantity > 1 && (
+                                  <div className="text-muted small">
+                                    x{item.quantity} = {formatPrice((item.unitPrice || item.productPrice || 0) * item.quantity)} VND
+                                  </div>
+                                )}
+                                
+                                {/* Show discount if exists */}
+                                {item.discountAmount > 0 && (
+                                  <div className="text-success small">
+                                    Giảm: -{formatPrice(item.discountAmount)} VND
+                                  </div>
+                                )}
+                                
+                                <div className="text-muted small mt-1">
+                                  Tổng: {formatPrice(item.totalPrice || item.total || 0)} VND
+                                </div>
                               </div>
+                            </td>
+                            <td>
+                              <Form.Control
+                                type="text"
+                                value={
+                                 'x' + (item.quantity || 1)}
+                                readOnly
+                                style={{ width: '70px', textAlign: 'center', backgroundColor: '#f8f9fa' }}
+                              />
                             </td>
                             <td>
                               <Button
@@ -197,6 +354,7 @@ const Cart = () => {
                                 size="sm"
                                 className="text-primary me-2"
                                 onClick={() => navigate(`/config-product/${item.productId}`)}
+                                title="Chỉnh sửa"
                               >
                                 <i className="fas fa-edit"></i>
                               </Button>
@@ -204,7 +362,8 @@ const Cart = () => {
                                 variant="link"
                                 size="sm"
                                 className="text-danger"
-                                onClick={() => handleRemoveItem(index)}
+                                onClick={() => handleRemoveItem(item.id)}
+                                title="Xóa"
                               >
                                 <i className="fas fa-trash"></i>
                               </Button>
@@ -264,26 +423,134 @@ const Cart = () => {
               <Card.Body>
                 <h3 className="mb-4">Thông tin thanh toán</h3>
                 
-                {/* Tùy chọn tài khoản */}
-                <div className="mb-4">
-                  <FormCheck
-                    type="radio"
-                    id="existing-customer"
-                    name="accountType"
-                    label="Đăng nhập khách hàng hiện tại"
-                    checked={accountType === 'existing'}
-                    onChange={() => setAccountType('existing')}
-                  />
-                  <FormCheck
-                    type="radio"
-                    id="new-customer"
-                    name="accountType"
-                    label="Tạo tài khoản mới"
-                    checked={accountType === 'new'}
-                    onChange={() => setAccountType('new')}
-                    className="mt-2"
-                  />
-                </div>
+              
+
+                {accountType === 'existing' && user && (
+                  <>
+                 
+
+                    {/* Hiển thị form thông tin đã điền sẵn từ profile */}
+                    {userProfile && !loadingProfile && (
+                      <>
+                        {/* Thông tin cá nhân */}
+                        <h4 className="mb-3">Thông tin cá nhân</h4>
+                        <Row className="mb-3">
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Số CCCD/Passport*</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="idCard"
+                                value={formData.idCard}
+                                onChange={handleInputChange}
+                              />
+                            </Form.Group>
+                          </Col>
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Họ tên*</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="fullName"
+                                value={formData.fullName}
+                                onChange={handleInputChange}
+                              />
+                            </Form.Group>
+                          </Col>
+                        </Row>
+                        <Row className="mb-3">
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Địa chỉ Email*</Form.Label>
+                              <Form.Control
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                              />
+                            </Form.Group>
+                          </Col>
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Số điện thoại*</Form.Label>
+                              <InputGroup>
+                                <InputGroup.Text>
+                                  <span className="flag-icon">🇻🇳</span> +84
+                                </InputGroup.Text>
+                                <Form.Control
+                                  type="tel"
+                                  name="phone"
+                                  value={formData.phone}
+                                  onChange={handleInputChange}
+                                  placeholder="91 234 56 78"
+                                />
+                              </InputGroup>
+                            </Form.Group>
+                          </Col>
+                        </Row>
+
+                        {/* Địa chỉ thanh toán */}
+                        <h4 className="mb-3 mt-4">Địa chỉ thanh toán</h4>
+                        <Row className="mb-3">
+                          <Col md={12}>
+                            <Form.Group>
+                              <Form.Label>Tên đường*</Form.Label>
+                              <Form.Control
+                                type="text"
+                                name="street"
+                                value={formData.street}
+                                onChange={handleInputChange}
+                              />
+                            </Form.Group>
+                          </Col>
+                        </Row>
+                        <Row className="mb-3">
+                          <Col md={4}>
+                            <Form.Group>
+                              <Form.Label>Quốc gia*</Form.Label>
+                              <Form.Select
+                                name="country"
+                                value={formData.country}
+                                onChange={handleInputChange}
+                              >
+                                <option>Viet Nam</option>
+                                <option>United States</option>
+                                <option>Other</option>
+                              </Form.Select>
+                            </Form.Group>
+                          </Col>
+                          <Col md={4}>
+                            <Form.Group>
+                              <Form.Label>Tỉnh/Thành phố*</Form.Label>
+                              <Form.Select
+                                name="province"
+                                value={formData.province}
+                                onChange={handleInputChange}
+                              >
+                                <option>TP HCM</option>
+                                <option>Hà Nội</option>
+                                <option>Đà Nẵng</option>
+                              </Form.Select>
+                            </Form.Group>
+                          </Col>
+                          <Col md={4}>
+                            <Form.Group>
+                              <Form.Label>Phường/Xã*</Form.Label>
+                              <Form.Select
+                                name="ward"
+                                value={formData.ward}
+                                onChange={handleInputChange}
+                              >
+                                <option>Phường An Hội Tây</option>
+                                <option>Phường khác</option>
+                              </Form.Select>
+                            </Form.Group>
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+                  </>
+                )}
 
                 {accountType === 'new' && (
                   <>

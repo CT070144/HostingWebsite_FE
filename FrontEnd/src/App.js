@@ -10,10 +10,13 @@ import Hosting from './pages/Hosting/Hosting';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import Dashboard from './pages/Dashboard/Dashboard';
+import ClientDashboard from './pages/Dashboard/Client/ClientDashboard';
 import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ConfigProduct from './pages/ConfigProduct/ConfigProduct';
 import Cart from './pages/Cart/Cart';
+import Profile from './pages/Profile/Profile';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import RoleProtectedRoute from './components/RoleProtectedRoute/RoleProtectedRoute';
 import AdminLayout from './pages/Dashboard/Admin/AdminLayout';
 import AdminDashboardPage from './pages/Dashboard/Admin/AdminDashboardPage';
 import AdminOrdersPage from './pages/Dashboard/Admin/AdminOrdersPage';
@@ -29,12 +32,13 @@ import './App.css';
 function App() {
   return (
     <Routes>
+      {/* Admin Routes - Only accessible by admin role */}
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute requireAuth={true}>
+          <RoleProtectedRoute requireAuth={true} allowedRoles="admin">
             <AdminLayout />
-          </ProtectedRoute>
+          </RoleProtectedRoute>
         }
       >
         <Route path="dashboard" element={<AdminDashboardPage />} />
@@ -55,12 +59,58 @@ function App() {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/hosting" element={<Hosting />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route 
+              path="/login" 
+              element={
+                <RoleProtectedRoute requireAuth={false}>
+                  <Login />
+                </RoleProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/register" 
+              element={
+                <RoleProtectedRoute requireAuth={false}>
+                  <Register />
+                </RoleProtectedRoute>
+              } 
+            />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Client Dashboard - Only accessible by user role */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <RoleProtectedRoute requireAuth={true} allowedRoles={['user', 'customer']}>
+                  <ClientDashboard />
+                </RoleProtectedRoute>
+              } 
+            />
+            {/* Legacy dashboard route - redirects based on role */}
+            <Route 
+              path="/dashboard-legacy" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/config-product/:productId" element={<ConfigProduct />} />
-            <Route path="/cart" element={<Cart />} />
+            <Route 
+              path="/cart" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <Cart />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <Profile />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/test-api" element={<TestAPI />} />
           </Routes>
         </Layout>

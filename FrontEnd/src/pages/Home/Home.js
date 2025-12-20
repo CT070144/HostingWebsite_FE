@@ -255,7 +255,7 @@ const Home = () => {
                       </div>
                       <Button 
                         as={Link} 
-                        to={product.link || '/pricing'} 
+                        to="/hosting#products" 
                         variant="primary"
                         className="btn-primary-custom w-100"
                       >
