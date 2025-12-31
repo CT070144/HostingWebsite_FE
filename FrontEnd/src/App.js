@@ -15,6 +15,8 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import ConfigProduct from './pages/ConfigProduct/ConfigProduct';
 import Cart from './pages/Cart/Cart';
 import Profile from './pages/Profile/Profile';
+import OrderDetails from './pages/Order/OrderDetails';
+import PrintInvoice from './pages/Order/PrintInvoice';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute/RoleProtectedRoute';
 import AdminLayout from './pages/Dashboard/Admin/AdminLayout';
@@ -32,6 +34,16 @@ import './App.css';
 function App() {
   return (
     <Routes>
+      {/* Print Invoice Route - No Layout (no header/footer) */}
+      <Route 
+        path="/order/:orderId/print" 
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <PrintInvoice />
+          </ProtectedRoute>
+        } 
+      />
+      
       {/* Admin Routes - Only accessible by admin role */}
       <Route
         path="/admin/*"
@@ -108,6 +120,14 @@ function App() {
               element={
                 <ProtectedRoute requireAuth={true}>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/order/:orderId" 
+              element={
+                <ProtectedRoute requireAuth={true}>
+                  <OrderDetails />
                 </ProtectedRoute>
               } 
             />

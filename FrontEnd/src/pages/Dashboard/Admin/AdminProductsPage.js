@@ -894,11 +894,9 @@ const AdminProductsPage = () => {
         <h1 className="page-title">Danh sách sản phẩm</h1>
         <div className="header-actions">
           <button className="btn btn-secondary" onClick={handleExport}>
-            <i className="fas fa-arrow-up"></i> Xuất file
+            <i className="fas fa-file-export"></i> Xuất file
           </button>
-          <button className="btn btn-secondary" onClick={handleImport}>
-            <i className="fas fa-arrow-down"></i> Nhập file
-          </button>
+          
           <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
             <i className="fas fa-star"></i> Sản phẩm nổi bật
           </button>

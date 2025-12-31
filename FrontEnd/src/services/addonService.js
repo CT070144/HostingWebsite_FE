@@ -4,6 +4,8 @@ import api from '../utils/api';
 export const addonService = {
   // Get all addons (public/admin endpoint)
   getAddons: () => api.get('/admin/addons'),
+  // Get all addons (public endpoint for users)
+  getPublicAddons: () => api.get('/public/addons'),
   // Create new addon
   create: (payload) => api.post('/admin/addons', payload),
   // Update addon

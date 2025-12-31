@@ -1,0 +1,195 @@
+/* Print Invoice Styles */
+.print-invoice-page {
+  background: #fff;
+  min-height: 100vh;
+  /* Remove any default margins/padding when not in Layout */
+  margin: 0;
+  padding: 0;
+}
+
+.print-controls {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 20px;
+}
+
+.invoice-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: #fff;
+}
+
+.invoice-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #000;
+}
+
+.invoice-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
+.invoice-meta {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 15px;
+  font-size: 14px;
+}
+
+.invoice-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-table thead {
+  background: #f8f9fa;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 12px 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.invoice-table th {
+  font-weight: bold;
+  background: #f8f9fa;
+}
+
+.invoice-table .text-end {
+  text-align: right;
+}
+
+.addon-row {
+  background: #f9f9f9;
+}
+
+.addon-row td {
+  padding: 8px 12px;
+  border-top: none;
+}
+
+.addons-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.addon-item {
+  font-size: 13px;
+  color: #666;
+}
+
+.total-row {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+.total-row td {
+  padding: 15px 8px;
+  border-top: 2px solid #000;
+}
+
+.total-amount {
+  font-size: 18px;
+  color: #000;
+}
+
+.invoice-footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.invoice-message {
+  font-size: 14px;
+  color: #666;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-invoice-page {
+    background: #fff;
+  }
+
+  .invoice-container {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .invoice-header {
+    page-break-after: avoid;
+  }
+
+  .invoice-section {
+    page-break-inside: avoid;
+  }
+
+  .invoice-table {
+    page-break-inside: auto;
+  }
+
+  .invoice-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .invoice-table thead {
+    display: table-header-group;
+  }
+
+  .invoice-table tfoot {
+    display: table-footer-group;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: A4;
+    /* Note: Browser headers/footers (URL, date, page numbers) 
+       can only be disabled in print dialog settings, not via CSS */
+    marks: none;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ensure no extra margins that might show headers/footers */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+

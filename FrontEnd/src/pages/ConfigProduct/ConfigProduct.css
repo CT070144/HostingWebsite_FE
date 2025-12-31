@@ -107,6 +107,7 @@
 
 /* Order Summary Card */
 .order-summary-card {
+  position: fixed;
     background: linear-gradient(135deg, var(--primary-color) 0%, #05253f 100%);
   color: white;
   border: none;

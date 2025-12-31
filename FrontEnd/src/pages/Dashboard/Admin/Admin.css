@@ -2256,3 +2256,41 @@
   }
 }
 
+/* Orders Table Styles */
+.orders-table {
+  margin-bottom: 0;
+}
+
+.orders-table thead th {
+  background-color: var(--primary-ultra-light);
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  padding: 1rem 0.75rem;
+  border-bottom: 2px solid var(--primary-light);
+}
+
+.orders-table tbody td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.orders-table tbody tr:hover {
+  background-color: var(--primary-ultra-light);
+  transition: background-color var(--transition-fast);
+}
+
+.orders-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.orders-table code {
+  font-size: 0.875rem;
+  background-color: var(--bg-tertiary);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+

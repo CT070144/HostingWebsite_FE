@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Row, 
@@ -14,6 +14,8 @@ import {
 import hostingMockData from '../../mockData/hosting.json';
 import { productService } from '../../services/productService';
 import { addonService } from '../../services/addonService';
+import { cartService } from '../../services/cartService';
+import { osTemplateService } from '../../services/osTemplateService';
 import { useCart } from '../../contexts/CartContext';
 import { useNotify } from '../../contexts/NotificationContext';
 import './ConfigProduct.css';
@@ -21,31 +23,130 @@ import './ConfigProduct.css';
 const ConfigProduct = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const location = useLocation();
+  const { fetchCart } = useCart();
   const { notifySuccess, notifyError } = useNotify();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingCartItemId, setEditingCartItemId] = useState(null);
 
-  const [paymentCycle, setPaymentCycle] = useState(36); // 3 năm mặc định
-  const [dedicatedIP, setDedicatedIP] = useState(false);
-  const [notes, setNotes] = useState('');
+  const [paymentCycle, setPaymentCycle] = useState(12); // 1 năm mặc định
   const [discountCode, setDiscountCode] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [addons, setAddons] = useState([]); // Available addons from API
-  const [selectedAddons, setSelectedAddons] = useState({}); // { addon_id: { addon, quantity } }
+  const [addons, setAddons] = useState([]); // Addon catalog from API (/public/addons)
+  const [osTemplates, setOsTemplates] = useState([]);
+  const [enableExtraConfig, setEnableExtraConfig] = useState(false);
+  const [extraConfigInputs, setExtraConfigInputs] = useState({
+    cpu: '',
+    ram: '',
+    disk: '',
+    ip: '',
+  });
+  const [extraConfigErrors, setExtraConfigErrors] = useState({
+    cpu: '',
+    ram: '',
+    disk: '',
+    ip: '',
+  });
+  const extraConfigCardRef = useRef(null);
+  const [config, setConfig] = useState({
+    cpu: 0,
+    ram: 0,
+    disk: 0,
+    bandwidth: 0,
+    ip: 0,
+    control_panel: false,
+    os_template_id: ''
+  });
 
-  // Giá Dedicated IP
-  const DEDICATED_IP_PRICE = 100000;
+  const validateNumericText = (raw, max) => {
+    if (raw === '') return ''; // allow empty while typing
+    if (!/^\d+$/.test(raw)) return 'Chỉ được nhập số';
+    const n = parseInt(raw, 10);
+    if (typeof max === 'number' && n > max) return `Tối đa ${max}`;
+    return '';
+  };
+
+  const setNumericFieldFromText = (field, raw, max) => {
+    const err = validateNumericText(raw, max);
+    setExtraConfigInputs(prev => ({ ...prev, [field]: raw }));
+    setExtraConfigErrors(prev => ({ ...prev, [field]: err }));
+
+    if (!err) {
+      const n = raw === '' ? 0 : parseInt(raw, 10);
+      setConfig(prev => ({ ...prev, [field]: n }));
+    }
+  };
+
+  const normalizeNumericText = (field, max) => {
+    const raw = extraConfigInputs[field];
+    const err = validateNumericText(raw, max);
+    if (!err) {
+      const n = parseInt(raw, 10);
+      // keep empty as empty; otherwise normalize leading zeros
+      if (raw !== '') setExtraConfigInputs(prev => ({ ...prev, [field]: String(n) }));
+    }
+  };
+
+  const clampNumber = (value, min, max, fallback) => {
+    let v = parseInt(value);
+    if (Number.isNaN(v)) v = fallback;
+    if (typeof min === 'number') v = Math.max(min, v);
+    if (typeof max === 'number') v = Math.min(max, v);
+    return v;
+  };
+
+  const addonByType = useMemo(() => {
+    const map = {};
+    (addons || []).forEach(a => {
+      if (a?.addon_type) map[a.addon_type] = a;
+    });
+    return map;
+  }, [addons]);
+
+  // Fetch OS templates from API
+  useEffect(() => {
+    const fetchOsTemplates = async () => {
+      try {
+        const response = await osTemplateService.listAdmin();
+        const data = response.data;
+        const templates = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.templates)
+          ? data.templates
+          : Array.isArray(data?.data)
+          ? data.data
+          : [];
+
+        // Show both active + inactive; inactive will be disabled in the select
+        setOsTemplates(templates);
+        
+        // Set default OS template if available
+        const firstActive = templates.find(t => t?.is_active) || templates[0];
+        if (firstActive && !config.os_template_id) {
+          setConfig(prev => ({
+            ...prev,
+            os_template_id: firstActive.template_id
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch OS templates:', err);
+        // Continue without OS templates if fetch fails
+      }
+    };
+
+    fetchOsTemplates();
+  }, []);
 
   // Fetch addons from API
   useEffect(() => {
     const fetchAddons = async () => {
       try {
-        const response = await addonService.getAddons();
+        const response = await addonService.getPublicAddons();
         const addonsData = response.data?.addons || [];
         // Only show active addons
-        setAddons(addonsData.filter(addon => addon.is_active));
+        setAddons(addonsData.filter(addon => addon.is_active && addon.addon_type !== 'BANDWIDTH'));
       } catch (err) {
         console.error('Failed to fetch addons:', err);
         // Continue without addons if fetch fails
@@ -54,6 +155,90 @@ const ConfigProduct = () => {
 
     fetchAddons();
   }, []);
+
+  // Clamp config values based on addon MAX when addon catalog is loaded/updated (ignore MIN)
+  useEffect(() => {
+    const cpuMax = addonByType?.CPU?.max_quantity;
+    const ramMax = addonByType?.RAM?.max_quantity;
+    const diskMax = addonByType?.DISK?.max_quantity;
+    const ipMax = addonByType?.IP?.max_quantity;
+
+    setConfig(prev => ({
+      ...prev,
+      cpu: clampNumber(prev.cpu, 0, cpuMax, 0),
+      ram: clampNumber(prev.ram, 0, ramMax, 0),
+      disk: clampNumber(prev.disk, 0, diskMax, 0),
+      ip: clampNumber(prev.ip, 0, ipMax, 0),
+    }));
+  }, [addonByType]);
+
+  // Check if editing cart item from URL params
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const cartItemId = searchParams.get('cartItemId');
+    if (cartItemId) {
+      setEditingCartItemId(cartItemId);
+    }
+  }, [location.search]);
+
+  // Fetch cart item details if editing
+  useEffect(() => {
+    const fetchCartItem = async () => {
+      if (!editingCartItemId) return;
+      
+      try {
+        const response = await cartService.getCartItemById(editingCartItemId);
+        const cartItem = response.data;
+        
+        // Pre-fill form with cart item data
+        if (cartItem.billing_cycle) setPaymentCycle(parseInt(cartItem.billing_cycle));
+        if (cartItem.quantity) setQuantity(cartItem.quantity);
+        if (cartItem.discountCode) setDiscountCode(cartItem.discountCode);
+        
+        // Pre-fill config
+        if (cartItem.config) {
+          const nextConfig = {
+            cpu: cartItem.config.cpu ?? 0,
+            ram: cartItem.config.ram ?? 0,
+            disk: cartItem.config.disk ?? 0,
+            bandwidth: cartItem.config.bandwidth ?? 0,
+            ip: cartItem.config.ip ?? 0,
+            control_panel: cartItem.config.control_panel || false,
+            os_template_id: cartItem.config.os_template_id || ''
+          };
+          setConfig(nextConfig);
+          setExtraConfigInputs({
+            cpu: (nextConfig.cpu ?? 0) > 0 ? String(nextConfig.cpu) : '',
+            ram: (nextConfig.ram ?? 0) > 0 ? String(nextConfig.ram) : '',
+            disk: (nextConfig.disk ?? 0) > 0 ? String(nextConfig.disk) : '',
+            ip: (nextConfig.ip ?? 0) > 0 ? String(nextConfig.ip) : '',
+          });
+          setExtraConfigErrors({
+            cpu: '',
+            ram: '',
+            disk: '',
+            ip: '',
+          });
+
+          // Auto-enable extra config section if cart item already has extra config
+          const hasExtra =
+            (nextConfig.cpu || 0) > 0 ||
+            (nextConfig.ram || 0) > 0 ||
+            (nextConfig.disk || 0) > 0 ||
+            (nextConfig.ip || 0) > 0 ||
+            !!nextConfig.control_panel;
+          if (hasExtra) setEnableExtraConfig(true);
+        }
+      } catch (err) {
+        console.error('Failed to fetch cart item:', err);
+        notifyError('Không tải được thông tin sản phẩm trong giỏ hàng');
+      }
+    };
+
+    if (editingCartItemId) {
+      fetchCartItem();
+    }
+  }, [editingCartItemId, notifyError]);
 
   // Fetch product from API
   useEffect(() => {
@@ -92,48 +277,6 @@ const ConfigProduct = () => {
     }
   }, [productId]);
 
-  // Handle addon selection
-  const handleAddonToggle = (addon) => {
-    setSelectedAddons(prev => {
-      const newSelected = { ...prev };
-      if (newSelected[addon.addon_id]) {
-        // Remove addon
-        delete newSelected[addon.addon_id];
-      } else {
-        // Add addon with minimum quantity
-        newSelected[addon.addon_id] = {
-          addon: addon,
-          quantity: addon.min_quantity || 1,
-        };
-      }
-      return newSelected;
-    });
-  };
-
-  // Handle addon quantity change
-  const handleAddonQuantityChange = (addonId, newQuantity) => {
-    const addon = selectedAddons[addonId]?.addon;
-    if (!addon) return;
-
-    let quantity = parseInt(newQuantity) || addon.min_quantity || 1;
-    
-    // Validate min/max quantity
-    if (addon.min_quantity && quantity < addon.min_quantity) {
-      quantity = addon.min_quantity;
-    }
-    if (addon.max_quantity && quantity > addon.max_quantity) {
-      quantity = addon.max_quantity;
-    }
-
-    setSelectedAddons(prev => ({
-      ...prev,
-      [addonId]: {
-        ...prev[addonId],
-        quantity: quantity,
-      },
-    }));
-  };
-
   // Tính giá theo chu kỳ thanh toán
   const calculatePrice = (cycle) => {
     if (!product) return 0;
@@ -142,14 +285,11 @@ const ConfigProduct = () => {
     const yearlyPrice = product.yearlyPrice || product.price_annually || 0;
     
     if (cycle === 12) {
-      // 1 năm
-      return monthlyPrice * 12;
-    } else if (cycle === 24) {
-      // 2 năm - giảm 10%
-      return Math.round(monthlyPrice * 24 * 0.9);
-    } else if (cycle === 36) {
-      // 3 năm - sử dụng yearlyPrice (đã tính sẵn)
+      // 1 năm - sử dụng yearlyPrice (đã tính sẵn)
       return yearlyPrice;
+    } else if (cycle === 3 || cycle === 6) {
+      // 3/6 tháng - tính theo monthlyPrice
+      return monthlyPrice * cycle;
     }
     return monthlyPrice * cycle;
   };
@@ -163,7 +303,59 @@ const ConfigProduct = () => {
   // Tính tổng tiền
   const orderSummary = useMemo(() => {
     const baseProductPrice = calculatePrice(paymentCycle);
-    const dedicatedIPPrice = dedicatedIP ? DEDICATED_IP_PRICE : 0;
+    
+    const getAddonUnitPrice = (type, fallback) => {
+      const addon = addonByType?.[type];
+      return typeof addon?.price_per_unit === 'number' ? addon.price_per_unit : fallback;
+    };
+
+    // Addons are treated as price per unit per month -> multiply by paymentCycle
+    const configBreakdown = [
+      {
+        key: 'cpu',
+        label: addonByType?.CPU?.addon_name || 'Additional CPU Core',
+        unit: addonByType?.CPU?.unit || 'Core',
+        quantity: config.cpu,
+        unitPrice: getAddonUnitPrice('CPU', 50000),
+      },
+      {
+        key: 'ram',
+        label: addonByType?.RAM?.addon_name || 'Additional RAM',
+        unit: addonByType?.RAM?.unit || 'GB',
+        quantity: config.ram,
+        unitPrice: getAddonUnitPrice('RAM', 28000),
+      },
+      {
+        key: 'disk',
+        label: addonByType?.DISK?.addon_name || 'Additional SSD Storage',
+        unit: addonByType?.DISK?.unit || 'GB',
+        quantity: config.disk,
+        unitPrice: getAddonUnitPrice('DISK', 18000),
+      },
+      {
+        key: 'ip',
+        label: addonByType?.IP?.addon_name || 'Additional IP Address',
+        unit: addonByType?.IP?.unit || 'IP',
+        quantity: config.ip,
+        unitPrice: getAddonUnitPrice('IP', 35000),
+      },
+      ...(config.control_panel
+        ? [
+            {
+              key: 'control_panel',
+              label: addonByType?.CONTROL_PANEL?.addon_name || 'Control Panel',
+              unit: addonByType?.CONTROL_PANEL?.unit || 'Panel',
+              quantity: 1,
+              unitPrice: getAddonUnitPrice('CONTROL_PANEL', 95000),
+            },
+          ]
+        : []),
+    ].map(line => ({
+      ...line,
+      total: (line.quantity || 0) * (line.unitPrice || 0) * paymentCycle,
+    })).filter(line => (line.quantity || 0) > 0 && (line.total || 0) > 0);
+
+    const configCost = configBreakdown.reduce((sum, line) => sum + (line.total || 0), 0);
     
     // Apply discount if available
     let discountPercent = 0;
@@ -171,36 +363,35 @@ const ConfigProduct = () => {
       discountPercent = product.discount.discount_percent || 0;
     }
     
-    const productPriceBeforeDiscount = (baseProductPrice + dedicatedIPPrice) * quantity;
-    const discountAmount = (productPriceBeforeDiscount * discountPercent) / 100;
-    const productPriceAfterDiscount = productPriceBeforeDiscount - discountAmount;
-    
-    const subtotal = productPriceAfterDiscount;
-    const vat = Math.round(subtotal * 0.1);
-    const setupFee = 0;
-    const total = subtotal + vat + setupFee;
+    // Discount only applies to base product price (not extra config)
+    const productTotal = baseProductPrice * quantity;
+    const configTotal = configCost * quantity;
+    const discountAmount = (productTotal * discountPercent) / 100;
+    const productTotalAfterDiscount = productTotal - discountAmount;
+
+    const subtotal = productTotalAfterDiscount + configTotal;
+    const total = subtotal;
 
     return {
       productPrice: baseProductPrice,
-      dedicatedIPPrice,
+      configCost,
+      configBreakdown,
       quantity,
       discountPercent,
       discountAmount,
       subtotal,
-      vat,
-      setupFee,
       total
     };
-  }, [paymentCycle, dedicatedIP, product, quantity, discountCode]);
+  }, [paymentCycle, config, product, quantity, discountCode, addonByType]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price);
   };
 
   const getCycleLabel = (cycle) => {
+    if (cycle === 3) return '3 tháng';
+    if (cycle === 6) return '6 tháng';
     if (cycle === 12) return '1 năm';
-    if (cycle === 24) return '2 năm';
-    if (cycle === 36) return '3 năm';
     return `${cycle} tháng`;
   };
 
@@ -214,6 +405,11 @@ const ConfigProduct = () => {
   };
 
   const features = getProductFeatures();
+
+  const cpuMax = addonByType?.CPU?.max_quantity;
+  const ramMax = addonByType?.RAM?.max_quantity;
+  const diskMax = addonByType?.DISK?.max_quantity;
+  const ipMax = addonByType?.IP?.max_quantity;
 
   if (loading) {
     return (
@@ -248,6 +444,12 @@ const ConfigProduct = () => {
   return (
     <div className="config-product-page">
       <Container className="py-5">
+        {editingCartItemId && (
+          <Alert variant="info" className="mb-4">
+            <i className="fas fa-edit me-2"></i>
+            Bạn đang chỉnh sửa sản phẩm trong giỏ hàng. Thay đổi của bạn sẽ được cập nhật.
+          </Alert>
+        )}
         <Row>
           {/* Cột trái - Cấu hình */}
           <Col lg={8}>
@@ -342,6 +544,42 @@ const ConfigProduct = () => {
                   <div className="payment-cycle-options">
                     <FormCheck
                       type="radio"
+                      id="cycle-3"
+                      name="paymentCycle"
+                      label={
+                        <div className="payment-cycle-item">
+                          <span className="cycle-label">3 tháng</span>
+                          <span className="cycle-price">{formatPrice(getMonthlyPrice(3))} VND/tháng</span>
+                        </div>
+                      }
+                      checked={paymentCycle === 3}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPaymentCycle(3);
+                        }
+                      }}
+                      className="payment-cycle-radio"
+                    />
+                    <FormCheck
+                      type="radio"
+                      id="cycle-6"
+                      name="paymentCycle"
+                      label={
+                        <div className="payment-cycle-item">
+                          <span className="cycle-label">6 tháng</span>
+                          <span className="cycle-price">{formatPrice(getMonthlyPrice(6))} VND/tháng</span>
+                        </div>
+                      }
+                      checked={paymentCycle === 6}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPaymentCycle(6);
+                        }
+                      }}
+                      className="payment-cycle-radio"
+                    />
+                    <FormCheck
+                      type="radio"
                       id="cycle-12"
                       name="paymentCycle"
                       label={
@@ -358,142 +596,173 @@ const ConfigProduct = () => {
                       }}
                       className="payment-cycle-radio"
                     />
-                    <FormCheck
-                      type="radio"
-                      id="cycle-24"
-                      name="paymentCycle"
-                      label={
-                        <div className="payment-cycle-item">
-                          <span className="cycle-label">2 năm</span>
-                          <span className="cycle-price">{formatPrice(getMonthlyPrice(24))} VND/tháng</span>
-                        </div>
-                      }
-                      checked={paymentCycle === 24}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setPaymentCycle(24);
-                        }
-                      }}
-                      className="payment-cycle-radio"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="cycle-36"
-                      name="paymentCycle"
-                      label={
-                        <div className="payment-cycle-item">
-                          <span className="cycle-label">3 năm</span>
-                          <span className="cycle-price">{formatPrice(getMonthlyPrice(36))} VND/tháng</span>
-                        </div>
-                      }
-                      checked={paymentCycle === 36}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setPaymentCycle(36);
-                        }
-                      }}
-                      className="payment-cycle-radio"
-                    />
                   </div>
                 </Form>
               </Card.Body>
             </Card>
 
-            
-
-            {/* Add-ons */}
-            {addons.length > 0 && (
+            {/* Configuration Options */}
+            <div ref={extraConfigCardRef}>
               <Card className="mb-4">
                 <Card.Body>
-                  <h3 className="mb-3">Add-ons (Tùy chọn bổ sung)</h3>
-                  <div className="addons-list">
-                    {addons.map((addon) => {
-                      const isSelected = !!selectedAddons[addon.addon_id];
-                      const selectedData = selectedAddons[addon.addon_id];
-                      
-                      return (
-                        <div key={addon.addon_id} className="addon-item mb-3 p-3 border rounded">
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <div className="flex-grow-1">
-                              <FormCheck
-                                type="checkbox"
-                                id={`addon-${addon.addon_id}`}
-                                label={
-                                  <div>
-                                    <strong>{addon.addon_name}</strong>
-                                    <div className="text-muted small">
-                                      {formatPrice(addon.price_per_unit)} VND/{addon.unit}
-                                      {addon.min_quantity && addon.max_quantity && (
-                                        <span> (Tối thiểu: {addon.min_quantity}, Tối đa: {addon.max_quantity})</span>
-                                      )}
-                                      {addon.min_quantity && !addon.max_quantity && (
-                                        <span> (Tối thiểu: {addon.min_quantity})</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                }
-                                checked={isSelected}
-                                onChange={() => handleAddonToggle(addon)}
-                              />
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <div className="mt-2 ms-4">
-                              <Row className="align-items-center">
-                                <Col xs="auto">
-                                  <Form.Label className="mb-0">Số lượng:</Form.Label>
-                                </Col>
-                                <Col xs="auto">
-                                  <Form.Control
-                                    type="number"
-                                    min={addon.min_quantity || 1}
-                                    max={addon.max_quantity || undefined}
-                                    value={selectedData.quantity}
-                                    onChange={(e) => handleAddonQuantityChange(addon.addon_id, e.target.value)}
-                                    style={{ width: '100px' }}
-                                  />
-                                </Col>
-                                <Col xs="auto">
-                                  <span className="text-muted">{addon.unit}</span>
-                                </Col>
-                                <Col xs="auto">
-                                  <span className="text-primary fw-bold">
-                                    = {formatPrice((selectedData.quantity || 1) * addon.price_per_unit)} VND
-                                  </span>
-                                </Col>
-                              </Row>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <h3 className="mb-4">Tùy chọn cấu hình</h3>
+
+                  <Row className="g-3">
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label>Hệ điều hành *</Form.Label>
+                        <Form.Select
+                          value={config.os_template_id}
+                          onChange={(e) => setConfig(prev => ({ ...prev, os_template_id: e.target.value }))}
+                        >
+                          <option value="">-- Chọn hệ điều hành --</option>
+                          {osTemplates.map(template => (
+                            <option
+                              key={template.template_id}
+                              value={template.template_id}
+                              disabled={!template.is_active}
+                            >
+                              {(template.display_name || template.name) +
+                                (template.is_active ? '' : ' (Không khả dụng)')}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={12}>
+                      <FormCheck
+                        type="switch"
+                        id="enable-extra-config"
+                        label="Bổ sung cấu hình (CPU/RAM/Disk/IP/Control Panel)"
+                        checked={enableExtraConfig}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEnableExtraConfig(checked);
+                          if (!checked) {
+                            setConfig(prev => ({
+                              ...prev,
+                              cpu: 0,
+                              ram: 0,
+                              disk: 0,
+                              bandwidth: 0,
+                              ip: 0,
+                              control_panel: false,
+                            }));
+                            setExtraConfigInputs({
+                              cpu: '',
+                              ram: '',
+                              disk: '',
+                              ip: '',
+                            });
+                            setExtraConfigErrors({
+                              cpu: '',
+                              ram: '',
+                              disk: '',
+                              ip: '',
+                            });
+                            setTimeout(() => {
+                              extraConfigCardRef.current?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start',
+                              });
+                            }, 0);
+                          }
+                        }}
+                      />
+                    </Col>
+                  </Row>
+
+                  {enableExtraConfig && (
+                    <Row className="g-3 mt-2">
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>CPU (cores)</Form.Label>
+                          <Form.Control
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={extraConfigInputs.cpu}
+                            isInvalid={!!extraConfigErrors.cpu}
+                            onChange={(e) => setNumericFieldFromText('cpu', e.target.value, cpuMax)}
+                            onBlur={() => normalizeNumericText('cpu', cpuMax)}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {extraConfigErrors.cpu}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>RAM (GB)</Form.Label>
+                          <Form.Control
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={extraConfigInputs.ram}
+                            isInvalid={!!extraConfigErrors.ram}
+                            onChange={(e) => setNumericFieldFromText('ram', e.target.value, ramMax)}
+                            onBlur={() => normalizeNumericText('ram', ramMax)}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {extraConfigErrors.ram}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Disk (GB)</Form.Label>
+                          <Form.Control
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={extraConfigInputs.disk}
+                            isInvalid={!!extraConfigErrors.disk}
+                            onChange={(e) => setNumericFieldFromText('disk', e.target.value, diskMax)}
+                            onBlur={() => normalizeNumericText('disk', diskMax)}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {extraConfigErrors.disk}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>IP Address</Form.Label>
+                          <Form.Control
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={extraConfigInputs.ip}
+                            isInvalid={!!extraConfigErrors.ip}
+                            onChange={(e) => setNumericFieldFromText('ip', e.target.value, ipMax)}
+                            onBlur={() => normalizeNumericText('ip', ipMax)}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {extraConfigErrors.ip}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={12}>
+                        <FormCheck
+                          type="checkbox"
+                          id="control-panel"
+                          label="Control Panel (cPanel/Plesk)"
+                          checked={config.control_panel}
+                          onChange={(e) =>
+                            setConfig(prev => ({ ...prev, control_panel: e.target.checked }))
+                          }
+                        />
+                      </Col>
+                    </Row>
+                  )}
                 </Card.Body>
               </Card>
-            )}
+            </div>
 
-            {/* Thông tin cần bổ sung */}
-            <Card className="mb-4">
-              <Card.Body>
-                <h3 className="mb-3">Thông tin cần bổ sung</h3>
-                <p className="text-muted small mb-3">(required fields are marked with *)</p>
-                <Form.Group className="mb-3">
-                  <Form.Label>Notes (Ghi Chú)</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={4}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Nhập ghi chú của bạn..."
-                  />
-                </Form.Group>
-                <div className="alert alert-info">
-                  <small>
-                    Dịch vụ sẽ được kích hoạt tự động theo cấu hình bạn chọn. Nếu bạn có yêu cầu đặc biệt (hệ điều hành khác, Range IP...), vui lòng điền thông tin vào ô Notes (Ghi Chú) bên trên để được hỗ trợ cài đặt.
-                  </small>
-                </div>
-              </Card.Body>
-            </Card>
+           
+
+          
           </Col>
 
           {/* Cột phải - Thông tin đơn hàng */}
@@ -503,9 +772,53 @@ const ConfigProduct = () => {
                 <h3 className="mb-4">Thông tin đơn hàng</h3>
                 
                 <div className="order-item mb-3">
-                  <div className="order-item-name">Web Hosting - {product.name}</div>
-                  <div className="order-item-price">{formatPrice(orderSummary.productPrice)} VND</div>
+                  <div className="order-item-name" style={{ fontWeight: '600' }}>Web Hosting - {product.name}</div>
+                  <div className="order-item-price" style={{ fontWeight: '600' }}>{formatPrice(orderSummary.productPrice)} VND</div>
                 </div>
+
+                {orderSummary.configBreakdown?.length > 0 && (
+                  <div className="order-item mb-3">
+                    <div className="order-item-name" style={{ fontWeight: '600' }}>Cấu hình bổ sung</div>
+                   <div className="mt-2 order-item-price" style={{ width: '100%' }}>
+                      {orderSummary.configBreakdown.map(line => (
+                        <div
+                          key={line.key}
+                          className="d-flex justify-content-between"
+                          style={{ fontSize: '0.85rem', opacity: 0.95, width: '100%', gap: '12px' }}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <span>{line.label}</span>
+                            <span className="ms-2">x{line.quantity}</span>
+                            <span className="ms-1">{line.unit}</span>
+                          </div>
+                          <div style={{ fontWeight: '600', textAlign: 'right', minWidth: '140px' }}>
+                            {formatPrice(line.total)} VND
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="order-item-name" style={{ fontWeight: '600' }}>Tổng</div>
+                    <div className="order-item-price" style={{ fontWeight: '600' }}>{formatPrice(orderSummary.configCost)} VND</div>
+                    
+                  </div>
+                )}
+
+                {orderSummary.discountPercent > 0 && (
+                  <div className="order-item mb-3">
+                    <div className="order-item-name" style={{fontWeight:'600'}}>
+                      Giảm giá ({orderSummary.discountPercent}%){' '}
+                      {product?.discount?.code ? `- ${product.discount.code}` : ''}
+                    </div>
+                    <div className="order-item-price">- {formatPrice(orderSummary.discountAmount)} VND</div>
+                  </div>
+                )}
+
+                {orderSummary.quantity > 1 && (
+                  <div className="order-item mb-3">
+                    <div className="order-item-name">Số lượng: x{orderSummary.quantity}</div>
+                    <div className="order-item-price"></div>
+                  </div>
+                )}
 
                 <div className="order-subtotal mb-3">
                   <div className="order-subtotal-label">Thành tiền</div>
@@ -515,50 +828,14 @@ const ConfigProduct = () => {
                   </div>
                 </div>
 
-                <div className="order-item mb-3">
-                  <div className="order-item-name">VAT @ 10.00%</div>
-                  <div className="order-item-price">{formatPrice(orderSummary.vat)} VND</div>
-                </div>
-
-                <div className="order-item mb-3">
-                  <div className="order-item-name">Phí cài đặt</div>
-                  <div className="order-item-price">{formatPrice(orderSummary.setupFee)} VND</div>
-                </div>
-
-                <hr className="my-4" />
+             
 
                 <div className="order-total">
-                  <div className="order-total-label">Tổng Thành tiền</div>
+                  <div className="order-total-label">Tổng </div>
                   <div className="order-total-price">{formatPrice(orderSummary.total)} VND</div>
                 </div>
 
-                {/* Quantity Input */}
-              
-
-                {/* Discount Code Input */}
-                {product.discount && (
-                  <div className="mb-3">
-                    <Form.Label style={{color: 'white'}}>Mã giảm giá (nếu có)</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Nhập mã giảm giá"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      disabled={!!product.discount?.code} // Disable if product has discount
-                      style={{color: 'black'}}
-                    />
-                    {product.discount.code && (
-                      <Form.Text className="text-white">
-                        Mã giảm giá hiện có: <strong>{product.discount.code}</strong> (-{product.discount.discount_percent}%)
-                        {product.discount.code && (
-                          <span className="ms-2">
-                            <i className="fas fa-check-circle text-success"></i> Đã tự động áp dụng
-                          </span>
-                        )}
-                      </Form.Text>
-                    )}
-                  </div>
-                )}
+             
 
                 <Button 
                   variant="primary" 
@@ -566,33 +843,72 @@ const ConfigProduct = () => {
                   className="w-100 mt-4 continue-button"
                   onClick={async () => {
                     try {
-                      // Prepare addons_applied array from selectedAddons
-                      const addonsApplied = Object.values(selectedAddons).map(selected => ({
-                        addon_id: selected.addon.addon_id,
-                        quantity: selected.quantity,
-                      }));
+                      // Validate config
+                      if (!config.os_template_id) {
+                        notifyError('Vui lòng chọn hệ điều hành');
+                        return;
+                      }
 
-                      // Add to cart using CartContext (now calls API)
-                      const appliedDiscountCode = discountCode || (product.discount?.code || null);
-                      await addToCart(product, {
-                        paymentCycle,
-                        discountCode: appliedDiscountCode,
-                        notes,
-                        quantity,
-                        addonsApplied,
-                      });
+                      if (enableExtraConfig) {
+                        const errors = {
+                          cpu: validateNumericText(extraConfigInputs.cpu, cpuMax),
+                          ram: validateNumericText(extraConfigInputs.ram, ramMax),
+                          disk: validateNumericText(extraConfigInputs.disk, diskMax),
+                          ip: validateNumericText(extraConfigInputs.ip, ipMax),
+                        };
+                        setExtraConfigErrors(prev => ({ ...prev, ...errors }));
+
+                        const hasError = Object.values(errors).some(Boolean);
+                        if (hasError) {
+                          notifyError('Vui lòng nhập đúng kiểu số và không vượt quá giới hạn tối đa');
+                          extraConfigCardRef.current?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start',
+                          });
+                          return;
+                        }
+                      }
+
+                      // Prepare cart item payload
+                      const cartData = {
+                        product_id: product.product_id || productId,
+                        billing_cycle: paymentCycle.toString(),
+                        quantity: quantity,
+                        config: {
+                          cpu: config.cpu,
+                          ram: config.ram,
+                          disk: config.disk,
+                          bandwidth: config.bandwidth,
+                          ip: config.ip,
+                          control_panel: config.control_panel,
+                          os_template_id: config.os_template_id
+                        }
+                      };
+
+                      if (editingCartItemId) {
+                        // Update existing cart item
+                        await cartService.updateItem(editingCartItemId, cartData);
+                        notifySuccess('Đã cập nhật sản phẩm trong giỏ hàng!');
+                      } else {
+                        // Add new item to cart
+                        await cartService.addItem(cartData);
+                        notifySuccess(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+                      }
                       
-                      notifySuccess(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+                      // Refresh cart context
+                      await fetchCart();
+                      
                       navigate('/cart');
                     } catch (error) {
-                      console.error('Failed to add to cart:', error);
-                      const errorMessage = error?.response?.data?.message || error?.message || 'Thêm sản phẩm vào giỏ hàng thất bại';
+                      console.error('Failed to add/update cart:', error);
+                      const errorMessage = error?.response?.data?.message || error?.message || 
+                        (editingCartItemId ? 'Cập nhật sản phẩm thất bại' : 'Thêm sản phẩm vào giỏ hàng thất bại');
                       notifyError(errorMessage);
                     }
                   }}
                 >
-                  <i className="fas fa-shopping-cart me-2"></i>
-                  Thêm vào giỏ hàng
+                  <i className={`fas fa-${editingCartItemId ? 'check' : 'shopping-cart'} me-2`}></i>
+                  {editingCartItemId ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ hàng'}
                 </Button>
               </Card.Body>
             </Card>

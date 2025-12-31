@@ -10,6 +10,9 @@ export const userService = {
   
   // Get user profile (for authenticated user)
   getProfile: () => api.get('/user/profile'),
+
+  // Update user profile (for authenticated user)
+  updateProfile: (payload) => api.put('/user/profile', payload),
 };
 
 

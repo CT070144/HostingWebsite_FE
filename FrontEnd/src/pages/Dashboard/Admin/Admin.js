@@ -31,7 +31,7 @@ ChartJS.register(
 );
 
 const Admin = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Open by default on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Open by default on desktop
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
   const [dashboardData, setDashboardData] = useState(null);

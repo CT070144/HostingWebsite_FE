@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   Container, 
   Row, 
@@ -9,7 +9,10 @@ import {
   FormCheck,
   Table,
   InputGroup,
-  Alert
+  Alert,
+  Modal,
+  Nav,
+  Tab
 } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import './Cart.css';
@@ -23,13 +26,15 @@ const Cart = () => {
   const navigate = useNavigate();
   const { notifyWarning, notifySuccess, notifyError } = useNotify();
   const { user } = useAuth();
-  const { cartItems, cart, loading: cartLoading, removeFromCart, clearCart, fetchCart, updateCartItem, getCartSubtotal, getCartVAT, getCartTotal } = useCart();
+  const { cartItems, loading: cartLoading, removeFromCart, clearCart, fetchCart } = useCart();
   const [accountType, setAccountType] = useState('new'); // 'existing' or 'new'
   const [customerType, setCustomerType] = useState('individual'); // 'individual' or 'organization'
   const [language, setLanguage] = useState('vi');
   const [paymentMethod, setPaymentMethod] = useState('vietcombank');
-  const [promoCode, setPromoCode] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [selectedCartItemMap, setSelectedCartItemMap] = useState({}); // { [cartItemId]: true/false }
+  const [showMissingInfoAlert, setShowMissingInfoAlert] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -48,6 +53,19 @@ const Cart = () => {
 
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+
+  // Sync selection with cart items (default: selected)
+  React.useEffect(() => {
+    setSelectedCartItemMap((prev) => {
+      const next = {};
+      (cartItems || []).forEach((item) => {
+        const id = item?.cartItemId || item?.id;
+        if (!id) return;
+        next[id] = prev[id] ?? true;
+      });
+      return next;
+    });
+  }, [cartItems]);
 
   // Fetch user profile from API
   React.useEffect(() => {
@@ -113,38 +131,72 @@ const Cart = () => {
   };
 
   const getCycleLabel = (cycle) => {
-    if (cycle === 12) return '1 năm';
-    if (cycle === 24) return '2 năm';
-    if (cycle === 36) return '3 năm 1 lần';
-    return `${cycle} tháng`;
+    const numCycle = typeof cycle === 'string' ? parseInt(cycle) : cycle;
+    if (numCycle === 3) return '3 tháng';
+    if (numCycle === 6) return '6 tháng';
+    if (numCycle === 12) return '1 năm';
+    return `${numCycle} tháng`;
   };
 
   const getCyclePeriod = (cycle) => {
+    if (cycle === 3) return 'mo';
+    if (cycle === 6) return 'mo';
     if (cycle === 12) return 'yr';
-    if (cycle === 24) return 'yr';
-    if (cycle === 36) return 'tri';
     return 'mo';
   };
 
-  // Calculate order summary using cart context
-  const orderSummary = {
-    subtotal: getCartSubtotal(),
-    vat: getCartVAT(),
-    total: getCartTotal(),
-  };
+  const selectedItems = useMemo(() => {
+    const items = cartItems || [];
+    return items.filter((item) => {
+      const id = item?.cartItemId || item?.id;
+      return !!id && !!selectedCartItemMap[id];
+    });
+  }, [cartItems, selectedCartItemMap]);
 
-  // Promotional codes from hosting.json
-  const promotionalCodes = [
-    { code: 'OFF25', discount: 25, description: 'Giảm 25% Microsoft 365 Business Standard' },
-    { code: 'OFF5', discount: 5, description: 'Giảm 5% Microsoft 365 Business Premium' },
-    { code: 'SERVER10X10', discount: 10, description: 'Giảm 10% Xeon 10-12 Core Series' },
-    { code: '90T11', discount: 90, description: 'Giảm 90% VPS & Hosting Việt Nam' },
-    { code: '30T11', discount: 30, description: 'Giảm 30% VPS & Hosting Việt Nam' }
-  ];
+  const selectedCartItemIds = useMemo(() => {
+    return selectedItems
+      .map((item) => item?.cartItemId || item?.id)
+      .filter(Boolean);
+  }, [selectedItems]);
+
+  const selectedTotal = useMemo(() => {
+    return selectedItems.reduce((sum, item) => {
+      const v = item?.totalPrice ?? item?.total ?? 0;
+      return sum + (typeof v === 'number' ? v : Number(v) || 0);
+    }, 0);
+  }, [selectedItems]);
+
+  const missingPaymentInfoFields = useMemo(() => {
+    const missing = [];
+    const fullName = (formData.fullName || '').trim();
+    const email = (formData.email || '').trim();
+    const phone = (formData.phone || '').trim();
+    const idCard = (formData.idCard || '').trim();
+    const street = (formData.street || '').trim();
+    const country = (formData.country || '').trim();
+    const province = (formData.province || '').trim();
+    const ward = (formData.ward || '').trim();
+
+    if (!fullName) missing.push('Họ tên');
+    if (!email || !email.includes('@')) missing.push('Email');
+    if (!phone) missing.push('Số điện thoại');
+    if (!idCard) missing.push('Số CCCD/Passport');
+    if (!street) missing.push('Tên đường/Địa chỉ');
+    if (!country) missing.push('Quốc gia');
+    if (!province) missing.push('Tỉnh/Thành phố');
+    if (!ward) missing.push('Phường/Xã');
+
+    return missing;
+  }, [formData]);
 
   const handleRemoveItem = async (itemId) => {
     try {
       await removeFromCart(itemId);
+      setSelectedCartItemMap((prev) => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
       notifySuccess('Đã xóa sản phẩm khỏi giỏ hàng');
     } catch (error) {
       console.error('Failed to remove item:', error);
@@ -157,27 +209,10 @@ const Cart = () => {
     navigate('/hosting');
   };
 
-  const handleClearCart = async () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
-      try {
-        await clearCart();
-        notifySuccess('Đã xóa tất cả sản phẩm khỏi giỏ hàng');
-      } catch (error) {
-        console.error('Failed to clear cart:', error);
-        const errorMessage = error?.response?.data?.message || error?.message || 'Xóa giỏ hàng thất bại';
-        notifyError(errorMessage);
-      }
-    }
-  };
-
-  const handleVerifyPromoCode = () => {
-    // Logic to verify promo code
-    console.log('Verifying promo code:', promoCode);
-  };
-
   const handlePayment = async () => {
     if (!agreedToTerms) {
-      notifyWarning('Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
+      setShowPolicyModal(true);
+      notifyWarning('Vui lòng đọc và đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
       return;
     }
     
@@ -186,29 +221,41 @@ const Cart = () => {
       return;
     }
 
+    if (selectedCartItemIds.length === 0) {
+      notifyWarning('Vui lòng chọn ít nhất 1 sản phẩm để đặt hàng');
+      return;
+    }
+
+    if (accountType === 'existing' && loadingProfile) {
+      notifyWarning('Đang tải thông tin tài khoản, vui lòng thử lại sau');
+      return;
+    }
+
+    if (missingPaymentInfoFields.length > 0) {
+      setShowMissingInfoAlert(true);
+      notifyWarning('Vui lòng nhập đầy đủ thông tin thanh toán');
+      return;
+    }
+
     try {
       // Prepare checkout data
-      const cartItemIds = cartItems
-        .filter(item => item.cartItemId)
-        .map(item => item.cartItemId);
-      
-      if (cartItemIds.length === 0) {
-        notifyError('Không có sản phẩm hợp lệ để thanh toán');
-        return;
-      }
-
       const checkoutData = {
-        cart_item_ids: cartItemIds,
+        cart_item_ids: selectedCartItemIds,
         payment_method: paymentMethod,
         notes: formData.notes || '',
       };
+      const res = await cartService.checkout(checkoutData);
+      const order = res.data;
+      notifySuccess('Tạo đơn hàng thành công!');
 
-      await cartService.checkout(checkoutData);
-      notifySuccess('Thanh toán thành công!');
-      
-      // Clear cart and redirect
-      await clearCart();
-      navigate('/dashboard');
+      // Refresh cart (avoid clearing items user didn't select)
+      await fetchCart();
+
+      if (order?.order_id) {
+        navigate(`/order/${order.order_id}`, { state: { order } });
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Checkout failed:', error);
       const errorMessage = error?.response?.data?.message || error?.message || 'Thanh toán thất bại';
@@ -248,7 +295,6 @@ const Cart = () => {
               <Card.Body>
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h3 className="mb-0">Sản phẩm/Tùy chọn</h3>
-                  <span className="text-muted">Giá/Chu kỳ</span>
                 </div>
                 
                 {cartLoading ? (
@@ -270,20 +316,80 @@ const Cart = () => {
                     <Table responsive className="cart-table">
                       <thead>
                         <tr>
+                          <th style={{ width: '48px' }}>
+                            <FormCheck
+                              type="checkbox"
+                              aria-label="Chọn tất cả"
+                              checked={
+                                cartItems.length > 0 &&
+                                cartItems.every((it) => {
+                                  const id = it?.cartItemId || it?.id;
+                                  return id ? !!selectedCartItemMap[id] : false;
+                                })
+                              }
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setSelectedCartItemMap((prev) => {
+                                  const next = { ...prev };
+                                  (cartItems || []).forEach((it) => {
+                                    const id = it?.cartItemId || it?.id;
+                                    if (!id) return;
+                                    next[id] = checked;
+                                  });
+                                  return next;
+                                });
+                              }}
+                            />
+                          </th>
                           <th>Sản phẩm</th>
                           <th>Giá/Chu kỳ</th>
                           <th>Số lượng</th>
-                          <th>Thao tác</th>
+                          <th style={{textAlign:'center'}}>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
                         {cartItems.map((item) => (
                           <tr key={item.id}>
                             <td>
+                              <FormCheck
+                                type="checkbox"
+                                aria-label="Chọn sản phẩm"
+                                checked={!!selectedCartItemMap[item.cartItemId || item.id]}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  const id = item.cartItemId || item.id;
+                                  if (!id) return;
+                                  setSelectedCartItemMap((prev) => ({
+                                    ...prev,
+                                    [id]: checked,
+                                  }));
+                                }}
+                              />
+                            </td>
+                            <td>
                               <div>
                                 <strong>{item.productName || item.product?.name || 'Sản phẩm'}</strong>
                                 <div className="small">
                                   Chu kỳ: {getCycleLabel(item.paymentCycle || item.billingCycle)}
+                                  
+                                  {/* Display config */}
+                                  {item.config && (
+                                    <div className="mt-2">
+                                      <div className="fw-bold">Cấu hình:</div>
+                                      <div className="text-muted">
+                                        CPU: {item.config.cpu} cores | RAM: {item.config.ram} GB | Disk: {item.config.disk} GB
+                                      </div>
+                                      <div className="text-muted">
+                                        Bandwidth: {item.config.bandwidth} GB | IP: {item.config.ip}
+                                        {item.config.control_panel && <span className="ms-2 badge bg-primary">Control Panel</span>}
+                                      </div>
+                                      {item.config.os_template_id && (
+                                        <div className="text-muted">
+                                          OS: {item.config.os_template_id}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                   
                                   {/* Display addons */}
                                   {item.addonsApplied && item.addonsApplied.length > 0 && (
@@ -353,7 +459,7 @@ const Cart = () => {
                                 variant="link"
                                 size="sm"
                                 className="text-primary me-2"
-                                onClick={() => navigate(`/config-product/${item.productId}`)}
+                                onClick={() => navigate(`/config-product/${item.productId}?cartItemId=${item.cartItemId || item.id}`)}
                                 title="Chỉnh sửa"
                               >
                                 <i className="fas fa-edit"></i>
@@ -374,15 +480,10 @@ const Cart = () => {
                     </Table>
                     
                     <div className="d-flex gap-2 mt-3">
-                      <Button variant="outline-primary" onClick={handleContinueShopping}>
+                      <Button variant="primary" onClick={handleContinueShopping}>
                         Tiếp tục mua hàng
                       </Button>
-                      <Button variant="outline-secondary" onClick={() => {}}>
-                        Ước tính thuế
-                      </Button>
-                      <Button variant="outline-danger" onClick={handleClearCart}>
-                        Xóa giỏ hàng
-                      </Button>
+                      
                     </div>
                   </>
                 )}
@@ -390,33 +491,7 @@ const Cart = () => {
             </Card>
 
             {/* Phần Khuyến mại */}
-            <Card className="mb-4">
-              <Card.Body>
-                <h3 className="mb-3">Khuyến mại</h3>
-                <InputGroup className="mb-3">
-                  <Form.Control
-                    type="text"
-                    placeholder="Nhập mã khuyến mại nếu có"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                  />
-                  <Button variant="primary" onClick={handleVerifyPromoCode}>
-                    Xác thực mã
-                  </Button>
-                </InputGroup>
-                
-                <div className="promo-list">
-                  {promotionalCodes.map((promo, index) => (
-                    <div key={index} className="promo-item">
-                      <div className="promo-info">
-                        <strong>{promo.code}</strong> - {promo.description}
-                      </div>
-                      <i className="fas fa-info-circle text-primary"></i>
-                    </div>
-                  ))}
-                </div>
-              </Card.Body>
-            </Card>
+            
 
             {/* Phần Thông tin thanh toán */}
             <Card className="mb-4">
@@ -871,34 +946,52 @@ const Cart = () => {
               <Card.Body>
                 <h3 className="mb-4">Thông tin đơn hàng</h3>
                 
-                <div className="order-item mb-3">
-                  <div className="order-item-name">Tạm tính</div>
-                  <div className="order-item-price">{formatPrice(orderSummary.subtotal)} VND</div>
-                </div>
-
-                <div className="order-item mb-3">
-                  <div className="order-item-name">VAT @ 10.00%</div>
-                  <div className="order-item-price">{formatPrice(orderSummary.vat)} VND</div>
-                </div>
-
-                {cartItems.length > 0 && (
-                  <div className="order-renewal mb-3">
-                    <div className="order-renewal-label">Gia hạn</div>
-                    {cartItems.map((item, index) => (
-                      <div key={index} className="order-renewal-item">
-                        <div className="order-renewal-cycle">{getCycleLabel(item.paymentCycle)}</div>
-                        <div className="order-renewal-price">{formatPrice(item.subtotal)} VND</div>
-                      </div>
-                    ))}
+                {selectedItems.length === 0 ? (
+                  <Alert variant="warning" className="mb-3">
+                   Tích chọn sản phẩm muốn đặt hàng.
+                  </Alert>
+                ) : (
+                  <div className="mb-3">
+                    {selectedItems.map((item) => {
+                      const name = item.productName || item.product?.name || 'Sản phẩm';
+                      const cycle = item.paymentCycle || item.billingCycle;
+                      const total = item.totalPrice ?? item.total ?? 0;
+                      const id = item.cartItemId || item.id;
+                      return (
+                        <div key={id} className="order-item mb-2">
+                          <div className="order-item-name">
+                            {name}
+                            <div className="small text-muted">Chu kỳ: {getCycleLabel(cycle)}</div>
+                          </div>
+                          <div className="order-item-price">{formatPrice(total)} VND</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 <hr className="my-4" />
 
                 <div className="order-total">
-                  <div className="order-total-label">Tổng Thành tiền</div>
-                  <div className="order-total-price">{formatPrice(orderSummary.total)} VND</div>
+                  <div className="order-total-label">Tổng thanh toán</div>
+                  <div className="order-total-price">{formatPrice(selectedTotal)} VND</div>
                 </div>
+
+                {showMissingInfoAlert && missingPaymentInfoFields.length > 0 && (
+                  <Alert variant="warning" className="mt-3 mb-0">
+                    <div className="fw-bold mb-2">Thiếu thông tin người dùng</div>
+                    <div className="small mb-3">
+                      Vui lòng cập nhật: {missingPaymentInfoFields.join(', ')}
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => navigate('/profile')}
+                    >
+                      Cập nhật thông tin
+                    </Button>
+                  </Alert>
+                )}
 
                 <Button 
                   variant="primary" 
@@ -907,13 +1000,34 @@ const Cart = () => {
                   onClick={handlePayment}
                 >
                   <i className="fas fa-arrow-right me-2"></i>
-                  Thanh toán
+                  Đặt hàng
                 </Button>
 
                 <FormCheck
                   type="checkbox"
                   id="agree-terms"
-                  label="Tôi đã đọc và đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân"
+                  label={
+                    <span>
+                      Tôi đã đọc và đồng ý với{' '}
+                      <Button
+                        variant="link"
+                        className="p-0 text-decoration-underline"
+                        onClick={() => setShowPolicyModal(true)}
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit' }}
+                      >
+                        Điều khoản dịch vụ
+                      </Button>
+                      {' '}và{' '}
+                      <Button
+                        variant="link"
+                        className="p-0 text-decoration-underline"
+                        onClick={() => setShowPolicyModal(true)}
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit' }}
+                      >
+                        Chính sách bảo vệ dữ liệu cá nhân
+                      </Button>
+                    </span>
+                  }
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
                   className="mt-3 terms-checkbox"
@@ -923,6 +1037,200 @@ const Cart = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Policy Modal */}
+      <Modal
+        show={showPolicyModal}
+        onHide={() => setShowPolicyModal(false)}
+        size="lg"
+        centered
+        scrollable
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Điều khoản dịch vụ & Chính sách bảo vệ dữ liệu</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Tab.Container defaultActiveKey="terms">
+            <Nav variant="tabs" className="mb-3">
+              <Nav.Item>
+                <Nav.Link eventKey="terms">Điều khoản dịch vụ</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="privacy">Chính sách bảo vệ dữ liệu</Nav.Link>
+              </Nav.Item>
+            </Nav>
+            <Tab.Content>
+              <Tab.Pane eventKey="terms">
+                <div className="policy-content">
+                  <h4 className="mb-3">Điều khoản dịch vụ</h4>
+                  
+                  <h5>1. Chấp nhận điều khoản</h5>
+                  <p>
+                    Bằng việc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ và bị ràng buộc bởi các điều khoản và điều kiện này. 
+                    Nếu bạn không đồng ý với bất kỳ phần nào của các điều khoản này, bạn không được phép sử dụng dịch vụ.
+                  </p>
+
+                  <h5>2. Mô tả dịch vụ</h5>
+                  <p>
+                    Chúng tôi cung cấp các dịch vụ hosting, VPS, và các dịch vụ công nghệ thông tin liên quan. 
+                    Dịch vụ được cung cấp "nguyên trạng" và có thể thay đổi mà không cần thông báo trước.
+                  </p>
+
+                  <h5>3. Đăng ký tài khoản</h5>
+                  <p>
+                    Để sử dụng dịch vụ, bạn phải đăng ký tài khoản và cung cấp thông tin chính xác, đầy đủ. 
+                    Bạn chịu trách nhiệm bảo mật thông tin đăng nhập và mọi hoạt động diễn ra dưới tài khoản của bạn.
+                  </p>
+
+                  <h5>4. Thanh toán và hoàn tiền</h5>
+                  <p>
+                    Tất cả các khoản thanh toán phải được thực hiện đúng hạn. Chúng tôi có quyền tạm ngừng hoặc chấm dứt dịch vụ 
+                    nếu thanh toán bị trễ. Chính sách hoàn tiền được áp dụng theo từng gói dịch vụ cụ thể.
+                  </p>
+
+                  <h5>5. Sử dụng dịch vụ</h5>
+                  <p>
+                    Bạn cam kết sử dụng dịch vụ một cách hợp pháp và không vi phạm quyền của bên thứ ba. 
+                    Bạn không được sử dụng dịch vụ cho các mục đích bất hợp pháp, gây hại, hoặc vi phạm pháp luật.
+                  </p>
+
+                  <h5>6. Bảo mật</h5>
+                  <p>
+                    Chúng tôi cam kết bảo vệ thông tin của bạn nhưng không thể đảm bảo an ninh tuyệt đối. 
+                    Bạn chịu trách nhiệm bảo vệ thông tin đăng nhập và dữ liệu của mình.
+                  </p>
+
+                  <h5>7. Chấm dứt dịch vụ</h5>
+                  <p>
+                    Chúng tôi có quyền chấm dứt hoặc tạm ngừng dịch vụ của bạn nếu vi phạm các điều khoản này 
+                    hoặc vì lý do bảo mật, kỹ thuật.
+                  </p>
+
+                  <h5>8. Thay đổi điều khoản</h5>
+                  <p>
+                    Chúng tôi có quyền thay đổi các điều khoản này bất cứ lúc nào. 
+                    Việc tiếp tục sử dụng dịch vụ sau khi thay đổi được coi là bạn đã chấp nhận các điều khoản mới.
+                  </p>
+
+                  <h5>9. Giới hạn trách nhiệm</h5>
+                  <p>
+                    Chúng tôi không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên nào 
+                    phát sinh từ việc sử dụng hoặc không thể sử dụng dịch vụ.
+                  </p>
+
+                  <h5>10. Liên hệ</h5>
+                  <p>
+                    Nếu bạn có câu hỏi về các điều khoản này, vui lòng liên hệ với chúng tôi qua email hoặc hotline.
+                  </p>
+                </div>
+              </Tab.Pane>
+              
+              <Tab.Pane eventKey="privacy">
+                <div className="policy-content">
+                  <h4 className="mb-3">Chính sách bảo vệ dữ liệu cá nhân</h4>
+                  
+                  <h5>1. Thu thập thông tin</h5>
+                  <p>
+                    Chúng tôi thu thập thông tin cá nhân của bạn khi bạn đăng ký, sử dụng dịch vụ, hoặc liên hệ với chúng tôi. 
+                    Thông tin thu thập bao gồm: họ tên, email, số điện thoại, địa chỉ, số CCCD/Passport, và thông tin thanh toán.
+                  </p>
+
+                  <h5>2. Mục đích sử dụng</h5>
+                  <p>
+                    Chúng tôi sử dụng thông tin của bạn để:
+                  </p>
+                  <ul>
+                    <li>Cung cấp và quản lý dịch vụ</li>
+                    <li>Xử lý thanh toán và giao dịch</li>
+                    <li>Gửi thông báo về dịch vụ và cập nhật</li>
+                    <li>Cải thiện chất lượng dịch vụ</li>
+                    <li>Tuân thủ các yêu cầu pháp lý</li>
+                  </ul>
+
+                  <h5>3. Bảo vệ thông tin</h5>
+                  <p>
+                    Chúng tôi áp dụng các biện pháp bảo mật kỹ thuật và tổ chức để bảo vệ thông tin cá nhân của bạn 
+                    khỏi truy cập trái phép, mất mát, hoặc phá hủy. Tuy nhiên, không có phương thức truyền tải qua Internet 
+                    nào là an toàn 100%.
+                  </p>
+
+                  <h5>4. Chia sẻ thông tin</h5>
+                  <p>
+                    Chúng tôi không bán, cho thuê, hoặc chia sẻ thông tin cá nhân của bạn cho bên thứ ba, trừ các trường hợp:
+                  </p>
+                  <ul>
+                    <li>Với sự đồng ý của bạn</li>
+                    <li>Để cung cấp dịch vụ (nhà cung cấp thanh toán, hosting, etc.)</li>
+                    <li>Khi được yêu cầu bởi pháp luật</li>
+                    <li>Để bảo vệ quyền và an toàn của chúng tôi và người dùng khác</li>
+                  </ul>
+
+                  <h5>5. Cookie và công nghệ theo dõi</h5>
+                  <p>
+                    Chúng tôi sử dụng cookie và công nghệ tương tự để cải thiện trải nghiệm người dùng, 
+                    phân tích lưu lượng truy cập, và cá nhân hóa nội dung. Bạn có thể quản lý cookie thông qua cài đặt trình duyệt.
+                  </p>
+
+                  <h5>6. Quyền của người dùng</h5>
+                  <p>
+                    Bạn có quyền:
+                  </p>
+                  <ul>
+                    <li>Truy cập và xem thông tin cá nhân của mình</li>
+                    <li>Yêu cầu chỉnh sửa hoặc cập nhật thông tin</li>
+                    <li>Yêu cầu xóa thông tin cá nhân</li>
+                    <li>Phản đối việc xử lý thông tin cá nhân</li>
+                    <li>Rút lại sự đồng ý bất cứ lúc nào</li>
+                  </ul>
+
+                  <h5>7. Lưu trữ dữ liệu</h5>
+                  <p>
+                    Chúng tôi lưu trữ thông tin cá nhân của bạn trong thời gian cần thiết để cung cấp dịch vụ 
+                    và tuân thủ các nghĩa vụ pháp lý. Sau khi chấm dứt dịch vụ, chúng tôi sẽ xóa hoặc ẩn danh hóa dữ liệu 
+                    theo quy định pháp luật.
+                  </p>
+
+                  <h5>8. Bảo mật thanh toán</h5>
+                  <p>
+                    Tất cả các giao dịch thanh toán được xử lý thông qua các nhà cung cấp thanh toán được mã hóa. 
+                    Chúng tôi không lưu trữ thông tin thẻ tín dụng hoặc chi tiết thanh toán đầy đủ trên hệ thống của mình.
+                  </p>
+
+                  <h5>9. Thay đổi chính sách</h5>
+                  <p>
+                    Chúng tôi có thể cập nhật chính sách này theo thời gian. Chúng tôi sẽ thông báo cho bạn về 
+                    bất kỳ thay đổi quan trọng nào thông qua email hoặc thông báo trên website.
+                  </p>
+
+                  <h5>10. Liên hệ</h5>
+                  <p>
+                    Nếu bạn có câu hỏi hoặc yêu cầu về chính sách bảo vệ dữ liệu, vui lòng liên hệ với chúng tôi:
+                  </p>
+                  <ul>
+                    <li>Email: support@ttcs-hosting.com</li>
+                    <li>Hotline: 1900-xxxx</li>
+                    <li>Địa chỉ: [Địa chỉ công ty]</li>
+                  </ul>
+                </div>
+              </Tab.Pane>
+            </Tab.Content>
+          </Tab.Container>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPolicyModal(false)}>
+            Đóng
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              setAgreedToTerms(true);
+              setShowPolicyModal(false);
+            }}
+          >
+            Tôi đồng ý
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

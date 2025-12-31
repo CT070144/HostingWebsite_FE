@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner, Alert, Badge, Button } from 'react-bootstrap';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Spinner, Alert, Badge, Button, Form } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
 import { userService } from '../../services/userService';
 import { useNotify } from '../../contexts/NotificationContext';
 import './Profile.css';
 
 const Profile = () => {
-  const { user } = useAuth();
-  const { notifyError } = useNotify();
+  useAuth();
+  const { notifyError, notifySuccess } = useNotify();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    identity_number: '',
+    address: '',
+    country: '',
+    city: '',
+    ward: '',
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -20,6 +32,16 @@ const Profile = () => {
         const response = await userService.getProfile();
         const userData = response.data?.user || response.data;
         setProfile(userData);
+        setFormData({
+          first_name: userData?.FirstName || '',
+          last_name: userData?.LastName || '',
+          phone_number: userData?.PhoneNumber || '',
+          identity_number: userData?.IdentityNumber || '',
+          address: userData?.Address || '',
+          country: userData?.Country || '',
+          city: userData?.City || '',
+          ward: userData?.Ward || '',
+        });
       } catch (err) {
         console.error('Failed to fetch profile:', err);
         setError('Không thể tải thông tin tài khoản');
@@ -78,6 +100,56 @@ const Profile = () => {
     return variantMap[roleLower] || 'secondary';
   };
 
+  const missingFields = useMemo(() => {
+    const missing = [];
+    if (!formData.first_name.trim()) missing.push('Họ');
+    if (!formData.last_name.trim()) missing.push('Tên');
+    if (!formData.phone_number.trim()) missing.push('Số điện thoại');
+    if (!formData.identity_number.trim()) missing.push('Số CCCD/Passport');
+    if (!formData.address.trim()) missing.push('Địa chỉ');
+    if (!formData.country.trim()) missing.push('Quốc gia');
+    if (!formData.city.trim()) missing.push('Thành phố/Tỉnh');
+    if (!formData.ward.trim()) missing.push('Phường/Xã');
+    return missing;
+  }, [formData]);
+
+  const handleSave = async () => {
+    if (missingFields.length > 0) {
+      notifyError(`Vui lòng nhập đầy đủ: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await userService.updateProfile({
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        country: formData.country.trim(),
+        first_name: formData.first_name.trim(),
+        identity_number: formData.identity_number.trim(),
+        last_name: formData.last_name.trim(),
+        phone_number: formData.phone_number.trim(),
+        ward: formData.ward.trim(),
+      });
+      notifySuccess('Cập nhật thông tin thành công');
+      setIsEditing(false);
+
+      // Refresh profile view
+      const response = await userService.getProfile();
+      const userData = response.data?.user || response.data;
+      setProfile(userData);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Cập nhật thông tin thất bại';
+      notifyError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="profile-page">
@@ -111,7 +183,42 @@ const Profile = () => {
       <Container className="py-5">
         <div className="profile-header mb-4">
           <h1 className="profile-title">Thông tin tài khoản</h1>
-         
+          <div className="mt-3">
+            {isEditing ? (
+              <div className="d-flex gap-2 flex-wrap">
+                <Button
+                  variant="primary"
+                  disabled={saving}
+                  onClick={handleSave}
+                >
+                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  disabled={saving}
+                  onClick={() => {
+                    setIsEditing(false);
+                    setFormData({
+                      first_name: profile?.FirstName || '',
+                      last_name: profile?.LastName || '',
+                      phone_number: profile?.PhoneNumber || '',
+                      identity_number: profile?.IdentityNumber || '',
+                      address: profile?.Address || '',
+                      country: profile?.Country || '',
+                      city: profile?.City || '',
+                      ward: profile?.Ward || '',
+                    });
+                  }}
+                >
+                  Hủy
+                </Button>
+              </div>
+            ) : (
+              <Button variant="primary" onClick={() => setIsEditing(true)}>
+                Cập nhật thông tin
+              </Button>
+            )}
+          </div>
         </div>
 
         <Row>
@@ -125,7 +232,108 @@ const Profile = () => {
                 </h3>
               </Card.Header>
               <Card.Body>
-                <Row className="g-3">
+                {isEditing && missingFields.length > 0 && (
+                  <Alert variant="warning">
+                    Vui lòng nhập đầy đủ: {missingFields.join(', ')}
+                  </Alert>
+                )}
+
+                {isEditing ? (
+                  <Form>
+                    <Row className="g-3">
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Họ</Form.Label>
+                          <Form.Control
+                            value={formData.first_name}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, first_name: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Tên</Form.Label>
+                          <Form.Control
+                            value={formData.last_name}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, last_name: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Số điện thoại</Form.Label>
+                          <Form.Control
+                            value={formData.phone_number}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, phone_number: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Số CCCD/Passport</Form.Label>
+                          <Form.Control
+                            value={formData.identity_number}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, identity_number: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+
+                      <Col md={12}>
+                        <Form.Group>
+                          <Form.Label>Địa chỉ</Form.Label>
+                          <Form.Control
+                            value={formData.address}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, address: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label>Quốc gia</Form.Label>
+                          <Form.Control
+                            value={formData.country}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, country: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label>Thành phố/Tỉnh</Form.Label>
+                          <Form.Control
+                            value={formData.city}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, city: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
+                        <Form.Group>
+                          <Form.Label>Phường/Xã</Form.Label>
+                          <Form.Control
+                            value={formData.ward}
+                            onChange={(e) =>
+                              setFormData((p) => ({ ...p, ward: e.target.value }))
+                            }
+                          />
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Form>
+                ) : (
+                  <Row className="g-3">
                   {/* Thông tin cá nhân */}
                   <Col md={6}>
                     <div className="profile-field">
@@ -224,6 +432,7 @@ const Profile = () => {
                     </div>
                   </Col>
                 </Row>
+                )}
               </Card.Body>
             </Card>
           </Col>

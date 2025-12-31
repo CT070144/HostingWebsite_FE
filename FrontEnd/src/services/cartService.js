@@ -5,6 +5,9 @@ export const cartService = {
   // Get user's cart
   getCart: () => api.get('/user/cart'),
   
+  // Get cart item by ID
+  getCartItemById: (cartItemId) => api.get(`/user/cart/items/${cartItemId}`),
+  
   // Add item to cart
   addItem: (itemData) => api.post('/user/cart/items', itemData),
   

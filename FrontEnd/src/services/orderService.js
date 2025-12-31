@@ -8,8 +8,8 @@ export const orderService = {
   updateStatus: (id, status) => api.patch(`/admin/orders/${id}/status`, { status }),
   
   // User endpoints
-  getUserOrders: (params = {}) => api.get('/orders', { params }),
-  getUserOrderById: (id) => api.get(`/orders/${id}`),
+  getUserOrders: (params = {}) => api.get('/order', { params }),
+  getUserOrderById: (id) => api.get(`/user/order/${id}`),
   createOrder: (orderData) => api.post('/orders', orderData),
   cancelOrder: (id) => api.post(`/orders/${id}/cancel`),
 };
