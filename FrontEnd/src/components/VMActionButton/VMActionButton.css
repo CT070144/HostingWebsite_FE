@@ -1,0 +1,14 @@
+.vm-action-button {
+      min-width: 90px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+}
+
+.vm-action-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.vm-action-button i {
+      font-size: 0.9rem;
+}

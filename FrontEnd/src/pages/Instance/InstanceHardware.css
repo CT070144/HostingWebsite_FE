@@ -1,0 +1,58 @@
+.instance-hardware {
+      background: #252525;
+      color: #e0e0e0;
+      height: 100%;
+}
+
+.hardware-header {
+      padding: 15px 20px;
+      background: #1e1e1e;
+      border-bottom: 1px solid #333;
+}
+
+.hardware-header h5 {
+      color: #fff;
+      font-weight: 600;
+}
+
+.hw-card {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #e0e0e0;
+}
+
+.hw-card-header {
+      background: #1e1e1e;
+      border-bottom: 1px solid #3a3a3a;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 15px;
+}
+
+.hw-card-body {
+      padding: 15px;
+}
+
+.hw-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #3a3a3a;
+}
+
+.hw-row:last-child {
+      border-bottom: none;
+}
+
+.hw-label {
+      font-weight: 500;
+      color: #aaa;
+      font-size: 0.9rem;
+}
+
+.hw-value {
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 500;
+}

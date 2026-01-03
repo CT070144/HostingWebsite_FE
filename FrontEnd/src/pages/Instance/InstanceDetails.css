@@ -1,0 +1,117 @@
+.instance-details-page {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+}
+
+.breadcrumb {
+      background: white;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.breadcrumb-item {
+      cursor: pointer;
+}
+
+.breadcrumb-item:hover:not(.active) {
+      color: #0d6efd;
+      text-decoration: underline;
+}
+
+.instance-header-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+}
+
+.instance-header-card h3 {
+      color: white;
+      font-weight: 700;
+}
+
+.instance-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.95rem;
+}
+
+.instance-meta code {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+}
+
+.vm-controls {
+      gap: 0.5rem;
+}
+
+.instance-tabs-card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+}
+
+.instance-nav-tabs {
+      border-bottom: none;
+      background: #f8f9fa;
+      padding: 0.5rem 1rem 0;
+}
+
+.instance-nav-tabs .nav-link {
+      border: none;
+      border-radius: 8px 8px 0 0;
+      color: #6c757d;
+      font-weight: 500;
+      padding: 0.75rem 1.5rem;
+      margin-right: 0.5rem;
+      transition: all 0.2s ease;
+}
+
+.instance-nav-tabs .nav-link:hover {
+      color: #495057;
+      background: rgba(13, 110, 253, 0.1);
+}
+
+.instance-nav-tabs .nav-link.active {
+      background: white;
+      color: #0d6efd;
+      border-bottom: 3px solid #0d6efd;
+}
+
+.tab-content-body {
+      padding: 2rem;
+      background: white;
+      min-height: 400px;
+}
+
+@media (max-width: 768px) {
+      .instance-header-card .d-flex {
+            flex-direction: column;
+            gap: 1rem;
+      }
+
+      .vm-controls {
+            width: 100%;
+      }
+
+      .vm-controls button {
+            flex: 1;
+      }
+
+      .instance-meta {
+            flex-direction: column;
+            align-items: flex-start;
+      }
+
+      .tab-content-body {
+            padding: 1rem;
+      }
+}

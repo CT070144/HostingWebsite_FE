@@ -1,0 +1,100 @@
+.instance-config {
+      animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+      from {
+            opacity: 0;
+            transform: translateY(10px);
+      }
+
+      to {
+            opacity: 1;
+            transform: translateY(0);
+      }
+}
+
+.config-card {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+}
+
+.config-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+}
+
+.config-card .card-header {
+      border-radius: 8px 8px 0 0;
+      padding: 1rem 1.25rem;
+      border: none;
+}
+
+.config-card .card-header h5 {
+      font-size: 1rem;
+      font-weight: 600;
+}
+
+.config-table {
+      font-size: 0.95rem;
+}
+
+.config-table tr {
+      border-bottom: 1px solid #f0f0f0;
+}
+
+.config-table tr:last-child {
+      border-bottom: none;
+}
+
+.config-table td {
+      padding: 0.75rem 0;
+      vertical-align: middle;
+}
+
+.config-label {
+      font-weight: 600;
+      color: #495057;
+      width: 40%;
+}
+
+.config-value {
+      color: #212529;
+}
+
+.config-code {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #d63384;
+      word-break: break-all;
+}
+
+.json-display {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 1.5rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      max-height: 400px;
+      overflow: auto;
+      margin: 0;
+}
+
+.json-display code {
+      color: #d4d4d4;
+}
+
+@media (max-width: 768px) {
+      .config-label {
+            width: 50%;
+      }
+
+      .config-code {
+            font-size: 0.75rem;
+      }
+}
