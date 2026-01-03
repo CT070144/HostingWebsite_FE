@@ -1,0 +1,106 @@
+.instance-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: #2a2a2a;
+      border-bottom: 1px solid #404040;
+      color: #e0e0e0;
+      height: 50px;
+}
+
+.toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+}
+
+.toolbar-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #e0e0e0;
+}
+
+.toolbar-title i {
+      color: #4a9eff;
+}
+
+.toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+}
+
+.toolbar-right .btn-group {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.toolbar-right .btn {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border: 1px solid #404040;
+      background: #383838;
+      color: #e0e0e0;
+      transition: all 0.2s;
+}
+
+.toolbar-right .btn:hover:not(:disabled) {
+      background: #484848;
+      border-color: #505050;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.toolbar-right .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+}
+
+.toolbar-right .btn-success {
+      background: #28a745;
+      border-color: #28a745;
+      color: white;
+}
+
+.toolbar-right .btn-success:hover:not(:disabled) {
+      background: #218838;
+      border-color: #218838;
+}
+
+.toolbar-right .btn-danger {
+      background: #dc3545;
+      border-color: #dc3545;
+      color: white;
+}
+
+.toolbar-right .btn-danger:hover:not(:disabled) {
+      background: #c82333;
+      border-color: #c82333;
+}
+
+.toolbar-right .btn-warning {
+      background: #ffc107;
+      border-color: #ffc107;
+      color: #212529;
+}
+
+.toolbar-right .btn-warning:hover:not(:disabled) {
+      background: #e0a800;
+      border-color: #e0a800;
+}
+
+.toolbar-right .btn-info {
+      background: #17a2b8;
+      border-color: #17a2b8;
+      color: white;
+}
+
+.toolbar-right .btn-info:hover:not(:disabled) {
+      background: #138496;
+      border-color: #138496;
+}
+
+.toolbar-right .btn i {
+      opacity: 0.9;
+}

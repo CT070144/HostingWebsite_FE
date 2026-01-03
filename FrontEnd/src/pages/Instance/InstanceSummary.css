@@ -1,0 +1,80 @@
+.instance-summary {
+      background: #252525;
+      color: #e0e0e0;
+      height: 100%;
+}
+
+.summary-header {
+      padding: 15px 20px;
+      background: #1e1e1e;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+}
+
+.header-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+}
+
+.instance-name {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #fff;
+      font-weight: 600;
+}
+
+.action-buttons button {
+      font-size: 0.85rem;
+}
+
+.info-card {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #e0e0e0;
+}
+
+.info-card-header {
+      background: #1e1e1e;
+      border-bottom: 1px solid #3a3a3a;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 15px;
+}
+
+.info-card-body {
+      padding: 15px;
+}
+
+.info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #3a3a3a;
+}
+
+.info-row:last-child {
+      border-bottom: none;
+}
+
+.info-label {
+      font-weight: 500;
+      color: #aaa;
+      font-size: 0.9rem;
+}
+
+.info-value {
+      color: #fff;
+      font-size: 0.9rem;
+}
+
+.info-value code {
+      background: #1e1e1e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.85rem;
+      color: #4fc3f7;
+}

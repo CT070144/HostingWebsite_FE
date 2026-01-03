@@ -1,0 +1,138 @@
+.instance-sidebar {
+      background: #1a1a1a;
+      border-right: 1px solid #333;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+}
+
+.sidebar-header {
+      padding: 12px 15px;
+      border-bottom: 1px solid #333;
+      background: #252525;
+}
+
+.sidebar-title {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #e0e0e0;
+}
+
+.sidebar-search {
+      padding: 10px;
+      border-bottom: 1px solid #333;
+}
+
+.search-input {
+      background: #2a2a2a !important;
+      border-color: #444 !important;
+      color: #e0e0e0 !important;
+      font-size: 0.85rem;
+}
+
+.search-input:focus {
+      background: #333 !important;
+      border-color: #0d6efd !important;
+      color: #e0e0e0 !important;
+      box-shadow: none !important;
+}
+
+.search-input::placeholder {
+      color: #888;
+}
+
+.sidebar-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 5px 0;
+}
+
+.tree-loading {
+      padding: 20px;
+      text-align: center;
+      color: #888;
+      font-size: 0.9rem;
+}
+
+.tree-node {
+      user-select: none;
+}
+
+.tree-node-content {
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      transition: background 0.2s;
+}
+
+.tree-node-content:hover {
+      background: #2a2a2a;
+}
+
+.tree-node.active>.tree-node-content {
+      background: #0d6efd;
+      color: white;
+      font-weight: 500;
+}
+
+.tree-children {
+      padding-left: 15px;
+}
+
+.node-count {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: #888;
+}
+
+.vm-id {
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+}
+
+.status-icon {
+      font-size: 0.6rem;
+      margin-right: 8px;
+}
+
+.status-icon.running {
+      color: #28a745;
+}
+
+.status-icon.stopped {
+      color: #6c757d;
+}
+
+.status-icon.error {
+      color: #dc3545;
+}
+
+.status-icon.provisioning {
+      color: #17a2b8;
+}
+
+.status-icon.unknown {
+      color: #ffc107;
+}
+
+/* Scrollbar */
+.sidebar-tree::-webkit-scrollbar {
+      width: 6px;
+}
+
+.sidebar-tree::-webkit-scrollbar-track {
+      background: #1a1a1a;
+}
+
+.sidebar-tree::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 3px;
+}
+
+.sidebar-tree::-webkit-scrollbar-thumb:hover {
+      background: #555;
+}

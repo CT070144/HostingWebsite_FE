@@ -93,7 +93,7 @@ const ClientDashboard = () => {
             {/* Stats Cards */}
             <Row className="mb-4">
               <Col md={3} className="mb-3">
-                <Card className="dashboard-card h-100">
+                <Card className="dashboard-card h-100" style={{ cursor: 'pointer' }} onClick={() => navigate('/instances')}>
                   <Card.Body>
                     <div className="d-flex align-items-center">
                       <div className="dashboard-icon bg-primary text-white rounded-circle p-3 me-3">
@@ -101,7 +101,7 @@ const ClientDashboard = () => {
                       </div>
                       <div>
                         <h3 className="mb-0">{dashboardData?.stats?.hostingCount || 0}</h3>
-                        <p className="text-muted mb-0">Hosting đang sử dụng</p>
+                        <p className="text-muted mb-0">Instance đang sử dụng</p>
                       </div>
                     </div>
                   </Card.Body>
@@ -240,7 +240,7 @@ const ClientDashboard = () => {
                   <Card.Body>
                     <p><strong>Họ và tên:</strong> {user?.firstName} {user?.lastName}</p>
                     <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
-                    <p><strong>Vai trò:</strong> 
+                    <p><strong>Vai trò:</strong>
                       <Badge bg="info" className="ms-2">
                         {user?.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}
                       </Badge>

@@ -28,6 +28,7 @@ import AdminBannerPage from './pages/Dashboard/Admin/AdminBannerPage';
 import AdminHostingBannerPage from './pages/Dashboard/Admin/AdminHostingBannerPage';
 import AdminFaqsPage from './pages/Dashboard/Admin/AdminFaqsPage';
 import AdminServiceFeaturesPage from './pages/Dashboard/Admin/AdminServiceFeaturesPage';
+import ProxmoxLayout from './pages/Instance/ProxmoxLayout';
 import TestAPI from './test api/TestAPI';
 import './App.css';
 
@@ -35,15 +36,41 @@ function App() {
   return (
     <Routes>
       {/* Print Invoice Route - No Layout (no header/footer) */}
-      <Route 
-        path="/order/:orderId/print" 
+      <Route
+        path="/order/:orderId/print"
         element={
           <ProtectedRoute requireAuth={true}>
             <PrintInvoice />
           </ProtectedRoute>
-        } 
+        }
       />
-      
+
+      {/* Instance Routes - Full screen without Layout */}
+      <Route
+        path="/instances"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <ProxmoxLayout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instances/:instanceId"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <ProxmoxLayout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/instances/:instanceId/:tab"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <ProxmoxLayout />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Admin Routes - Only accessible by admin role */}
       <Route
         path="/admin/*"
@@ -63,6 +90,8 @@ function App() {
         <Route path="configuration/service-features" element={<AdminServiceFeaturesPage />} />
         <Route path="configuration" element={<AdminUsersPage />} />
       </Route>
+
+      {/* Regular Routes with Layout (header/footer) */}
       <Route path="/*" element={
         <Layout>
           <Routes>
@@ -71,65 +100,65 @@ function App() {
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/hosting" element={<Hosting />} />
             <Route path="/contact" element={<Contact />} />
-            <Route 
-              path="/login" 
+            <Route
+              path="/login"
               element={
                 <RoleProtectedRoute requireAuth={false}>
                   <Login />
                 </RoleProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/register" 
+            <Route
+              path="/register"
               element={
                 <RoleProtectedRoute requireAuth={false}>
                   <Register />
                 </RoleProtectedRoute>
-              } 
+              }
             />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             {/* Client Dashboard - Only accessible by user role */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <RoleProtectedRoute requireAuth={true} allowedRoles={['user', 'customer']}>
                   <ClientDashboard />
                 </RoleProtectedRoute>
-              } 
+              }
             />
             {/* Legacy dashboard route - redirects based on role */}
-            <Route 
-              path="/dashboard-legacy" 
+            <Route
+              path="/dashboard-legacy"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <Dashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route path="/config-product/:productId" element={<ConfigProduct />} />
-            <Route 
-              path="/cart" 
+            <Route
+              path="/cart"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <Cart />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <Profile />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/order/:orderId" 
+            <Route
+              path="/order/:orderId"
               element={
                 <ProtectedRoute requireAuth={true}>
                   <OrderDetails />
                 </ProtectedRoute>
-              } 
+              }
             />
             <Route path="/test-api" element={<TestAPI />} />
           </Routes>
@@ -140,4 +169,3 @@ function App() {
 }
 
 export default App;
-

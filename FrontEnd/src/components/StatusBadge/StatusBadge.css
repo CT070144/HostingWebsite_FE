@@ -1,0 +1,10 @@
+.status-badge {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.status-badge i {
+  font-size: 0.8rem;
+}
