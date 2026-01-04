@@ -93,7 +93,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                                           >
                                                 <i className={`fas fa-chevron-${expandedNodes.has('datacenter') ? 'down' : 'right'} me-2`}></i>
                                                 <i className="fas fa-database me-2"></i>
-                                                <span>Datacenter</span>
+                                                <span>VPS</span>
                                           </div>
 
                                           {expandedNodes.has('datacenter') && (
