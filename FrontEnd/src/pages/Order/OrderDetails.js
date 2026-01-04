@@ -7,7 +7,6 @@ import { orderService } from '../../services/orderService';
 import { paymentService } from '../../services/paymentService';
 import { instanceService } from '../../services/instanceService';
 import PdfViewer from './PdfViewer';
-import { QRCodeSVG } from 'qrcode.react';
 import './OrderDetails.css';
 
 const formatPrice = (price) => new Intl.NumberFormat('vi-VN').format(price || 0);
@@ -381,13 +380,17 @@ const OrderDetails = () => {
 
     try {
       const res = await paymentService.checkPaymentStatus(payment.payment_id);
-      const updatedPayment = res.data;
+      const statusUpdate = res.data;
 
-      // Update payment state
-      setPayment(updatedPayment);
+      // Only update status and paid_at, preserve QR code and other data from initial payment creation
+      setPayment(prev => ({
+        ...prev,
+        status: statusUpdate.status,
+        paid_at: statusUpdate.paid_at
+      }));
 
       // If payment is now PAID, stop polling and trigger VM polling
-      if (updatedPayment.status === 'PAID') {
+      if (statusUpdate.status === 'PAID') {
         setPollingPayment(false);
         if (paymentPollingIntervalRef.current) {
           clearInterval(paymentPollingIntervalRef.current);
@@ -636,16 +639,34 @@ const OrderDetails = () => {
                     <div className="text-center">
                       <h5>Quét mã QR để thanh toán</h5>
 
-                      {payment.qr_content && (
-                        <div className="my-3 p-2 border rounded d-inline-block">
-                          {/* Generates QR directly in SVG */}
-                          <QRCodeSVG
-                            value={payment.qr_code}
-                            size={250}
-                            level={"H"} // High error correction level
-                            includeMargin={true}
+                      {payment.qr_content ? (
+                        <div className="my-3">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(payment.qr_content)}`}
+                            alt="QR Code thanh toán"
+                            style={{ maxWidth: '300px', width: '100%', border: '1px solid #ddd', padding: '10px', borderRadius: '8px' }}
+                            onError={(e) => {
+                              // Fallback to link button if QR fails
+                              e.target.style.display = 'none';
+                              const fallback = document.getElementById('qr-fallback-link');
+                              if (fallback) fallback.style.display = 'block';
+                            }}
                           />
+                          <div id="qr-fallback-link" style={{ display: 'none' }} className="my-3">
+                            <p className="text-muted">Không thể tải QR code</p>
+                            <a
+                              href={payment.qr_content}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-primary"
+                            >
+                              <i className="fa-solid fa-external-link me-2"></i>
+                              Mở trang thanh toán PayOS
+                            </a>
+                          </div>
                         </div>
+                      ) : (
+                        <p className="text-muted">Đang tải QR code...</p>
                       )}
 
                       {/* Fallback button is less necessary now, but you can keep it if payment.qr_content implies a URL */}

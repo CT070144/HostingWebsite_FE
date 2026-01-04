@@ -287,7 +287,7 @@ const ConfigProduct = () => {
     if (cycle === 12) {
       // 1 năm - sử dụng yearlyPrice (đã tính sẵn)
       return yearlyPrice;
-    } else if (cycle === 3 || cycle === 6) {
+    } else if (cycle === 3 || cycle === 6 || cycle ===1) {
       // 3/6 tháng - tính theo monthlyPrice
       return monthlyPrice * cycle;
     }
@@ -389,6 +389,7 @@ const ConfigProduct = () => {
   };
 
   const getCycleLabel = (cycle) => {
+    if (cycle === 1) return '1 tháng';
     if (cycle === 3) return '3 tháng';
     if (cycle === 6) return '6 tháng';
     if (cycle === 12) return '1 năm';
@@ -542,6 +543,24 @@ const ConfigProduct = () => {
                 <h3 className="mb-4">Chọn chu kỳ thanh toán</h3>
                 <Form>
                   <div className="payment-cycle-options">
+                    <FormCheck
+                        type="radio"
+                        id="cycle-1"
+                        name="paymentCycle"
+                        label={
+                          <div className="payment-cycle-item">
+                            <span className="cycle-label">1 tháng</span>
+                            <span className="cycle-price">{formatPrice(getMonthlyPrice(1))} VND/tháng</span>
+                          </div>
+                        }
+                        checked={paymentCycle === 1}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setPaymentCycle(1);
+                          }
+                        }}
+                        className="payment-cycle-radio"
+                    />
                     <FormCheck
                       type="radio"
                       id="cycle-3"

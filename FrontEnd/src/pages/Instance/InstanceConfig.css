@@ -1,5 +1,6 @@
 .instance-config {
       animation: fadeIn 0.3s ease-in;
+      margin: 50px 50px 0 50px;
 }
 
 @keyframes fadeIn {

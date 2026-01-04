@@ -393,6 +393,7 @@
 }
 
 /* Modal Styles */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -403,9 +404,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2100;
   padding: 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  /* Ensure modal is above all other content */
+  isolation: isolate;
+  /* Prevent body scroll when modal is open */
+  overscroll-behavior: contain;
+}
+
+/* Ensure modal works even when inside containers with overflow hidden */
+.admin-products-page .modal-overlay {
+  position: fixed !important;
+  z-index: 2100 !important;
 }
 
 .modal-content {
@@ -416,6 +428,12 @@
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  /* Ensure content can scroll independently */
+  overscroll-behavior: contain;
+  /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
 .product-modal {

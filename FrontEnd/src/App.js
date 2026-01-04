@@ -17,6 +17,7 @@ import Cart from './pages/Cart/Cart';
 import Profile from './pages/Profile/Profile';
 import OrderDetails from './pages/Order/OrderDetails';
 import PrintInvoice from './pages/Order/PrintInvoice';
+import PaymentSuccess from './pages/Payment/PaymentSuccess';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import RoleProtectedRoute from './components/RoleProtectedRoute/RoleProtectedRoute';
 import AdminLayout from './pages/Dashboard/Admin/AdminLayout';
@@ -160,6 +161,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/test-api" element={<TestAPI />} />
           </Routes>
         </Layout>
