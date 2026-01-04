@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import classNames from 'classnames/bind';
+import styles from './AdminProductsPage.module.css';
 
-import './AdminProductsPage.css';
+const cx = classNames.bind(styles);
 
 import hostingData from '../../../mockData/hosting.json';
 import homeMockData from '../../../mockData/home.json';
@@ -272,6 +274,38 @@ const AdminProductsPage = () => {
     fetchFeatured();
     fetchAddons();
   }, []);
+
+  // Prevent body scroll when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = isModalOpen || isDiscountModalOpen || isFeaturedModalOpen || isFeaturedPreviewOpen || isAddonModalOpen;
+    
+    if (isAnyModalOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen, isDiscountModalOpen, isFeaturedModalOpen, isFeaturedPreviewOpen, isAddonModalOpen]);
 
   // Handle filter changes - fetch products with new filters
   const handleFilterChange = (key, value) => {
@@ -888,26 +922,26 @@ const AdminProductsPage = () => {
     : filteredProducts;
 
   return (
-    <div className="dashboard-overview">
+    <div className={cx('adminProductsPage')}>
       {/* Page Header */}
-      <div className="page-header">
-        <h1 className="page-title">Danh sách sản phẩm</h1>
-        <div className="header-actions">
-          <button className="btn btn-secondary" onClick={handleExport}>
+      <div className={cx('pageHeader')}>
+        <h1 className={cx('pageTitle')}>Danh sách sản phẩm</h1>
+        <div className={cx('headerActions')}>
+          <button className={cx('btn', 'btnSecondary')} onClick={handleExport}>
             <i className="fas fa-file-export"></i> Xuất file
           </button>
           
-          <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
+          <button className={cx('btn', 'btnSecondary')} onClick={handleOpenFeaturedModal}>
             <i className="fas fa-star"></i> Sản phẩm nổi bật
           </button>
-          <button className="btn btn-secondary" onClick={handleOpenAddonModal}>
+          <button className={cx('btn', 'btnSecondary')} onClick={handleOpenAddonModal}>
             <i className="fas fa-puzzle-piece"></i> Addons
           </button>
-          <button className="btn btn-secondary" onClick={() => navigate('/admin/configuration/hosting-banner')}>
+          <button className={cx('btn', 'btnSecondary')} onClick={() => navigate('/admin/configuration/hosting-banner')}>
             <i className="fas fa-image"></i> Banner Hosting
           </button>
           <div className="btn-group">
-            <button className="btn btn-primary" onClick={handleAddNew}>
+            <button className={cx('btn', 'btnPrimary')} onClick={handleAddNew}>
               <i className="fas fa-plus"></i> Thêm sản phẩm
             </button>
           </div>
@@ -915,12 +949,12 @@ const AdminProductsPage = () => {
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="products-filter-bar">
-        <div className="filter-tabs">
-          <button className="filter-tab active">Tất cả</button>
+      <div className={cx('productsFilterBar')}>
+        <div className={cx('filterTabs')}>
+          <button className={cx('filterTab', 'filterTabActive')}>Tất cả</button>
         </div>
-        <div className="filter-controls">
-          <div className="search-box-filter">
+        <div className={cx('filterControls')}>
+          <div className={cx('searchBoxFilter')}>
             <i className="fas fa-search"></i>
             <input
               type="text"
@@ -931,7 +965,7 @@ const AdminProductsPage = () => {
           </div>
           {/* Service type filter (simple) */}
           <select 
-            className="filter-select"
+            className={cx('filterSelect')}
             value={filters.service_type}
             onChange={(e) => handleFilterChange('service_type', e.target.value)}
           >
@@ -942,7 +976,7 @@ const AdminProductsPage = () => {
           </select>
           {/* Has discount filter (simple) */}
           <select
-            className="filter-select"
+            className={cx('filterSelect')}
             value={filters.has_discount}
             onChange={(e) => handleFilterChange('has_discount', e.target.value)}
           >
@@ -952,7 +986,7 @@ const AdminProductsPage = () => {
           </select>
           {/* Sort (simple) */}
           <select 
-            className="filter-select"
+            className={cx('filterSelect')}
             value={filters.sort}
             onChange={(e) => handleFilterChange('sort', e.target.value)}
           >
@@ -963,7 +997,7 @@ const AdminProductsPage = () => {
 
           {/* Toggle advanced filters */}
           <button
-            className="btn btn-secondary"
+            className={cx('btn', 'btnSecondary')}
             type="button"
             onClick={() => setShowAdvancedFilters((prev) => !prev)}
           >
@@ -1050,16 +1084,16 @@ const AdminProductsPage = () => {
       </div>
 
       {/* Products Table */}
-      <div className="products-table-container">
+      <div className={cx('productsTableContainer')}>
         {loadingProducts ? (
           <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
+            <div className={cx('spinnerBorder', 'spinnerBorderTextPrimary')} role="status">
               <span className="visually-hidden">Loading...</span>
             </div>
             <p className="mt-3">Đang tải sản phẩm...</p>
           </div>
         ) : (
-          <table className="products-table">
+          <table className={cx('productsTable')}>
             <thead>
               <tr>
                 <th>
@@ -1081,7 +1115,7 @@ const AdminProductsPage = () => {
             <tbody>
               {currentProducts.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="empty-state">
+                  <td colSpan="8" className={cx('emptyState')}>
                     Không tìm thấy sản phẩm nào.
                   </td>
                 </tr>
@@ -1096,14 +1130,14 @@ const AdminProductsPage = () => {
                     />
                   </td>
                   <td>
-                    <div className="product-info">
-                      <div className="product-image-placeholder">
+                    <div className={cx('productInfo')}>
+                      <div className={cx('productImagePlaceholder')}>
                         <i className="fas fa-box"></i>
                       </div>
-                      <a href="#" className="product-name">
+                      <a href="#" className={cx('productName')}>
                         {product.name}
                         {product.hot && (
-                          <span className="hot-indicator" style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem' }}>
+                          <span className={cx('hotIndicator')} style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem' }}>
                             <i className="fas fa-fire"></i> HOT
                           </span>
                         )}
@@ -1111,17 +1145,17 @@ const AdminProductsPage = () => {
                     </div>
                   </td>
                   <td>
-                    <span className="price-cell">
+                    <span className={cx('priceCell')}>
                       {formatPrice(product.monthlyPrice)} VNĐ/tháng
                     </span>
                   </td>
                   <td>
-                    <span className="price-cell">
+                    <span className={cx('priceCell')}>
                       {formatPrice(product.yearlyPrice)} VNĐ/năm
                     </span>
                   </td>
                   <td>
-                    <div className="discount-codes-cell">
+                    <div className={cx('discountCodesCell')}>
                       {product.discount ? (
                         <div
                           style={{
@@ -1205,7 +1239,7 @@ const AdminProductsPage = () => {
                     </div>
                   </td>
                   <td>
-                    <div className="features-cell">
+                    <div className={cx('featuresCell')}>
                       {product.spec && product.spec.attributes && Object.keys(product.spec.attributes).length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {Object.entries(product.spec.attributes).slice(0, 3).map(([key, value], idx) => (
@@ -1233,21 +1267,21 @@ const AdminProductsPage = () => {
                     </div>
                   </td>
                   <td>
-                    <span className="date-cell">
+                    <span className={cx('dateCell')}>
                       {formatDate(product.created_at)}
                     </span>
                   </td>
                   <td>
-                    <div className="action-buttons">
+                    <div className={cx('actionButtons')}>
                       <button
-                        className="btn-icon btn-edit"
+                        className={cx('btnIcon', 'btnEdit')}
                         onClick={() => handleEdit(product)}
                         title="Sửa"
                       >
                         <i className="fas fa-edit"></i>
                       </button>
                       <button
-                        className="btn-icon btn-delete"
+                        className={cx('btnIcon', 'btnDelete')}
                         onClick={() => handleDelete(product.id)}
                         title="Xóa"
                       >
@@ -1264,15 +1298,15 @@ const AdminProductsPage = () => {
       </div>
 
       {/* Pagination */}
-      <div className="products-pagination">
-        <div className="pagination-info">
+      <div className={cx('productsPagination')}>
+        <div className={cx('paginationInfo')}>
           {loadingProducts 
             ? 'Đang tải...'
             : `Từ ${(currentPage - 1) * itemsPerPage + 1} đến ${Math.min(currentPage * itemsPerPage, totalProducts)} trên tổng ${totalProducts}`
           }
         </div>
-        <div className="pagination-controls">
-          <div className="items-per-page">
+        <div className={cx('paginationControls')}>
+          <div className={cx('itemsPerPage')}>
             <span>Hiển thị</span>
             <select
               value={itemsPerPage}
@@ -1285,9 +1319,9 @@ const AdminProductsPage = () => {
             </select>
             <span>Kết quả</span>
           </div>
-          <div className="pagination-buttons">
+          <div className={cx('paginationButtons')}>
             <button
-              className="pagination-btn"
+              className={cx('paginationBtn')}
               disabled={currentPage === 1 || loadingProducts}
               onClick={() => handlePageChange(currentPage - 1)}
             >
@@ -1296,7 +1330,7 @@ const AdminProductsPage = () => {
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
-                className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                className={cx('paginationBtn', { paginationBtnActive: currentPage === page })}
                 onClick={() => handlePageChange(page)}
                 disabled={loadingProducts}
               >
@@ -1304,7 +1338,7 @@ const AdminProductsPage = () => {
               </button>
             ))}
             <button
-              className="pagination-btn"
+              className={cx('paginationBtn')}
               disabled={currentPage === totalPages || loadingProducts}
               onClick={() => handlePageChange(currentPage + 1)}
             >
@@ -1315,58 +1349,58 @@ const AdminProductsPage = () => {
       </div>
 
       {/* Footer Link */}
-      <div className="products-footer-link">
+      <div className={cx('productsFooterLink')}>
         <a href="#">Tìm hiểu thêm về sản phẩm</a>
       </div>
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content product-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className={cx('modalOverlay')} onClick={() => setIsModalOpen(false)}>
+          <div className={cx('modalContent', 'productModal')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modalHeader')}>
               <h2>{editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
-              <button className="modal-close" onClick={() => setIsModalOpen(false)}>
+              <button className={cx('modalClose')} onClick={() => setIsModalOpen(false)}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="product-form">
-              <div className="form-row">
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Tên sản phẩm *</label>
+            <form onSubmit={handleSubmit} className={cx('productForm')}>
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Tên sản phẩm *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="form-input"
+                      className={cx('formInput')}
                       required
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Giá tháng (VNĐ) *</label>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Giá tháng (VNĐ) *</label>
                     <input
                       type="number"
                       value={formData.price_monthly}
                       onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
-                      className="form-input"
+                      className={cx('formInput')}
                       required
                     />
                   </div>
                 </div>
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Giá năm (VNĐ) *</label>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Giá năm (VNĐ) *</label>
                     <input
                       type="number"
                       value={formData.price_annually}
                       onChange={(e) => setFormData({ ...formData, price_annually: e.target.value })}
-                      className="form-input"
+                      className={cx('formInput')}
                       required
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>
                       <input
                         type="checkbox"
                         checked={formData.is_hot}
@@ -1379,12 +1413,12 @@ const AdminProductsPage = () => {
               </div>
 
               {/* Basic spec info */}
-              <div className="form-row">
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Loại dịch vụ *</label>
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Loại dịch vụ *</label>
                     <select
-                      className="form-input"
+                      className={cx('formInput')}
                       value={formData.service_type}
                       onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
                       required
@@ -1396,9 +1430,9 @@ const AdminProductsPage = () => {
                     </select>
                   </div>
                 </div>
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>
                       <input
                         type="checkbox"
                         checked={formData.is_active}
@@ -1411,23 +1445,23 @@ const AdminProductsPage = () => {
               </div>
 
               {/* Spec meta info */}
-              <div className="form-row">
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Tên gói / Spec name</label>
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Tên gói / Spec name</label>
                     <input
                       type="text"
                       value={formData.spec_name}
                       onChange={(e) => setFormData({ ...formData, spec_name: e.target.value })}
-                      className="form-input"
+                      className={cx('formInput')}
                     />
                   </div>
                 </div>
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Loại gói (type)</label>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Loại gói (type)</label>
                     <select
-                      className="form-input"
+                      className={cx('formInput')}
                       value={formData.spec_type}
                       onChange={(e) => setFormData({ ...formData, spec_type: e.target.value })}
                     >
@@ -1439,15 +1473,15 @@ const AdminProductsPage = () => {
                 </div>
               </div>
 
-              <div className="form-row">
-                <div className="form-column">
-                  <div className="form-group">
-                    <label className="form-label">Location</label>
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Location</label>
                     <input
                       type="text"
                       value={formData.spec_location}
                       onChange={(e) => setFormData({ ...formData, spec_location: e.target.value })}
-                      className="form-input"
+                      className={cx('formInput')}
                       placeholder="VD: HCMC, Hanoi..."
                     />
                   </div>
@@ -1643,11 +1677,11 @@ const AdminProductsPage = () => {
                 )}
               </div>
 
-              <div className="form-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+              <div className={cx('formActions')}>
+                <button type="button" className={cx('btn', 'btnSecondary')} onClick={() => setIsModalOpen(false)}>
                   Hủy
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className={cx('btn', 'btnPrimary')}>
                   {editingProduct ? 'Cập nhật' : 'Thêm mới'}
                 </button>
               </div>
