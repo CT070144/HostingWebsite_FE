@@ -101,17 +101,7 @@ const Admin = () => {
         { key: 'categories', label: 'Danh mục', path: '/admin/products/categories' }
       ]
     },
-    {
-      key: 'users',
-      label: 'Người dùng',
-      icon: 'fas fa-users',
-      path: '/admin/users',
-      subMenu: [
-        { key: 'all-users', label: 'Tất cả người dùng', path: '/admin/users' },
-        { key: 'add-user', label: 'Thêm người dùng', path: '/admin/users/add' },
-        { key: 'roles', label: 'Phân quyền', path: '/admin/users/roles' }
-      ]
-    },
+    
     {
       key: 'reports',
       label: 'Báo cáo',
@@ -546,19 +536,7 @@ const Admin = () => {
                     <button className="view-report-btn">Xem báo cáo</button>
                   </div>
 
-                  <div className="stat-card users">
-                    <div className="stat-icon">
-                      <i className="fas fa-users"></i>
-                    </div>
-                    <div className="stat-content">
-                      <div className="stat-label">Người dùng</div>
-                      <div className="stat-value">{formatNumber(dashboardData.stats.totalUsers)}</div>
-                      <div className={`stat-change ${dashboardData.stats.usersChange > 0 ? 'positive' : 'negative'}`}>
-                        <i className={`fas fa-arrow-${dashboardData.stats.usersChange > 0 ? 'up' : 'down'}`}></i>
-                        {Math.abs(dashboardData.stats.usersChange)}% so với tuần trước
-                      </div>
-                    </div>
-                  </div>
+                 
 
                   <div className="stat-card products">
                     <div className="stat-icon">

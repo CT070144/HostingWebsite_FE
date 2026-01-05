@@ -57,7 +57,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
 
       return (
             <div className="instance-sidebar">
-                  <div className="sidebar-header">
+                  <div className="sidebar-header-client">
                         <h6 className="sidebar-title">
                               <i className="fas fa-server me-2"></i>
                               Server View

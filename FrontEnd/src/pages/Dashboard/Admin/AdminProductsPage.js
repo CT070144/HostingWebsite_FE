@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
 import styles from './AdminProductsPage.module.css';
-
-const cx = classNames.bind(styles);
-
 import hostingData from '../../../mockData/hosting.json';
 import homeMockData from '../../../mockData/home.json';
 import { featuredProductService } from '../../../services/featuredProductService';
@@ -12,6 +9,8 @@ import { discountService } from '../../../services/discountService';
 import { productService } from '../../../services/productService';
 import { addonService } from '../../../services/addonService';
 import { useNotify } from '../../../contexts/NotificationContext';
+
+const cx = classNames.bind(styles);
 
 const AdminProductsPage = () => {
   const navigate = useNavigate();
