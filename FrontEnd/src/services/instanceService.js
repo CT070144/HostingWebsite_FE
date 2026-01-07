@@ -22,4 +22,11 @@ export const instanceService = {
       restartVM: (instanceId) => api.post(`/user/instances/${instanceId}/restart`),
 
       suspendVM: (instanceId) => api.post(`/user/instances/${instanceId}/suspend`),
+
+      // Get instance metrics (timeframe: hour, day, week, month, year)
+      getMetrics: (instanceId, timeframe = 'hour') =>
+            api.get(`/user/instances/${instanceId}/metrics`, { params: { timeframe } }),
+
+      // Get real-time instance stats
+      getLiveStats: (instanceId) => api.get(`/user/instances/${instanceId}/live`),
 };

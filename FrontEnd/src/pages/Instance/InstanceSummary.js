@@ -4,6 +4,7 @@ import { instanceService } from '../../services/instanceService';
 import { useNotify } from '../../contexts/NotificationContext';
 import StatusBadge from '../../components/StatusBadge/StatusBadge';
 import VMActionButton from '../../components/VMActionButton/VMActionButton';
+import MonitoringCharts from './MonitoringCharts';
 import './InstanceSummary.css';
 
 const InstanceSummary = ({ instance, onRefresh }) => {
@@ -24,9 +25,12 @@ const InstanceSummary = ({ instance, onRefresh }) => {
             return new Date(dateString).toLocaleString('vi-VN');
       };
 
-      const canStart = instance.status === 'STOPPED' || instance.status === 'SUSPENDED';
-      const canStop = instance.status === 'RUNNING';
-      const canRestart = instance.status === 'RUNNING';
+      const normalizeStatus = (s) => (s || '').toUpperCase();
+      const status = normalizeStatus(instance.status);
+
+      const canStart = status === 'STOPPED' || status === 'SUSPENDED';
+      const canStop = status === 'RUNNING';
+      const canRestart = status === 'RUNNING';
 
       return (
             <div className="instance-summary">
@@ -144,6 +148,11 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                               </Card>
                         </Col>
                   </Row>
+
+                  {/* Monitoring Section */}
+                  <div className="p-3">
+                        <MonitoringCharts instanceId={instance.instance_id} />
+                  </div>
             </div>
       );
 };

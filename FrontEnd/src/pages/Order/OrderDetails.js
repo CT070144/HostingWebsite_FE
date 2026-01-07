@@ -20,7 +20,8 @@ const getStatusBadge = (status) => {
 };
 
 // Map order status to step index for Steps component
-const getStatusStep = (status) => {
+const getStatusStep = (status, sshSuccess) => {
+  if (sshSuccess) return 3;
   const s = String(status || '').toUpperCase();
   if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'DELIVERED') return 3;
   if (s === 'CONFIRMED' || s === 'PROCESSING') return 2;
@@ -289,6 +290,7 @@ const OrderDetails = () => {
   const [generatedKeys, setGeneratedKeys] = useState(null);
   const [sshSubmitting, setSshSubmitting] = useState(false);
   const [sshError, setSshError] = useState(null);
+  const [sshSuccess, setSshSuccess] = useState(false); // New state to track if step 4 reached
 
   const paymentPollingIntervalRef = useRef(null);
   const pollingIntervalRef = useRef(null);
@@ -502,17 +504,20 @@ const OrderDetails = () => {
     );
 
     if (waitingInstances.length === 0) {
-      alert('Không tìm thấy máy ảo cần cấu hình');
+      console.warn('[SSH Config] No instances waiting for SSH configuration');
+      setSshError('Không tìm thấy máy ảo cần cấu hình');
       return;
     }
 
     if (!sshConfig.sshkeys.trim()) {
-      alert('Vui lòng nhập hoặc tạo SSH key');
+      console.warn('[SSH Config] SSH key is empty');
+      setSshError('Vui lòng nhập hoặc tạo SSH key');
       return;
     }
 
     if (!sshConfig.cipassword.trim()) {
-      alert('Vui lòng nhập mật khẩu');
+      console.warn('[SSH Config] Password is empty');
+      setSshError('Vui lòng nhập mật khẩu');
       return;
     }
 
@@ -521,6 +526,8 @@ const OrderDetails = () => {
       setSshError(null);
 
       const instance = waitingInstances[0];
+      console.log('[SSH Config] Starting SSH configuration for instance:', instance.instance_id);
+
       await instanceService.configureSSH(instance.instance_id, {
         ciuser: sshConfig.ciuser,
         cipassword: sshConfig.cipassword,
@@ -528,10 +535,16 @@ const OrderDetails = () => {
         sshkeys: sshConfig.sshkeys
       });
 
-      alert('Cấu hình SSH thành công! Máy ảo đang khởi động...');
-      navigate('/dashboard/instances');
+      console.log('[SSH Config] SSH configuration successful, showing success state');
+      // Show Success State locally - DO NOT NAVIGATE
+      setSshSuccess(true);
+
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      console.log('[SSH Config] sshSuccess state set to true, scrolled to top');
     } catch (err) {
-      console.error('Failed to configure SSH:', err);
+      console.error('[SSH Config] Failed to configure SSH:', err);
       setSshError(err?.response?.data?.error || err?.message || 'Không thể cấu hình SSH');
     } finally {
       setSshSubmitting(false);
@@ -540,10 +553,11 @@ const OrderDetails = () => {
 
   const badge = getStatusBadge(order?.status);
   const currentStep = useMemo(() => {
+    if (sshSuccess) return 3; // Step 4: Success
     if (vmReady) return 2;
     if (pollingForVM) return 1;
-    return getStatusStep(order?.status);
-  }, [order?.status, pollingForVM, vmReady]);
+    return getStatusStep(order?.status, sshSuccess);
+  }, [order?.status, pollingForVM, vmReady, sshSuccess]);
 
   const steps = [
     {
@@ -639,34 +653,28 @@ const OrderDetails = () => {
                     <div className="text-center">
                       <h5>Quét mã QR để thanh toán</h5>
 
+
                       {payment.qr_content ? (
                         <div className="my-3">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(payment.qr_content)}`}
-                            alt="QR Code thanh toán"
-                            style={{ maxWidth: '300px', width: '100%', border: '1px solid #ddd', padding: '10px', borderRadius: '8px' }}
-                            onError={(e) => {
-                              // Fallback to link button if QR fails
-                              e.target.style.display = 'none';
-                              const fallback = document.getElementById('qr-fallback-link');
-                              if (fallback) fallback.style.display = 'block';
-                            }}
-                          />
-                          <div id="qr-fallback-link" style={{ display: 'none' }} className="my-3">
-                            <p className="text-muted">Không thể tải QR code</p>
-                            <a
-                              href={payment.qr_content}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-primary"
-                            >
-                              <i className="fa-solid fa-external-link me-2"></i>
-                              Mở trang thanh toán PayOS
-                            </a>
+                          <div className="border rounded p-2" style={{ backgroundColor: '#f8f9fa' }}>
+                            <iframe
+                              src={payment.qr_content}
+                              style={{
+                                width: '100%',
+                                height: '600px',
+                                border: 'none',
+                                borderRadius: '8px'
+                              }}
+                              title="PayOS Payment"
+                            />
                           </div>
+                          <p className="text-muted small mt-2 text-center">
+                            <i className="fa-solid fa-info-circle me-1"></i>
+                            Quét mã QR bên trên để thanh toán
+                          </p>
                         </div>
                       ) : (
-                        <p className="text-muted">Đang tải QR code...</p>
+                        <p className="text-muted">Đang tải trang thanh toán...</p>
                       )}
 
                       {/* Fallback button is less necessary now, but you can keep it if payment.qr_content implies a URL */}
@@ -712,7 +720,7 @@ const OrderDetails = () => {
         )}
 
         {/* Step 3: SSH Configuration */}
-        {vmReady && (
+        {vmReady && !sshSuccess && (
           <Card className="mb-4">
             <Card.Body>
               <h4 className="mb-3">Cấu hình SSH Key</h4>
@@ -817,6 +825,43 @@ const OrderDetails = () => {
           </Card>
         )}
 
+        {/* Step 4: Success Message */}
+        {sshSuccess && (
+          <Card className="mb-4 text-center border-success">
+            <Card.Body className="py-5">
+              <div className="mb-3 text-success">
+                <i className="fas fa-check-circle fa-4x"></i>
+              </div>
+              <h3 className="text-success mb-3">Đơn hàng đã hoàn thành!</h3>
+              <p className="text-muted mb-4">
+                Cảm ơn bạn đã sử dụng dịch vụ. Máy ảo của bạn đã sẵn sàng sử dụng.
+              </p>
+              <div className="d-flex justify-content-center gap-3">
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    // Navigate to the created instance's summary page
+                    const createdInstance = instances.find(inst =>
+                      inst.status === 'RUNNING' || inst.status === 'CONFIGURING'
+                    );
+                    if (createdInstance) {
+                      navigate(`/instances/${createdInstance.instance_id}/summary`);
+                    } else {
+                      // Fallback to instances list if no instance found
+                      navigate('/instances');
+                    }
+                  }}
+                >
+                  <i className="fas fa-server me-2"></i> Quản lý Instance
+                </Button>
+                <Button variant="outline-primary" onClick={() => navigate('/')}>
+                  Về trang chủ
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        )}
+
         <Row className="g-3">
           <Col lg={5}>
             <Card className="mb-3">
@@ -881,7 +926,7 @@ const OrderDetails = () => {
           </Col>
         </Row>
       </Container>
-    </div>
+    </div >
   );
 };
 
