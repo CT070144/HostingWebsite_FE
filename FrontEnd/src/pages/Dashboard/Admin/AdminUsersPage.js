@@ -414,7 +414,7 @@ const AdminUsersPage = () => {
       {/* Add/Edit Modal */}
       {isModalOpen && (
         <div
-          className="modal-overlay"
+          className="modal-overlay-admin"
           onClick={() => setIsModalOpen(false)}
         >
           <div

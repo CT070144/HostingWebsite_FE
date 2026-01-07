@@ -372,7 +372,7 @@ const AdminHostingBannerPage = () => {
 
       {/* Create/Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+        <div className="modal-overlay-admin" onClick={() => setIsModalOpen(false)}>
           <div className="modal-content hosting-banner-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingBanner ? 'Sửa banner' : 'Tạo banner mới'}</h2>

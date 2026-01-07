@@ -593,6 +593,8 @@ const AdminProductsPage = () => {
       discount_code_id: id,
     }));
     notifySuccess('Đã thêm mã giảm giá!');
+    // Đóng modal mã giảm giá sau khi chọn xong
+    handleCloseDiscountModal();
   };
 
   const handleCreateNewDiscount = () => {
@@ -653,6 +655,8 @@ const AdminProductsPage = () => {
         fetchDiscountCodes().then(() => {
           setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
           notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+          // Đóng modal sau khi tạo và gán mã thành công
+          handleCloseDiscountModal();
         }).catch(() => {
           // If refresh fails, still update local state
           const normalizedDiscount = {
@@ -669,6 +673,8 @@ const AdminProductsPage = () => {
           }
           setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
           notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+          // Đóng modal kể cả khi refresh list thất bại
+          handleCloseDiscountModal();
         });
       })
       .catch((err) => {
@@ -1691,15 +1697,15 @@ const AdminProductsPage = () => {
 
       {/* Discount Code Modal */}
       {isDiscountModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseDiscountModal}>
+        <div className={cx('modalOverlay')} onClick={handleCloseDiscountModal}>
           <div 
-            className="modal-content product-modal" 
+            className={cx('modalContent', 'productModal')} 
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '800px' }}
           >
-            <div className="modal-header">
+            <div className={cx('modalHeader')}>
               <h2>Danh mục Mã giảm giá</h2>
-              <button className="modal-close" onClick={handleCloseDiscountModal}>
+              <button className={cx('modalClose')} onClick={handleCloseDiscountModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -1899,15 +1905,15 @@ const AdminProductsPage = () => {
 
       {/* Featured Products Modal */}
       {isFeaturedModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseFeaturedModal}>
+        <div className={cx('modalOverlay')} onClick={handleCloseFeaturedModal}>
           <div
-            className="modal-content product-modal"
+            className={cx('modalContent', 'productModal')}
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '820px' }}
           >
-            <div className="modal-header">
+            <div className={cx('modalHeader')}>
               <h2>Danh mục Sản phẩm nổi bật</h2>
-              <button className="modal-close" onClick={handleCloseFeaturedModal}>
+              <button className={cx('modalClose')} onClick={handleCloseFeaturedModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -2111,15 +2117,15 @@ const AdminProductsPage = () => {
 
       {/* Featured Preview Modal */}
       {isFeaturedPreviewOpen && (
-        <div className="modal-overlay" onClick={() => setIsFeaturedPreviewOpen(false)}>
+        <div className={cx('modalOverlay')} onClick={() => setIsFeaturedPreviewOpen(false)}>
           <div
-            className="modal-content product-modal"
+            className={cx('modalContent', 'productModal')}
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '420px', padding: 0,paddingBottom:'10px' }}
+            style={{ maxWidth: '420px', padding: 0, paddingBottom: '10px' }}
           >
-            <div className="modal-header">
+            <div className={cx('modalHeader')}>
               <h2>Preview</h2>
-              <button className="modal-close" onClick={() => setIsFeaturedPreviewOpen(false)}>
+              <button className={cx('modalClose')} onClick={() => setIsFeaturedPreviewOpen(false)}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -2208,15 +2214,15 @@ const AdminProductsPage = () => {
 
       {/* Addons Modal */}
       {isAddonModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseAddonModal}>
+        <div className={cx('modalOverlay')} onClick={handleCloseAddonModal}>
           <div
-            className="modal-content product-modal"
+            className={cx('modalContent', 'productModal')}
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: '900px' }}
           >
-            <div className="modal-header">
+            <div className={cx('modalHeader')}>
               <h2>Quản lý Addons</h2>
-              <button className="modal-close" onClick={handleCloseAddonModal}>
+              <button className={cx('modalClose')} onClick={handleCloseAddonModal}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
