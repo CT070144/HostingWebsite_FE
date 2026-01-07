@@ -518,7 +518,7 @@ const AdminOrdersPage = () => {
               <div className="stat-label">Đơn hàng thành công</div>
               {loadingStats ? (
                 <Spinner animation="border" size="sm" />
-              ) : (
+              ) : (   
                 <div className="stat-value">
                   {(stats.statusCounts.PAID || 0) + (stats.statusCounts.SUCCESS || 0) + (stats.statusCounts.COMPLETED || 0)}
                 </div>
@@ -714,6 +714,7 @@ const AdminOrdersPage = () => {
         size="lg"
         centered
         scrollable
+        className="modal-content-order"
       >
         <Modal.Header closeButton className="bg-primary text-white">
           <Modal.Title>
@@ -915,7 +916,7 @@ const AdminOrdersPage = () => {
             </Alert>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="modal-footer-order">
           <Button variant="secondary" onClick={() => setShowOrderModal(false)}>
             Đóng
           </Button>
