@@ -20,11 +20,11 @@ const AdminLayout = () => {
 
   const configurationMenu = {
     key: 'configuration',
-    label: 'Cấu hình',
+    label: 'Cài đặt',
     icon: 'fas fa-cog',
     path: '/admin/configuration/users',
     subMenu: [
-      { key: 'users', label: 'Người dùng', path: '/admin/configuration/users' },
+     
       { key: 'banner', label: 'Banner', path: '/admin/configuration/banner' },
       { key: 'hosting-banner', label: 'Banner Hosting', path: '/admin/configuration/hosting-banner' },
       { key: 'faqs', label: 'FAQs', path: '/admin/configuration/faqs' },

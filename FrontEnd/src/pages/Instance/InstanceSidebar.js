@@ -44,6 +44,27 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                             Server View
                       </h6>
                 </div>
+            <div className="instance-sidebar">
+                  <div className="sidebar-header-client">
+                        <h6 className="sidebar-title">
+                              <i className="fas fa-server me-2"></i>
+                              Server View
+                        </h6>
+                  </div>
+
+                  <div className="sidebar-search">
+                        <InputGroup size="sm">
+                              <InputGroup.Text>
+                                    <i className="fas fa-search"></i>
+                              </InputGroup.Text>
+                              <Form.Control
+                                    placeholder="Search..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="search-input"
+                              />
+                        </InputGroup>
+                  </div>
 
                 <div className="sidebar-search">
                       <InputGroup size="sm">

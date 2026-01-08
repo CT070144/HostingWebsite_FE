@@ -65,6 +65,7 @@ const AdminBannerPage = () => {
     buttonLink: '',
     display_order: 0,
     image_type: 'URL', // URL or FILE
+    is_active: true,
   });
   const [imagePreview, setImagePreview] = useState('');
   const [dragActive, setDragActive] = useState(false);
@@ -175,12 +176,16 @@ const AdminBannerPage = () => {
     }
 
     const fd = new FormData();
-    fd.append('title', formData.title);
-    fd.append('subtitle', formData.subtitle);
-    fd.append('description', formData.description);
+    // Các field text cơ bản theo đúng format API
+    fd.append('title', formData.title || '');
+    fd.append('subtitle', formData.subtitle || '');
+    fd.append('description', formData.description || '');
     fd.append('image_type', formData.image_type || 'URL');
-    fd.append('button_text', formData.buttonText);
-    fd.append('button_link', formData.buttonLink);
+    fd.append('button_text', formData.buttonText || '');
+    fd.append('button_link', formData.buttonLink || '');
+    // API docs có is_active boolean
+    fd.append('is_active', String(formData.is_active !== false));
+    // Trường này backend có thể có thêm, vẫn giữ nếu đang dùng
     fd.append('display_order', Number(formData.display_order) || 0);
 
     if (formData.image_type === 'FILE') {
@@ -199,7 +204,7 @@ const AdminBannerPage = () => {
 
     try {
       if (editingBanner) {
-        await bannerService.update(editingBanner.slide_id, fd);
+        await bannerService.update(editingBanner.slide_id || editingBanner.id, fd);
       } else {
         await bannerService.create(fd);
       }
@@ -232,6 +237,7 @@ const AdminBannerPage = () => {
       buttonText: btnText,
       buttonLink: btnLink,
       display_order: banner.display_order ?? 0,
+      is_active: banner.is_active !== undefined ? banner.is_active : true,
     });
     setImagePreview(banner.image || '');
     setImageInputType((banner.image_type || 'URL').toLowerCase() === 'file' ? 'upload' : 'url');
@@ -278,6 +284,7 @@ const AdminBannerPage = () => {
       buttonLink: '',
       display_order: 0,
       image_type: 'URL',
+      is_active: true,
     });
     setImagePreview('');
     setImageInputType('url');
@@ -295,6 +302,7 @@ const AdminBannerPage = () => {
       buttonLink: '',
       display_order: 0,
       image_type: 'URL',
+      is_active: true,
     });
     setImagePreview('');
     setImageInputType('url');
@@ -350,7 +358,7 @@ const AdminBannerPage = () => {
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-overlay-admin" onClick={handleCloseModal}>
           <div className="modal-content banner-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingBanner ? 'Sửa banner' : 'Thêm banner mới'}</h2>
@@ -561,7 +569,7 @@ const AdminBannerPage = () => {
 
       {/* View Modal */}
       {isViewModalOpen && editingBanner && (
-        <div className="modal-overlay" onClick={() => setIsViewModalOpen(false)}>
+        <div className="modal-overlay-admin" onClick={() => setIsViewModalOpen(false)}>
           <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Chi tiết Banner</h2>

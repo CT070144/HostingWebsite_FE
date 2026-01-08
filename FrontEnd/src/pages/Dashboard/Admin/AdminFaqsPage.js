@@ -228,7 +228,7 @@ const AdminFaqsPage = () => {
 
       {/* Add / Edit Modal */}
       {isEditorOpen && (
-        <div className="modal-overlay" onClick={() => setIsEditorOpen(false)}>
+        <div className="modal-overlay-admin" onClick={() => setIsEditorOpen(false)}>
           <div
             className="modal-content faq-modal"
             onClick={(e) => e.stopPropagation()}
@@ -337,7 +337,7 @@ const AdminFaqsPage = () => {
 
       {/* View modal */}
       {isViewOpen && viewingFaq && (
-        <div className="modal-overlay" onClick={() => setIsViewOpen(false)}>
+        <div className="modal-overlay-admin" onClick={() => setIsViewOpen(false)}>
           <div
             className="modal-content faq-modal"
             onClick={(e) => e.stopPropagation()}

@@ -353,7 +353,7 @@ const AdminServiceFeaturesPage = () => {
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
+        <div className="modal-overlay-admin" onClick={handleCloseModal}>
           <div className="modal-content feature-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingFeature ? 'Sửa dịch vụ' : 'Thêm dịch vụ mới'}</h2>
@@ -570,7 +570,7 @@ const AdminServiceFeaturesPage = () => {
 
       {/* View Modal */}
       {isViewModalOpen && viewingFeature && (
-        <div className="modal-overlay" onClick={() => setIsViewModalOpen(false)}>
+        <div className="modal-overlay-admin" onClick={() => setIsViewModalOpen(false)}>
           <div className="modal-content view-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Chi tiết Dịch vụ</h2>

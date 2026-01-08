@@ -16,6 +16,7 @@
     "axios": "^1.6.2",
     "bootstrap": "^5.3.2",
     "chart.js": "^4.4.0",
+    "classnames": "^2.5.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "qrcode.react": "^4.2.0",

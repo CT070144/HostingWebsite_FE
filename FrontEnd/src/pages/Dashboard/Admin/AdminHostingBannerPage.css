@@ -115,7 +115,8 @@
 
 .hosting-banner-modal {
   max-width: 900px;
-  max-height: 90vh;
+  height: auto;
+  max-height: calc(100vh - 40px);
   overflow-y: auto;
 }
 

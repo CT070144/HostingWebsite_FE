@@ -1376,7 +1376,7 @@
 }
 
 /* Modal Styles */
-.modal-overlay {
+.modal-overlay-admin {
   position: fixed;
   top: 0;
   left: 0;
@@ -1384,16 +1384,16 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 2000;
-  padding: 1rem;
+  padding: 2rem 1rem;
   
   overflow-y: scroll; /* hoặc auto */
   -ms-overflow-style: none;  /* IE, Edge */
   scrollbar-width: none;     /* Firefox */
 }
-.modal-overlay::-webkit-scrollbar {
+.modal-overlay-admin::-webkit-scrollbar {
   display: none;
 }
 
@@ -1403,8 +1403,11 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 100%;
   max-width: 1100px;
-  max-height: 90vh;
-  overflow-y: auto;
+  height: auto;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto; /* enable scrolling inside modal */
+  display: flex;
+  flex-direction: column;
   position: relative;
   /* Hide scrollbar */
   -ms-overflow-style: none;

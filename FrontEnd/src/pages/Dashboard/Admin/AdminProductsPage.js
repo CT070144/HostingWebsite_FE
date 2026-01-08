@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import './AdminProductsPage.css';
-
+import classNames from 'classnames/bind';
+import styles from './AdminProductsPage.module.css';
 import hostingData from '../../../mockData/hosting.json';
 import homeMockData from '../../../mockData/home.json';
 import { featuredProductService } from '../../../services/featuredProductService';
@@ -10,6 +9,8 @@ import { discountService } from '../../../services/discountService';
 import { productService } from '../../../services/productService';
 import { addonService } from '../../../services/addonService';
 import { useNotify } from '../../../contexts/NotificationContext';
+
+const cx = classNames.bind(styles);
 
 const AdminProductsPage = () => {
   const navigate = useNavigate();
@@ -277,6 +278,7 @@ const AdminProductsPage = () => {
   useEffect(() => {
     const isAnyModalOpen = isModalOpen || isDiscountModalOpen || isFeaturedModalOpen || isFeaturedPreviewOpen || isAddonModalOpen;
 
+    
     if (isAnyModalOpen) {
       // Save current scroll position
       const scrollY = window.scrollY;
@@ -592,6 +594,8 @@ const AdminProductsPage = () => {
       discount_code_id: id,
     }));
     notifySuccess('Đã thêm mã giảm giá!');
+    // Đóng modal mã giảm giá sau khi chọn xong
+    handleCloseDiscountModal();
   };
 
   const handleCreateNewDiscount = () => {
@@ -674,6 +678,52 @@ const AdminProductsPage = () => {
           console.error('Create discount failed', err);
           const errorMessage = err?.response?.data?.message || err?.message || 'Tạo mã giảm giá thất bại';
           notifyError(errorMessage);
+      .then((res) => {
+        // Handle different response formats
+        let created = payload;
+        if (res.data) {
+          created = res.data.data || res.data || payload;
+        }
+        
+        // Extract id to set to product's discount_code_id
+        const idToAdd = created.discount_code_id || created.id;
+        if (!idToAdd) {
+          fetchDiscountCodes();
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới!');
+          return;
+        }
+        
+        // Update form data with new discount id (mỗi sản phẩm chỉ 1 mã)
+        setFormData(prev => ({
+          ...prev,
+          discount_code_id: idToAdd,
+        }));
+
+        // Refresh the discount codes list from API
+        fetchDiscountCodes().then(() => {
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+          // Đóng modal sau khi tạo và gán mã thành công
+          handleCloseDiscountModal();
+        }).catch(() => {
+          // If refresh fails, still update local state
+          const normalizedDiscount = {
+            discount_code_id: created.discount_code_id || created.id,
+            code: created.code || payload.code,
+            discount_percent: created.discount_percent ?? payload.discount_percent,
+            max_cycle: created.max_cycle ?? payload.max_cycle,
+            description: created.description || payload.description || '',
+            is_active: created.is_active ?? true,
+          };
+          const existsInAll = allDiscountCodes.some(d => d.discount_code_id === normalizedDiscount.discount_code_id);
+          if (!existsInAll) {
+            setAllDiscountCodes(prev => [...prev, normalizedDiscount]);
+          }
+          setNewDiscountCode({ code: '', discount_percent: '', max_cycle: '', description: '' });
+          notifySuccess('Đã tạo mã giảm giá mới và thêm vào sản phẩm!');
+          // Đóng modal kể cả khi refresh list thất bại
+          handleCloseDiscountModal();
         });
   };
 
@@ -927,6 +977,27 @@ const AdminProductsPage = () => {
           <div className="header-actions">
             <button className="btn btn-secondary" onClick={handleExport}>
               <i className="fas fa-file-export"></i> Xuất file
+    <div className={cx('adminProductsPage')}>
+      {/* Page Header */}
+      <div className={cx('pageHeader')}>
+        <h1 className={cx('pageTitle')}>Danh sách sản phẩm</h1>
+        <div className={cx('headerActions')}>
+          <button className={cx('btn', 'btnSecondary')} onClick={handleExport}>
+            <i className="fas fa-file-export"></i> Xuất file
+          </button>
+          
+          <button className={cx('btn', 'btnSecondary')} onClick={handleOpenFeaturedModal}>
+            <i className="fas fa-star"></i> Sản phẩm nổi bật
+          </button>
+          <button className={cx('btn', 'btnSecondary')} onClick={handleOpenAddonModal}>
+            <i className="fas fa-puzzle-piece"></i> Addons
+          </button>
+          <button className={cx('btn', 'btnSecondary')} onClick={() => navigate('/admin/configuration/hosting-banner')}>
+            <i className="fas fa-image"></i> Banner Hosting
+          </button>
+          <div className="btn-group">
+            <button className={cx('btn', 'btnPrimary')} onClick={handleAddNew}>
+              <i className="fas fa-plus"></i> Thêm sản phẩm
             </button>
 
             <button className="btn btn-secondary" onClick={handleOpenFeaturedModal}>
@@ -954,6 +1025,98 @@ const AdminProductsPage = () => {
           <div className="filter-controls">
             <div className="search-box-filter">
               <i className="fas fa-search"></i>
+      {/* Search and Filter Bar */}
+      <div className={cx('productsFilterBar')}>
+        <div className={cx('filterTabs')}>
+          <button className={cx('filterTab', 'filterTabActive')}>Tất cả</button>
+        </div>
+        <div className={cx('filterControls')}>
+          <div className={cx('searchBoxFilter')}>
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo mã sản phẩm, tên sản phẩm, barcode"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {/* Service type filter (simple) */}
+          <select 
+            className={cx('filterSelect')}
+            value={filters.service_type}
+            onChange={(e) => handleFilterChange('service_type', e.target.value)}
+          >
+            <option value="">Tất cả loại dịch vụ</option>
+            <option value="VPS">VPS</option>
+            <option value="Hosting">Hosting</option>
+            <option value="Cloud_Compute">Cloud Compute</option>
+          </select>
+          {/* Has discount filter (simple) */}
+          <select
+            className={cx('filterSelect')}
+            value={filters.has_discount}
+            onChange={(e) => handleFilterChange('has_discount', e.target.value)}
+          >
+            <option value="">Tất cả khuyến mãi</option>
+            <option value="true">Có mã giảm giá</option>
+            <option value="false">Không có mã giảm giá</option>
+          </select>
+          {/* Sort (simple) */}
+          <select 
+            className={cx('filterSelect')}
+            value={filters.sort}
+            onChange={(e) => handleFilterChange('sort', e.target.value)}
+          >
+            <option value="">Sắp xếp</option>
+            <option value="price_asc">Giá tăng dần</option>
+            <option value="price_desc">Giá giảm dần</option>
+          </select>
+
+          {/* Toggle advanced filters */}
+          <button
+            className={cx('btn', 'btnSecondary')}
+            type="button"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+          >
+            <i className={`fas fa-${showAdvancedFilters ? 'chevron-up' : 'chevron-down'}`}></i>{' '}
+            Bộ lọc nâng cao
+          </button>
+
+          {/* Advanced filters: hiển thị khi cần */}
+          {showAdvancedFilters && (
+            <>
+              {/* Spec type filter */}
+              <select
+                className="filter-select"
+                value={filters.spec_type}
+                onChange={(e) => handleFilterChange('spec_type', e.target.value)}
+              >
+                <option value="">Tất cả loại gói/spec</option>
+                <option value="Package">Package</option>
+                <option value="Usage_Unit">Usage Unit</option>
+              </select>
+              {/* Location filter */}
+              <select
+                className="filter-select"
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+              >
+                <option value="">Tất cả location</option>
+                <option value="HCMC">HCMC</option>
+                <option value="Hanoi">Hanoi</option>
+                <option value="DaNang">DaNang</option>
+              </select>
+              {/* Active status filter */}
+              <select
+                className="filter-select"
+                value={filters.is_active}
+                onChange={(e) => handleFilterChange('is_active', e.target.value)}
+              >
+                <option value="">Tất cả trạng thái</option>
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Ngừng hoạt động</option>
+              </select>
+              {/* Price range */}
               <input
                   type="text"
                   placeholder="Tìm kiếm theo mã sản phẩm, tên sản phẩm, barcode"
@@ -1046,6 +1209,20 @@ const AdminProductsPage = () => {
                       onChange={(e) => handleFilterChange('min_price', e.target.value)}
                       style={{ width: '150px', padding: '8px' }}
                   />
+      {/* Products Table */}
+      <div className={cx('productsTableContainer')}>
+        {loadingProducts ? (
+          <div className="text-center py-5">
+            <div className={cx('spinnerBorder', 'spinnerBorderTextPrimary')} role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3">Đang tải sản phẩm...</p>
+          </div>
+        ) : (
+          <table className={cx('productsTable')}>
+            <thead>
+              <tr>
+                <th>
                   <input
                       type="number"
                       className="filter-select"
@@ -1095,6 +1272,14 @@ const AdminProductsPage = () => {
                 <thead>
                 <tr>
                   <th>
+                  <td colSpan="8" className={cx('emptyState')}>
+                    Không tìm thấy sản phẩm nào.
+                  </td>
+                </tr>
+              ) : (
+              currentProducts.map((product) => (
+                <tr key={product.id}>
+                  <td>
                     <input
                         type="checkbox"
                         checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
@@ -1163,6 +1348,43 @@ const AdminProductsPage = () => {
                                       }}
                                   >
                                     <div>
+                  </td>
+                  <td>
+                    <div className={cx('productInfo')}>
+                      <div className={cx('productImagePlaceholder')}>
+                        <i className="fas fa-box"></i>
+                      </div>
+                      <a href="#" className={cx('productName')}>
+                        {product.name}
+                        {product.hot && (
+                          <span className={cx('hotIndicator')} style={{ marginLeft: '8px', color: '#ef4444', fontSize: '0.75rem' }}>
+                            <i className="fas fa-fire"></i> HOT
+                          </span>
+                        )}
+                      </a>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={cx('priceCell')}>
+                      {formatPrice(product.monthlyPrice)} VNĐ/tháng
+                    </span>
+                  </td>
+                  <td>
+                    <span className={cx('priceCell')}>
+                      {formatPrice(product.yearlyPrice)} VNĐ/năm
+                    </span>
+                  </td>
+                  <td>
+                    <div className={cx('discountCodesCell')}>
+                      {product.discount ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <div>
                             <span
                                 className="discount-code-badge"
                                 style={{
@@ -1248,6 +1470,21 @@ const AdminProductsPage = () => {
                                               color: '#374151',
                                             }}
                                         >
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div className={cx('featuresCell')}>
+                      {product.spec && product.spec.attributes && Object.keys(product.spec.attributes).length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          {Object.entries(product.spec.attributes).slice(0, 3).map(([key, value], idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                fontSize: '0.6875rem',
+                                color: '#374151',
+                              }}
+                            >
                               <strong>{formatFeatureLabel(key)}:</strong> {String(value)}
                             </span>
                                     ))}
@@ -1322,6 +1559,76 @@ const AdminProductsPage = () => {
                   className="pagination-btn"
                   disabled={currentPage === 1 || loadingProducts}
                   onClick={() => handlePageChange(currentPage - 1)}
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={cx('dateCell')}>
+                      {formatDate(product.created_at)}
+                    </span>
+                  </td>
+                  <td>
+                    <div className={cx('actionButtons')}>
+                      <button
+                        className={cx('btnIcon', 'btnEdit')}
+                        onClick={() => handleEdit(product)}
+                        title="Sửa"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        className={cx('btnIcon', 'btnDelete')}
+                        onClick={() => handleDelete(product.id)}
+                        title="Xóa"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Pagination */}
+      <div className={cx('productsPagination')}>
+        <div className={cx('paginationInfo')}>
+          {loadingProducts 
+            ? 'Đang tải...'
+            : `Từ ${(currentPage - 1) * itemsPerPage + 1} đến ${Math.min(currentPage * itemsPerPage, totalProducts)} trên tổng ${totalProducts}`
+          }
+        </div>
+        <div className={cx('paginationControls')}>
+          <div className={cx('itemsPerPage')}>
+            <span>Hiển thị</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(e.target.value)}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>Kết quả</span>
+          </div>
+          <div className={cx('paginationButtons')}>
+            <button
+              className={cx('paginationBtn')}
+              disabled={currentPage === 1 || loadingProducts}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              <i className="fas fa-chevron-left"></i>
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                className={cx('paginationBtn', { paginationBtnActive: currentPage === page })}
+                onClick={() => handlePageChange(page)}
+                disabled={loadingProducts}
               >
                 <i className="fas fa-chevron-left"></i>
               </button>
@@ -1343,6 +1650,14 @@ const AdminProductsPage = () => {
                 <i className="fas fa-chevron-right"></i>
               </button>
             </div>
+            ))}
+            <button
+              className={cx('paginationBtn')}
+              disabled={currentPage === totalPages || loadingProducts}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              <i className="fas fa-chevron-right"></i>
+            </button>
           </div>
         </div>
 
@@ -1469,6 +1784,66 @@ const AdminProductsPage = () => {
                         </select>
                       </div>
                     </div>
+      {/* Footer Link */}
+      <div className={cx('productsFooterLink')}>
+        <a href="#">Tìm hiểu thêm về sản phẩm</a>
+      </div>
+
+      {/* Add/Edit Modal */}
+      {isModalOpen && (
+        <div className={cx('modalOverlay')} onClick={() => setIsModalOpen(false)}>
+          <div className={cx('modalContent', 'productModal')} onClick={(e) => e.stopPropagation()}>
+            <div className={cx('modalHeader')}>
+              <h2>{editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h2>
+              <button className={cx('modalClose')} onClick={() => setIsModalOpen(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className={cx('productForm')}>
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Tên sản phẩm *</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className={cx('formInput')}
+                      required
+                    />
+                  </div>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Giá tháng (VNĐ) *</label>
+                    <input
+                      type="number"
+                      value={formData.price_monthly}
+                      onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
+                      className={cx('formInput')}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Giá năm (VNĐ) *</label>
+                    <input
+                      type="number"
+                      value={formData.price_annually}
+                      onChange={(e) => setFormData({ ...formData, price_annually: e.target.value })}
+                      className={cx('formInput')}
+                      required
+                    />
+                  </div>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_hot}
+                        onChange={(e) => setFormData({ ...formData, is_hot: e.target.checked })}
+                      />
+                      Nổi bật
+                    </label>
                   </div>
 
                   <div className="form-row">
@@ -1493,6 +1868,156 @@ const AdminProductsPage = () => {
                         Thuộc tính kỹ thuật (spec.attributes)
                       </label>
                       <button
+              {/* Basic spec info */}
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Loại dịch vụ *</label>
+                    <select
+                      className={cx('formInput')}
+                      value={formData.service_type}
+                      onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                      required
+                    >
+                      <option value="">-- Chọn loại dịch vụ --</option>
+                      <option value="VPS">VPS</option>
+                      <option value="Hosting">Hosting</option>
+                      <option value="Cloud_Compute">Cloud Compute</option>
+                    </select>
+                  </div>
+                </div>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>
+                      <input
+                        type="checkbox"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                      />
+                      Đang hoạt động
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Spec meta info */}
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Tên gói / Spec name</label>
+                    <input
+                      type="text"
+                      value={formData.spec_name}
+                      onChange={(e) => setFormData({ ...formData, spec_name: e.target.value })}
+                      className={cx('formInput')}
+                    />
+                  </div>
+                </div>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Loại gói (type)</label>
+                    <select
+                      className={cx('formInput')}
+                      value={formData.spec_type}
+                      onChange={(e) => setFormData({ ...formData, spec_type: e.target.value })}
+                    >
+                      <option value="">-- Chọn --</option>
+                      <option value="Package">Package</option>
+                      <option value="Usage_Unit">Usage Unit</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className={cx('formRow')}>
+                <div className={cx('formColumn')}>
+                  <div className={cx('formGroup')}>
+                    <label className={cx('formLabel')}>Location</label>
+                    <input
+                      type="text"
+                      value={formData.spec_location}
+                      onChange={(e) => setFormData({ ...formData, spec_location: e.target.value })}
+                      className={cx('formInput')}
+                      placeholder="VD: HCMC, Hanoi..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Features Section - Dynamic Key-Value Pairs */}
+              <div className="form-group" style={{ marginTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <label className="form-label" style={{ marginBottom: 0, fontSize: '16px', fontWeight: 600 }}>
+                    Thuộc tính kỹ thuật (spec.attributes)
+                  </label>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        spec_attributes: [...(formData.spec_attributes || []), { key: '', value: '' }],
+                      });
+                    }}
+                    style={{ padding: '6px 15px', fontSize: '14px' }}
+                  >
+                    <i className="fas fa-plus"></i> Thêm thuộc tính
+                  </button>
+                </div>
+                
+                {(formData.spec_attributes || []).length === 0 ? (
+                  <p style={{ color: '#999', fontStyle: 'italic', padding: '15px', textAlign: 'center', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                    Chưa có thuộc tính nào. Nhấn nút "Thêm thuộc tính" để thêm.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {(formData.spec_attributes || []).map((feature, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '8px',
+                          backgroundColor: '#fff',
+                        }}
+                      >
+                        <input
+                          type="text"
+                          value={feature.key || ''}
+                          onChange={(e) => {
+                            const updated = [...(formData.spec_attributes || [])];
+                            updated[index] = { ...updated[index], key: e.target.value };
+                            setFormData({ ...formData, spec_attributes: updated });
+                          }}
+                          className="form-input"
+                          placeholder="VD: cpuCores, ramGB, storageGB..."
+                          style={{ flex: 1 }}
+                          onBlur={(e) => {
+                            // Format label on blur
+                            const formattedKey = formatFeatureLabel(e.target.value);
+                            if (formattedKey !== e.target.value) {
+                              const updated = [...(formData.spec_attributes || [])];
+                              updated[index] = { ...updated[index], key: formattedKey };
+                              setFormData({ ...formData, spec_attributes: updated });
+                            }
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={feature.value || ''}
+                          onChange={(e) => {
+                            const updated = [...(formData.spec_attributes || [])];
+                            updated[index] = { ...updated[index], value: e.target.value };
+                            setFormData({ ...formData, spec_attributes: updated });
+                          }}
+                          className="form-input"
+                          placeholder="VD: 50 GB, 4.0 GB..."
+                          style={{ flex: 1 }}
+                        />
+                        <button
                           type="button"
                           className="btn btn-primary"
                           onClick={() => {
@@ -1674,6 +2199,36 @@ const AdminProductsPage = () => {
                         </div>
                     )}
                   </div>
+                )}
+              </div>
+
+              <div className={cx('formActions')}>
+                <button type="button" className={cx('btn', 'btnSecondary')} onClick={() => setIsModalOpen(false)}>
+                  Hủy
+                </button>
+                <button type="submit" className={cx('btn', 'btnPrimary')}>
+                  {editingProduct ? 'Cập nhật' : 'Thêm mới'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Discount Code Modal */}
+      {isDiscountModalOpen && (
+        <div className={cx('modalOverlay')} onClick={handleCloseDiscountModal}>
+          <div 
+            className={cx('modalContent', 'productModal')} 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '800px' }}
+          >
+            <div className={cx('modalHeader')}>
+              <h2>Danh mục Mã giảm giá</h2>
+              <button className={cx('modalClose')} onClick={handleCloseDiscountModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
 
                   <div className="form-actions">
                     <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
@@ -1910,6 +2465,27 @@ const AdminProductsPage = () => {
                     <i className="fas fa-times"></i>
                   </button>
                 </div>
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Featured Products Modal */}
+      {isFeaturedModalOpen && (
+        <div className={cx('modalOverlay')} onClick={handleCloseFeaturedModal}>
+          <div
+            className={cx('modalContent', 'productModal')}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '820px' }}
+          >
+            <div className={cx('modalHeader')}>
+              <h2>Danh mục Sản phẩm nổi bật</h2>
+              <button className={cx('modalClose')} onClick={handleCloseFeaturedModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
 
                 <div style={{ padding: '16px' }}>
                   <div style={{ marginBottom: '16px', fontSize: '13px', color: '#6b7280' }}>
@@ -2202,6 +2778,25 @@ const AdminProductsPage = () => {
                   </div>
                 </div>
               </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Featured Preview Modal */}
+      {isFeaturedPreviewOpen && (
+        <div className={cx('modalOverlay')} onClick={() => setIsFeaturedPreviewOpen(false)}>
+          <div
+            className={cx('modalContent', 'productModal')}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '420px', padding: 0, paddingBottom: '10px' }}
+          >
+            <div className={cx('modalHeader')}>
+              <h2>Preview</h2>
+              <button className={cx('modalClose')} onClick={() => setIsFeaturedPreviewOpen(false)}>
+                <i className="fas fa-times"></i>
+              </button>
             </div>
         )}
 
@@ -2252,6 +2847,75 @@ const AdminProductsPage = () => {
                                   {addon.addon_name}
                                   {!addon.is_active && (
                                       <span style={{ marginLeft: '8px', color: '#ef4444', fontSize: '12px' }}>
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    background: '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 12px',
+                    fontWeight: 700,
+                    cursor: 'not-allowed',
+                  }}
+                  disabled
+                >
+                  Chi tiết bảng giá
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Addons Modal */}
+      {isAddonModalOpen && (
+        <div className={cx('modalOverlay')} onClick={handleCloseAddonModal}>
+          <div
+            className={cx('modalContent', 'productModal')}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '900px' }}
+          >
+            <div className={cx('modalHeader')}>
+              <h2>Quản lý Addons</h2>
+              <button className={cx('modalClose')} onClick={handleCloseAddonModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div style={{ padding: '16px' }}>
+              {/* Current list */}
+              <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                {loadingAddons ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#1976d2' }}>
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p style={{ marginTop: '10px' }}>Đang tải addons...</p>
+                  </div>
+                ) : addons.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>
+                    <i className="fas fa-inbox" style={{ fontSize: '40px' }}></i>
+                    <div>Chưa có addon nào</div>
+                  </div>
+                ) : (
+                  addons.map((addon) => (
+                    <div
+                      key={addon.addon_id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 14px',
+                        borderBottom: '1px solid #e5e7eb'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                          {addon.addon_name}
+                          {!addon.is_active && (
+                            <span style={{ marginLeft: '8px', color: '#ef4444', fontSize: '12px' }}>
                               (Ngừng kích hoạt)
                             </span>
                                   )}
