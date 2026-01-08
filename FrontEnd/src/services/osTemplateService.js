@@ -6,7 +6,7 @@ export const osTemplateService = {
   list: () => api.get('/public/os-templates'),
 
   // Get all OS templates (admin endpoint)
-  listAdmin: () => api.get('/admin/os-templates'),
+  listAdmin: () => api.get('/public/os-templates'),
   
   // Get OS template by ID
   getById: (templateId) => api.get(`/public/os-templates/${templateId}`),

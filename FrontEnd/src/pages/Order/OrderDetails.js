@@ -383,8 +383,20 @@ const OrderDetails = () => {
       const res = await paymentService.checkPaymentStatus(payment.payment_id);
       const updatedPayment = res.data;
 
+      // Preserve payment details if they exist in current payment but not in updated response
+      const mergedPayment = {
+        ...updatedPayment,
+        qr_code: updatedPayment.qr_code || payment.qr_code,
+        qr_content: updatedPayment.qr_content || payment.qr_content,
+        bank_name: updatedPayment.bank_name || payment.bank_name,
+        bank_account: updatedPayment.bank_account || payment.bank_account,
+        bank_code: updatedPayment.bank_code || payment.bank_code,
+        amount: updatedPayment.amount || payment.amount,
+        currency: updatedPayment.currency || payment.currency,
+      };
+
       // Update payment state
-      setPayment(updatedPayment);
+      setPayment(mergedPayment);
 
       // If payment is now PAID, stop polling and trigger VM polling
       if (updatedPayment.status === 'PAID') {
@@ -398,7 +410,7 @@ const OrderDetails = () => {
     } catch (err) {
       console.error('Failed to poll payment status:', err);
     }
-  }, [payment?.payment_id]);
+  }, [payment?.payment_id, payment?.qr_code, payment?.qr_content, payment?.bank_name, payment?.bank_account, payment?.bank_code]);
 
   // Start payment polling when payment is created and PENDING
   useEffect(() => {
@@ -636,13 +648,12 @@ const OrderDetails = () => {
                     <div className="text-center">
                       <h5>Quét mã QR để thanh toán</h5>
 
-                      {payment.qr_content && (
-                        <div className="my-3 p-2 border rounded d-inline-block">
-                          {/* Generates QR directly in SVG */}
+                      {payment.qr_code && (
+                        <div className="my-3 p-2 border rounded d-inline-block bg-white">
                           <QRCodeSVG
                             value={payment.qr_code}
                             size={250}
-                            level={"H"} // High error correction level
+                            level="M"
                             includeMargin={true}
                           />
                         </div>
@@ -652,11 +663,17 @@ const OrderDetails = () => {
 
                       <div className="mt-3">
                         <p><strong>Số tiền:</strong> {formatPrice(payment.amount)} {payment.currency}</p>
-                        <p><strong>Ngân hàng:</strong> {payment.bank_name}</p>
-                        <p><strong>Số tài khoản:</strong> {payment.bank_account}</p>
-                        <p className="text-muted small">
-                          Nội dung: {payment.qr_content || order.order_id}
-                        </p>
+                        {payment.bank_code && (
+                          <p><strong>Mã ngân hàng:</strong> {payment.bank_code}</p>
+                        )}
+                        <p><strong>Chủ tài khoản:</strong> {payment.bank_name || '—'}</p>
+                        <p><strong>Số tài khoản:</strong> {payment.bank_account || '—'}</p>
+                        <p><strong>Nội dung chuyển khoản:</strong> {order.order_id || payment.order_id || '—'}</p>
+                        {payment.qr_content && (
+                          <p className="text-muted small mt-2">
+                            <strong>Link thanh toán:</strong> <a href={payment.qr_content} target="_blank" rel="noopener noreferrer">{payment.qr_content}</a>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </Col>

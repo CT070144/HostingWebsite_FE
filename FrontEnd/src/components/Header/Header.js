@@ -90,7 +90,11 @@ const Header = () => {
                 id="user-dropdown"
                 align="end"
               >
-                <NavDropdown.Item as={Link} to="/admin/dashboard" onClick={() => setExpanded(false)}>
+                <NavDropdown.Item 
+                  as={Link} 
+                  to={user?.role === 'admin' ? '/admin/dashboard' : '/instances'} 
+                  onClick={() => setExpanded(false)}
+                >
                   <i className="fas fa-cog me-2"></i>
                   Trang quản trị
                 </NavDropdown.Item>

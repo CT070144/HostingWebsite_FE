@@ -90,10 +90,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                                                 <span className="info-label">VM ID:</span>
                                                 <span className="info-value">VM-{instance.external_vm_id}</span>
                                           </div>
-                                          <div className="info-row">
-                                                <span className="info-label">Node:</span>
-                                                <span className="info-value">{instance.node_name}</span>
-                                          </div>
+                                         
                                           <div className="info-row">
                                                 <span className="info-label">Status:</span>
                                                 <span className="info-value">{instance.status}</span>

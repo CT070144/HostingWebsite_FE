@@ -1,6 +1,6 @@
 .instance-sidebar {
-      background: #1a1a1a;
-      border-right: 1px solid #333;
+      background: #0d0d0d;
+      border-right: 1px solid #222;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -8,38 +8,44 @@
 
 .sidebar-header-client {
       padding: 12px 15px;
-      border-bottom: 1px solid #333;
-      background: #252525;
+      border-bottom: 1px solid #222;
+      background: #0d0d0d;
 }
 
 .sidebar-title {
       margin: 0;
       font-size: 0.9rem;
       font-weight: 600;
-      color: #e0e0e0;
+      color: #999;
 }
 
 .sidebar-search {
       padding: 10px;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid #222;
 }
 
 .search-input {
-      background: #2a2a2a !important;
-      border-color: #444 !important;
-      color: #e0e0e0 !important;
+      background: #1a1a1a !important;
+      border-color: #333 !important;
+      color: #ccc !important;
       font-size: 0.85rem;
 }
 
 .search-input:focus {
-      background: #333 !important;
-      border-color: #0d6efd !important;
-      color: #e0e0e0 !important;
+      background: #222 !important;
+      border-color: #444 !important;
+      color: #ccc !important;
       box-shadow: none !important;
 }
 
 .search-input::placeholder {
-      color: #888;
+      color: #666;
+}
+
+.sidebar-search .input-group-text {
+      background: #1a1a1a !important;
+      border-color: #333 !important;
+      color: #666 !important;
 }
 
 .sidebar-tree {
@@ -51,8 +57,15 @@
 .tree-loading {
       padding: 20px;
       text-align: center;
-      color: #888;
+      color: #666;
       font-size: 0.9rem;
+}
+
+.tree-empty {
+      padding: 15px;
+      text-align: center;
+      color: #555;
+      font-size: 0.8rem;
 }
 
 .tree-node {
@@ -63,30 +76,34 @@
       padding: 6px 10px;
       cursor: pointer;
       font-size: 0.85rem;
-      color: #ccc;
+      color: #aaa;
       display: flex;
       align-items: center;
-      transition: background 0.2s;
+      transition: all 0.2s;
 }
 
 .tree-node-content:hover {
-      background: #2a2a2a;
+      background: #1a1a1a;
+      color: #ccc;
 }
 
-.tree-node.active>.tree-node-content {
-      background: #0d6efd;
-      color: white;
+.tree-node.active > .tree-node-content {
+      background: #2a2a2a;
+      color: #fff;
       font-weight: 500;
+      border-left: 2px solid #555;
 }
 
 .tree-children {
-      padding-left: 15px;
+      padding-left: 20px;
+      border-left: 1px solid #222;
+      margin-left: 10px;
 }
 
 .node-count {
       margin-left: auto;
       font-size: 0.75rem;
-      color: #888;
+      color: #666;
 }
 
 .vm-id {
@@ -100,23 +117,23 @@
 }
 
 .status-icon.running {
-      color: #28a745;
+      color: #4ade80;
 }
 
 .status-icon.stopped {
-      color: #6c757d;
+      color: #6b7280;
 }
 
 .status-icon.error {
-      color: #dc3545;
+      color: #ef4444;
 }
 
 .status-icon.provisioning {
-      color: #17a2b8;
+      color: #3b82f6;
 }
 
 .status-icon.unknown {
-      color: #ffc107;
+      color: #f59e0b;
 }
 
 /* Scrollbar */
@@ -125,14 +142,14 @@
 }
 
 .sidebar-tree::-webkit-scrollbar-track {
-      background: #1a1a1a;
+      background: #0d0d0d;
 }
 
 .sidebar-tree::-webkit-scrollbar-thumb {
-      background: #444;
+      background: #333;
       border-radius: 3px;
 }
 
 .sidebar-tree::-webkit-scrollbar-thumb:hover {
-      background: #555;
+      background: #444;
 }
