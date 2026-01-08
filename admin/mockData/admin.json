@@ -1,0 +1,207 @@
+{
+  "stats": {
+    "totalRevenue": 7852000,
+    "totalOrders": 2568,
+    "totalUsers": 1248,
+    "totalProducts": 156,
+    "revenueChange": 2.1,
+    "ordersChange": -2.1,
+    "usersChange": 5.3,
+    "productsChange": 1.2
+  },
+  "recentOrders": [
+    {
+      "id": 1,
+      "orderNumber": "ORD-2024-001",
+      "customerName": "Nguyễn Văn A",
+      "customerEmail": "nguyenvana@example.com",
+      "product": "LH - Start",
+      "amount": 12750,
+      "status": "completed",
+      "createdAt": "2024-12-10T10:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "orderNumber": "ORD-2024-002",
+      "customerName": "Trần Thị B",
+      "customerEmail": "tranthib@example.com",
+      "product": "LH1",
+      "amount": 21250,
+      "status": "pending",
+      "createdAt": "2024-12-10T09:15:00.000Z"
+    },
+    {
+      "id": 3,
+      "orderNumber": "ORD-2024-003",
+      "customerName": "Lê Văn C",
+      "customerEmail": "levanc@example.com",
+      "product": "LH3",
+      "amount": 51000,
+      "status": "processing",
+      "createdAt": "2024-12-10T08:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "orderNumber": "ORD-2024-004",
+      "customerName": "Phạm Thị D",
+      "customerEmail": "phamthid@example.com",
+      "product": "LH2",
+      "amount": 34000,
+      "status": "completed",
+      "createdAt": "2024-12-09T16:45:00.000Z"
+    },
+    {
+      "id": 5,
+      "orderNumber": "ORD-2024-005",
+      "customerName": "Hoàng Văn E",
+      "customerEmail": "hoangvane@example.com",
+      "product": "LH4",
+      "amount": 80750,
+      "status": "cancelled",
+      "createdAt": "2024-12-09T14:20:00.000Z"
+    }
+  ],
+  "recentUsers": [
+    {
+      "id": 1,
+      "name": "Nguyễn Văn A",
+      "email": "nguyenvana@example.com",
+      "phone": "0901234567",
+      "status": "active",
+      "joinedAt": "2024-11-15T10:00:00.000Z",
+      "totalOrders": 3,
+      "totalSpent": 76500
+    },
+    {
+      "id": 2,
+      "name": "Trần Thị B",
+      "email": "tranthib@example.com",
+      "phone": "0912345678",
+      "status": "active",
+      "joinedAt": "2024-11-20T14:30:00.000Z",
+      "totalOrders": 1,
+      "totalSpent": 21250
+    },
+    {
+      "id": 3,
+      "name": "Lê Văn C",
+      "email": "levanc@example.com",
+      "phone": "0923456789",
+      "status": "inactive",
+      "joinedAt": "2024-10-10T08:15:00.000Z",
+      "totalOrders": 5,
+      "totalSpent": 255000
+    },
+    {
+      "id": 4,
+      "name": "Phạm Thị D",
+      "email": "phamthid@example.com",
+      "phone": "0934567890",
+      "status": "active",
+      "joinedAt": "2024-12-01T12:00:00.000Z",
+      "totalOrders": 2,
+      "totalSpent": 68000
+    },
+    {
+      "id": 5,
+      "name": "Hoàng Văn E",
+      "email": "hoangvane@example.com",
+      "phone": "0945678901",
+      "status": "active",
+      "joinedAt": "2024-11-25T16:45:00.000Z",
+      "totalOrders": 4,
+      "totalSpent": 323000
+    }
+  ],
+  "revenueData": [
+    { "date": "01", "last6Days": 450000, "lastWeek": 420000 },
+    { "date": "02", "last6Days": 520000, "lastWeek": 480000 },
+    { "date": "03", "last6Days": 480000, "lastWeek": 460000 },
+    { "date": "04", "last6Days": 600000, "lastWeek": 550000 },
+    { "date": "05", "last6Days": 550000, "lastWeek": 530000 },
+    { "date": "06", "last6Days": 620000, "lastWeek": 580000 },
+    { "date": "07", "last6Days": 580000, "lastWeek": 540000 },
+    { "date": "08", "last6Days": 650000, "lastWeek": 600000 },
+    { "date": "09", "last6Days": 600000, "lastWeek": 560000 },
+    { "date": "10", "last6Days": 700000, "lastWeek": 650000 },
+    { "date": "11", "last6Days": 680000, "lastWeek": 630000 },
+    { "date": "12", "last6Days": 750000, "lastWeek": 710000 }
+  ],
+  "orderTimeData": [
+    { "time": "Morning", "label": "Morning", "timeRange": "6am - 12pm", "orders": 1890, "percentage": 28 },
+    { "time": "Afternoon", "label": "Afternoon", "timeRange": "1pm - 4pm", "orders": 2700, "percentage": 40 },
+    { "time": "Evening", "label": "Evening", "timeRange": "5pm - 11pm", "orders": 2160, "percentage": 32 }
+  ],
+  "orderTrendData": [
+    { "date": "01", "last6Days": 420, "lastWeek": 400 },
+    { "date": "02", "last6Days": 450, "lastWeek": 430 },
+    { "date": "03", "last6Days": 430, "lastWeek": 410 },
+    { "date": "04", "last6Days": 480, "lastWeek": 450 },
+    { "date": "05", "last6Days": 460, "lastWeek": 440 },
+    { "date": "06", "last6Days": 490, "lastWeek": 470 }
+  ],
+  "topProducts": [
+    {
+      "id": 1,
+      "name": "LH - Start",
+      "orders": 856,
+      "revenue": 10911600,
+      "image": "https://via.placeholder.com/40"
+    },
+    {
+      "id": 2,
+      "name": "LH1",
+      "orders": 642,
+      "revenue": 13642500,
+      "image": "https://via.placeholder.com/40"
+    },
+    {
+      "id": 3,
+      "name": "LH3",
+      "orders": 534,
+      "revenue": 27234000,
+      "image": "https://via.placeholder.com/40"
+    },
+    {
+      "id": 4,
+      "name": "LH2",
+      "orders": 438,
+      "revenue": 14892000,
+      "image": "https://via.placeholder.com/40"
+    },
+    {
+      "id": 5,
+      "name": "LH4",
+      "orders": 326,
+      "revenue": 26324500,
+      "image": "https://via.placeholder.com/40"
+    }
+  ],
+  "notifications": [
+    {
+      "id": 1,
+      "title": "Đơn hàng mới",
+      "message": "Bạn có đơn hàng mới ORD-2024-001",
+      "type": "order",
+      "read": false,
+      "createdAt": "2024-12-10T10:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Người dùng mới",
+      "message": "Nguyễn Văn A đã đăng ký tài khoản",
+      "type": "user",
+      "read": false,
+      "createdAt": "2024-12-10T09:15:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Thanh toán thành công",
+      "message": "Đơn hàng ORD-2024-000 đã thanh toán thành công",
+      "type": "payment",
+      "read": true,
+      "createdAt": "2024-12-10T08:00:00.000Z"
+    }
+  ]
+}
+

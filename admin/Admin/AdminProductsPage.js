@@ -9,7 +9,6 @@ import { discountService } from '../../../services/discountService';
 import { productService } from '../../../services/productService';
 import { addonService } from '../../../services/addonService';
 import { useNotify } from '../../../contexts/NotificationContext';
-import * as XLSX from 'xlsx';
 
 const cx = classNames.bind(styles);
 
@@ -535,86 +534,13 @@ const AdminProductsPage = () => {
   };
 
   const handleExport = () => {
-    if (products.length === 0) {
-      notifyWarning('Không có sản phẩm nào để xuất!');
-      return;
-    }
-
-    try {
-      // Chuẩn bị dữ liệu cho Excel
-      const excelData = products.map((product, index) => {
-        // Xử lý thông tin spec
-        const specAttributes = product.spec?.attributes 
-          ? Object.entries(product.spec.attributes)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join('; ')
-          : '';
-
-        // Xử lý discount
-        const discountInfo = product.discount
-          ? `${product.discount.code} (-${product.discount.discount_percent}%)${
-              product.discount.max_cycle ? ` (Max: ${product.discount.max_cycle} tháng)` : ''
-            }`
-          : '';
-
-        return {
-          'STT': index + 1,
-          'ID': product.id,
-          'Tên sản phẩm': product.name || '',
-          'Loại dịch vụ': product.service_type || '',
-          'Giá tháng (VNĐ)': product.monthlyPrice || 0,
-          'Giá năm (VNĐ)': product.yearlyPrice || 0,
-          'Nổi bật': product.hot ? 'Có' : 'Không',
-          'Trạng thái': product.is_active ? 'Hoạt động' : 'Ngừng',
-          'Mã giảm giá': discountInfo,
-          'Tên gói/Spec': product.spec?.spec_name || '',
-          'Loại gói': product.spec?.type || '',
-          'Vị trí': product.spec?.location || '',
-          'Thông số kỹ thuật': specAttributes,
-          'Ngày tạo': product.created_at ? new Date(product.created_at).toLocaleString('vi-VN') : '',
-          'Ngày cập nhật': product.updated_at ? new Date(product.updated_at).toLocaleString('vi-VN') : '',
-        };
-      });
-
-      // Tạo workbook và worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
-
-      // Tùy chỉnh độ rộng cột
-      const colWidths = [
-        { wch: 5 },   // STT
-        { wch: 10 },  // ID
-        { wch: 30 },  // Tên sản phẩm
-        { wch: 15 },  // Loại dịch vụ
-        { wch: 15 },  // Giá tháng
-        { wch: 15 },  // Giá năm
-        { wch: 10 },  // Nổi bật
-        { wch: 12 },  // Trạng thái
-        { wch: 30 },  // Mã giảm giá
-        { wch: 20 },  // Tên gói
-        { wch: 15 },  // Loại gói
-        { wch: 12 },  // Vị trí
-        { wch: 50 },  // Thông số kỹ thuật
-        { wch: 18 },  // Ngày tạo
-        { wch: 18 },  // Ngày cập nhật
-      ];
-      ws['!cols'] = colWidths;
-
-      // Thêm worksheet vào workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách sản phẩm');
-
-      // Tạo tên file với timestamp
-      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-      const filename = `DanhSachSanPham_${timestamp}.xlsx`;
-
-      // Xuất file
-      XLSX.writeFile(wb, filename);
-      
-      notifySuccess(`Đã xuất ${products.length} sản phẩm ra file Excel!`);
-    } catch (error) {
-      console.error('Export Excel failed:', error);
-      notifyError('Xuất file Excel thất bại. Vui lòng thử lại.');
-    }
+    const dataStr = JSON.stringify(products, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'products.json';
+    link.click();
   };
 
   const handleImport = () => {
@@ -1007,7 +933,7 @@ const AdminProductsPage = () => {
         <h1 className={cx('pageTitle')}>Danh sách sản phẩm</h1>
         <div className={cx('headerActions')}>
           <button className={cx('btn', 'btnSecondary')} onClick={handleExport}>
-            <i className="fas fa-file-excel"></i> Xuất Excel
+            <i className="fas fa-file-export"></i> Xuất file
           </button>
           
           <button className={cx('btn', 'btnSecondary')} onClick={handleOpenFeaturedModal}>

@@ -24,8 +24,7 @@ import AdminDashboardPage from './pages/Dashboard/Admin/AdminDashboardPage';
 import AdminOrdersPage from './pages/Dashboard/Admin/AdminOrdersPage';
 import AdminProductsPage from './pages/Dashboard/Admin/AdminProductsPage';
 import AdminUsersPage from './pages/Dashboard/Admin/AdminUsersPage';
-import AdminBannerPage from './pages/Dashboard/Admin/AdminBannerPage';
-import AdminHostingBannerPage from './pages/Dashboard/Admin/AdminHostingBannerPage';
+import AdminBannersPage from './pages/Dashboard/Admin/AdminBannersPage';
 import AdminFaqsPage from './pages/Dashboard/Admin/AdminFaqsPage';
 import AdminServiceFeaturesPage from './pages/Dashboard/Admin/AdminServiceFeaturesPage';
 import ProxmoxLayout from './pages/Instance/ProxmoxLayout';
@@ -84,8 +83,8 @@ function App() {
         <Route path="orders" element={<AdminOrdersPage />} />
         <Route path="products" element={<AdminProductsPage />} />
         <Route path="configuration/users" element={<AdminUsersPage />} />
-        <Route path="configuration/banner" element={<AdminBannerPage />} />
-        <Route path="configuration/hosting-banner" element={<AdminHostingBannerPage />} />
+        <Route path="configuration/banner" element={<AdminBannersPage />} />
+        <Route path="configuration/hosting-banner" element={<AdminBannersPage />} />
         <Route path="configuration/faqs" element={<AdminFaqsPage />} />
         <Route path="configuration/service-features" element={<AdminServiceFeaturesPage />} />
         <Route path="configuration" element={<AdminUsersPage />} />
