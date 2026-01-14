@@ -1255,8 +1255,7 @@ const AdminProductsPage = () => {
                                         onChange={(e) => handleFilterChange('max_price', e.target.value)}
                                         style={{ width: '150px', padding: '8px' }}
                                       />
-                                    </>
-            )}
+                                    </th>
 
                                     <button
                                       className="btn btn-secondary"
