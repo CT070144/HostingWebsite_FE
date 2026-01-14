@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Container, 
-  Row, 
-  Col, 
-  Card, 
-  Form, 
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
   Button,
   FormCheck,
   Spinner,
@@ -114,14 +114,14 @@ const ConfigProduct = () => {
         const templates = Array.isArray(data)
           ? data
           : Array.isArray(data?.templates)
-          ? data.templates
-          : Array.isArray(data?.data)
-          ? data.data
-          : [];
+            ? data.templates
+            : Array.isArray(data?.data)
+              ? data.data
+              : [];
 
         // Show both active + inactive; inactive will be disabled in the select
         setOsTemplates(templates);
-        
+
         // Set default OS template if available
         const firstActive = templates.find(t => t?.is_active) || templates[0];
         if (firstActive && !config.os_template_id) {
@@ -185,16 +185,16 @@ const ConfigProduct = () => {
   useEffect(() => {
     const fetchCartItem = async () => {
       if (!editingCartItemId) return;
-      
+
       try {
         const response = await cartService.getCartItemById(editingCartItemId);
         const cartItem = response.data;
-        
+
         // Pre-fill form with cart item data
         if (cartItem.billing_cycle) setPaymentCycle(parseInt(cartItem.billing_cycle));
         if (cartItem.quantity) setQuantity(cartItem.quantity);
         if (cartItem.discountCode) setDiscountCode(cartItem.discountCode);
-        
+
         // Pre-fill config
         if (cartItem.config) {
           const nextConfig = {
@@ -249,7 +249,7 @@ const ConfigProduct = () => {
         const response = await productService.getByIdPublic(productId);
         const productData = response.data?.product || response.data;
         setProduct(productData);
-        
+
         // Auto-apply discount code if product has discount
         if (productData?.discount?.code) {
           setDiscountCode(productData.discount.code);
@@ -280,17 +280,18 @@ const ConfigProduct = () => {
   // Tính giá theo chu kỳ thanh toán
   const calculatePrice = (cycle) => {
     if (!product) return 0;
-    
+
     const monthlyPrice = product.monthlyPrice || product.price_monthly || 0;
     const yearlyPrice = product.yearlyPrice || product.price_annually || 0;
-    
+
     if (cycle === 12) {
       // 1 năm - sử dụng yearlyPrice (đã tính sẵn)
       return yearlyPrice;
-    } else {
+    } else if (cycle === 1 || cycle === 3 || cycle === 6) {
       // 1/3/6 tháng - tính theo monthlyPrice
       return monthlyPrice * cycle;
     }
+    return 0;
   };
 
   // Tính giá theo tháng cho từng chu kỳ
@@ -302,7 +303,7 @@ const ConfigProduct = () => {
   // Tính tổng tiền
   const orderSummary = useMemo(() => {
     const baseProductPrice = calculatePrice(paymentCycle);
-    
+
     const getAddonUnitPrice = (type, fallback) => {
       const addon = addonByType?.[type];
       return typeof addon?.price_per_unit === 'number' ? addon.price_per_unit : fallback;
@@ -340,14 +341,14 @@ const ConfigProduct = () => {
       },
       ...(config.control_panel
         ? [
-            {
-              key: 'control_panel',
-              label: addonByType?.CONTROL_PANEL?.addon_name || 'Control Panel',
-              unit: addonByType?.CONTROL_PANEL?.unit || 'Panel',
-              quantity: 1,
-              unitPrice: getAddonUnitPrice('CONTROL_PANEL', 95000),
-            },
-          ]
+          {
+            key: 'control_panel',
+            label: addonByType?.CONTROL_PANEL?.addon_name || 'Control Panel',
+            unit: addonByType?.CONTROL_PANEL?.unit || 'Panel',
+            quantity: 1,
+            unitPrice: getAddonUnitPrice('CONTROL_PANEL', 95000),
+          },
+        ]
         : []),
     ].map(line => ({
       ...line,
@@ -355,13 +356,13 @@ const ConfigProduct = () => {
     })).filter(line => (line.quantity || 0) > 0 && (line.total || 0) > 0);
 
     const configCost = configBreakdown.reduce((sum, line) => sum + (line.total || 0), 0);
-    
+
     // Apply discount if available
     let discountPercent = 0;
     if (product?.discount?.code && discountCode === product.discount.code) {
       discountPercent = product.discount.discount_percent || 0;
     }
-    
+
     // Discount only applies to base product price (not extra config)
     const productTotal = baseProductPrice * quantity;
     const configTotal = configCost * quantity;
@@ -458,7 +459,7 @@ const ConfigProduct = () => {
               <Card.Body>
                 <h2 className="mb-3">Cấu hình</h2>
                 <h4 className="text-muted mb-4">Web Hosting - {product.name}</h4>
-                
+
                 <Row className="g-3">
                   <Col md={6} lg={4}>
                     <div className="config-item">
@@ -778,9 +779,9 @@ const ConfigProduct = () => {
               </Card>
             </div>
 
-           
 
-          
+
+
           </Col>
 
           {/* Cột phải - Thông tin đơn hàng */}
@@ -788,7 +789,7 @@ const ConfigProduct = () => {
             <Card className="order-summary-card">
               <Card.Body>
                 <h3 className="mb-4">Thông tin đơn hàng</h3>
-                
+
                 <div className="order-item mb-3">
                   <div className="order-item-name" style={{ fontWeight: '600' }}>Web Hosting - {product.name}</div>
                   <div className="order-item-price" style={{ fontWeight: '600' }}>{formatPrice(orderSummary.productPrice)} VND</div>
@@ -797,7 +798,7 @@ const ConfigProduct = () => {
                 {orderSummary.configBreakdown?.length > 0 && (
                   <div className="order-item mb-3">
                     <div className="order-item-name" style={{ fontWeight: '600' }}>Cấu hình bổ sung</div>
-                   <div className="mt-2 order-item-price" style={{ width: '100%' }}>
+                    <div className="mt-2 order-item-price" style={{ width: '100%' }}>
                       {orderSummary.configBreakdown.map(line => (
                         <div
                           key={line.key}
@@ -817,13 +818,13 @@ const ConfigProduct = () => {
                     </div>
                     <div className="order-item-name" style={{ fontWeight: '600' }}>Tổng</div>
                     <div className="order-item-price" style={{ fontWeight: '600' }}>{formatPrice(orderSummary.configCost)} VND</div>
-                    
+
                   </div>
                 )}
 
                 {orderSummary.discountPercent > 0 && (
                   <div className="order-item mb-3">
-                    <div className="order-item-name" style={{fontWeight:'600'}}>
+                    <div className="order-item-name" style={{ fontWeight: '600' }}>
                       Giảm giá ({orderSummary.discountPercent}%){' '}
                       {product?.discount?.code ? `- ${product.discount.code}` : ''}
                     </div>
@@ -846,18 +847,18 @@ const ConfigProduct = () => {
                   </div>
                 </div>
 
-             
+
 
                 <div className="order-total">
                   <div className="order-total-label">Tổng </div>
                   <div className="order-total-price">{formatPrice(orderSummary.total)} VND</div>
                 </div>
 
-             
 
-                <Button 
-                  variant="primary" 
-                  size="lg" 
+
+                <Button
+                  variant="primary"
+                  size="lg"
                   className="w-100 mt-4 continue-button"
                   onClick={async () => {
                     try {
@@ -912,14 +913,14 @@ const ConfigProduct = () => {
                         await cartService.addItem(cartData);
                         notifySuccess(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
                       }
-                      
+
                       // Refresh cart context
                       await fetchCart();
-                      
+
                       navigate('/cart');
                     } catch (error) {
                       console.error('Failed to add/update cart:', error);
-                      const errorMessage = error?.response?.data?.message || error?.message || 
+                      const errorMessage = error?.response?.data?.message || error?.message ||
                         (editingCartItemId ? 'Cập nhật sản phẩm thất bại' : 'Thêm sản phẩm vào giỏ hàng thất bại');
                       notifyError(errorMessage);
                     }

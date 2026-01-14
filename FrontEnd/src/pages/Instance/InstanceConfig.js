@@ -17,11 +17,10 @@ const InstanceConfig = ({ instance }) => {
             {
                   title: 'Thông tin cơ bản',
                   icon: 'fa-info-circle',
-                  color: 'primary',
+
                   items: [
                         { label: 'Instance ID', value: instance.instance_id, code: true },
                         { label: 'VM ID', value: `VM-${instance.external_vm_id}` },
-                        { label: 'Node', value: instance.node_name },
                         { label: 'Product ID', value: instance.product_id, code: true },
                         { label: 'Order ID', value: instance.order_id || 'N/A', code: !!instance.order_id },
                   ]
@@ -29,7 +28,7 @@ const InstanceConfig = ({ instance }) => {
             {
                   title: 'Trạng thái & Thời gian',
                   icon: 'fa-clock',
-                  color: 'success',
+
                   items: [
                         { label: 'Trạng thái', value: instance.status, badge: true },
                         { label: 'Ngày tạo', value: formatDate(instance.created_at) },
@@ -39,7 +38,7 @@ const InstanceConfig = ({ instance }) => {
             {
                   title: 'Kết nối',
                   icon: 'fa-network-wired',
-                  color: 'info',
+
                   items: [
                         { label: 'VNC Port', value: instance.vnc_port || 'N/A' },
                         { label: 'User ID', value: instance.user_id, code: true },
@@ -89,19 +88,7 @@ const InstanceConfig = ({ instance }) => {
                         ))}
                   </Row>
 
-                  <Card className="config-card">
-                        <Card.Header className="bg-dark text-white">
-                              <h5 className="mb-0">
-                                    <i className="fas fa-database me-2"></i>
-                                    Dữ liệu Instance (JSON)
-                              </h5>
-                        </Card.Header>
-                        <Card.Body>
-                              <pre className="json-display">
-                                    <code>{JSON.stringify(instance, null, 2)}</code>
-                              </pre>
-                        </Card.Body>
-                  </Card>
+
             </div>
       );
 };

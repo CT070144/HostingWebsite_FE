@@ -255,284 +255,285 @@ const AdminDashboardPage = () => {
     };
   }, []);
 
-  if (loading || !dashboardData) {
-    return (
-      <div className="admin-loading">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="dashboard-overview">
-      <h1 className="page-title">Dashboard</h1>
+    <div className="dashboard-overview" style={{ padding: 0, margin: 0, height: '100vh', overflow: 'hidden', backgroundColor: '#11294c' }}>
+      {/* System Monitor - Full Screen */}
+      <iframe
+        title="System Monitor"
+        src="http://localhost:7655?token=pulse-admin-token-secret-12345"
+        width="100%"
+        height="100%"
+        style={{ border: 'none', display: 'block' }}
+      />
 
-      {/* Stats + Order Status Row */}
-      <div className="stats-status-row">
-        {/* Stats Cards 2x2 bên trái */}
-        <div className="stats-grid">
-          <div className="stat-card revenue">
-            <div className="stat-icon">
-              <i className="fas fa-dollar-sign"></i>
-            </div>
-            <div className="stat-content">
-              <div className="stat-label">Doanh thu</div>
-              <div className="stat-value">
-                {formatCurrency(dashboardData.stats.totalRevenue)}
-              </div>
-              <div
-                className={`stat-change ${
-                  dashboardData.stats.revenueChange > 0 ? 'positive' : 'negative'
-                }`}
-              >
-                <i
-                  className={`fas fa-arrow-${
-                    dashboardData.stats.revenueChange > 0 ? 'up' : 'down'
-                  }`}
-                ></i>
-                {Math.abs(dashboardData.stats.revenueChange)}% so với tuần trước
-              </div>
-              <div className="stat-period">
-                Doanh thu từ 1-12 Tháng 12, 2024
-              </div>
-            </div>
-            <button className="view-report-btn">Xem báo cáo</button>
+      {loading || !dashboardData ? (
+        <div className="admin-loading" style={{ padding: '40px', textAlign: 'center' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading dashboard stats...</span>
           </div>
-
-          <div className="stat-card orders">
-            <div className="stat-icon">
-              <i className="fas fa-shopping-cart"></i>
-            </div>
-            <div className="stat-content">
-              <div className="stat-label">Đơn hàng</div>
-              <div className="stat-value">
-                {formatNumber(dashboardData.stats.totalOrders)}
-              </div>
-              <div
-                className={`stat-change ${
-                  dashboardData.stats.ordersChange > 0 ? 'positive' : 'negative'
-                }`}
-              >
-                <i
-                  className={`fas fa-arrow-${
-                    dashboardData.stats.ordersChange > 0 ? 'up' : 'down'
-                  }`}
-                ></i>
-                {Math.abs(dashboardData.stats.ordersChange)}% so với tuần trước
-              </div>
-              <div className="stat-period">
-                Đơn hàng từ 1-6 Tháng 12, 2024
-              </div>
-            </div>
-            <button className="view-report-btn">Xem báo cáo</button>
-          </div>
-
-          <div className="stat-card users">
-            <div className="stat-icon">
-              <i className="fas fa-users"></i>
-            </div>
-            <div className="stat-content">
-              <div className="stat-label">Người dùng</div>
-              <div className="stat-value">
-                {formatNumber(dashboardData.stats.totalUsers)}
-              </div>
-              <div
-                className={`stat-change ${
-                  dashboardData.stats.usersChange > 0 ? 'positive' : 'negative'
-                }`}
-              >
-                <i
-                  className={`fas fa-arrow-${
-                    dashboardData.stats.usersChange > 0 ? 'up' : 'down'
-                  }`}
-                ></i>
-                {Math.abs(dashboardData.stats.usersChange)}% so với tuần trước
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card products">
-            <div className="stat-icon">
-              <i className="fas fa-box"></i>
-            </div>
-            <div className="stat-content">
-              <div className="stat-label">Sản phẩm</div>
-              <div className="stat-value">
-                {formatNumber(dashboardData.stats.totalProducts)}
-              </div>
-              <div
-                className={`stat-change ${
-                  dashboardData.stats.productsChange > 0 ? 'positive' : 'negative'
-                }`}
-              >
-                <i
-                  className={`fas fa-arrow-${
-                    dashboardData.stats.productsChange > 0 ? 'up' : 'down'
-                  }`}
-                ></i>
-                {Math.abs(dashboardData.stats.productsChange)}% so với tuần trước
-              </div>
-            </div>
-          </div>
+          <p style={{ marginTop: '16px', color: '#6b7280' }}>Đang tải dữ liệu thống kê...</p>
         </div>
+      ) : (
+        <>
 
-        {/* Order Status Chart bên phải */}
-        <div className="dashboard-card order-status-chart">
-          <div className="card-header">
-            <h3>Trạng thái đơn hàng</h3>
-            <span className="card-period">Thống kê trạng thái (mock data)</span>
-          </div>
-          <div className="card-content">
-            <div className="donut-chart-container">
-              <div className="donut-chart-wrapper">
-                <Doughnut
-                  data={orderStatusChartConfig.data}
-                  options={orderStatusChartConfig.options}
-                />
+          {/* Stats + Order Status Row */}
+          <div className="stats-status-row">
+            {/* Stats Cards 2x2 bên trái */}
+            <div className="stats-grid">
+              <div className="stat-card revenue">
+                <div className="stat-icon">
+                  <i className="fas fa-dollar-sign"></i>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Doanh thu</div>
+                  <div className="stat-value">
+                    {formatCurrency(dashboardData.stats.totalRevenue)}
+                  </div>
+                  <div
+                    className={`stat-change ${dashboardData.stats.revenueChange > 0 ? 'positive' : 'negative'
+                      }`}
+                  >
+                    <i
+                      className={`fas fa-arrow-${dashboardData.stats.revenueChange > 0 ? 'up' : 'down'
+                        }`}
+                    ></i>
+                    {Math.abs(dashboardData.stats.revenueChange)}% so với tuần trước
+                  </div>
+                  <div className="stat-period">
+                    Doanh thu từ 1-12 Tháng 12, 2024
+                  </div>
+                </div>
+                <button className="view-report-btn">Xem báo cáo</button>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Charts and Tables */}
-      <div className="dashboard-grid">
-        <div className="dashboard-card revenue-chart">
-          <div className="card-header">
-            <h3>Doanh thu</h3>
-            <button className="view-report-btn">Xem báo cáo</button>
-          </div>
-          <div className="card-content">
-            <div className="chart-container chart-container-bar">
-              {revenueChartConfig && (
-                <Bar
-                  data={revenueChartConfig.data}
-                  options={revenueChartConfig.options}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+              <div className="stat-card orders">
+                <div className="stat-icon">
+                  <i className="fas fa-shopping-cart"></i>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Đơn hàng</div>
+                  <div className="stat-value">
+                    {formatNumber(dashboardData.stats.totalOrders)}
+                  </div>
+                  <div
+                    className={`stat-change ${dashboardData.stats.ordersChange > 0 ? 'positive' : 'negative'
+                      }`}
+                  >
+                    <i
+                      className={`fas fa-arrow-${dashboardData.stats.ordersChange > 0 ? 'up' : 'down'
+                        }`}
+                    ></i>
+                    {Math.abs(dashboardData.stats.ordersChange)}% so với tuần trước
+                  </div>
+                  <div className="stat-period">
+                    Đơn hàng từ 1-6 Tháng 12, 2024
+                  </div>
+                </div>
+                <button className="view-report-btn">Xem báo cáo</button>
+              </div>
 
-        <div className="dashboard-card order-time-chart">
-          <div className="card-header">
-            <h3>Thời gian đặt hàng</h3>
-            <span className="card-period">Từ 1-6 Tháng 12, 2024</span>
-            <button className="view-report-btn">Xem báo cáo</button>
-          </div>
-          <div className="card-content">
-            <div className="donut-chart-container">
-              <div className="donut-chart-wrapper">
-                {orderTimeChartConfig && (
-                  <Doughnut
-                    data={orderTimeChartConfig.data}
-                    options={orderTimeChartConfig.options}
-                  />
-                )}
-                <div className="donut-center">
-                  <div className="donut-center-label">Đơn hàng</div>
-                  <div className="donut-center-value">
-                    {dashboardData.orderTimeData.reduce(
-                      (sum, item) => sum + item.orders,
-                      0
-                    )}
+              <div className="stat-card users">
+                <div className="stat-icon">
+                  <i className="fas fa-users"></i>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Người dùng</div>
+                  <div className="stat-value">
+                    {formatNumber(dashboardData.stats.totalUsers)}
+                  </div>
+                  <div
+                    className={`stat-change ${dashboardData.stats.usersChange > 0 ? 'positive' : 'negative'
+                      }`}
+                  >
+                    <i
+                      className={`fas fa-arrow-${dashboardData.stats.usersChange > 0 ? 'up' : 'down'
+                        }`}
+                    ></i>
+                    {Math.abs(dashboardData.stats.usersChange)}% so với tuần trước
                   </div>
                 </div>
               </div>
-              <div className="donut-legend">
-                {dashboardData.orderTimeData.map((item, index) => (
-                  <div key={item.time} className="legend-item">
-                    <span
-                      className="legend-dot"
-                      style={{
-                        backgroundColor:
-                          index === 0 ? '#60a5fa' : index === 1 ? '#3b82f6' : '#93c5fd',
-                      }}
-                    ></span>
-                    <span>
-                      {item.label} {item.percentage}%
-                    </span>
+
+              <div className="stat-card products">
+                <div className="stat-icon">
+                  <i className="fas fa-box"></i>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Sản phẩm</div>
+                  <div className="stat-value">
+                    {formatNumber(dashboardData.stats.totalProducts)}
                   </div>
-                ))}
+                  <div
+                    className={`stat-change ${dashboardData.stats.productsChange > 0 ? 'positive' : 'negative'
+                      }`}
+                  >
+                    <i
+                      className={`fas fa-arrow-${dashboardData.stats.productsChange > 0 ? 'up' : 'down'
+                        }`}
+                    ></i>
+                    {Math.abs(dashboardData.stats.productsChange)}% so với tuần trước
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Status Chart bên phải */}
+            <div className="dashboard-card order-status-chart">
+              <div className="card-header">
+                <h3>Trạng thái đơn hàng</h3>
+                <span className="card-period">Thống kê trạng thái (mock data)</span>
+              </div>
+              <div className="card-content">
+                <div className="donut-chart-container">
+                  <div className="donut-chart-wrapper">
+                    <Doughnut
+                      data={orderStatusChartConfig.data}
+                      options={orderStatusChartConfig.options}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="dashboard-card orders-line-chart">
-          <div className="card-header">
-            <h3>Đơn hàng theo ngày</h3>
-            <span className="card-period">Mock data tuần này</span>
-          </div>
-          <div className="card-content">
-            <div className="chart-container orders-line-chart-inner">
-              <Line
-                data={ordersLineChartConfig.data}
-                options={ordersLineChartConfig.options}
-              />
+          {/* Charts and Tables */}
+          <div className="dashboard-grid">
+            <div className="dashboard-card revenue-chart">
+              <div className="card-header">
+                <h3>Doanh thu</h3>
+                <button className="view-report-btn">Xem báo cáo</button>
+              </div>
+              <div className="card-content">
+                <div className="chart-container chart-container-bar">
+                  {revenueChartConfig && (
+                    <Bar
+                      data={revenueChartConfig.data}
+                      options={revenueChartConfig.options}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="dashboard-card top-products">
-          <div className="card-header">
-            <h3>Sản phẩm bán chạy</h3>
-          </div>
-          <div className="card-content">
-            <div className="products-list">
-              {dashboardData.topProducts.map((product) => (
-                <div key={product.id} className="product-item">
-                  <div className="product-icon">
-                    <i className="fas fa-server"></i>
-                  </div>
-                  <div className="product-info">
-                    <div className="product-name">{product.name}</div>
-                    <div className="product-meta">
-                      {formatNumber(product.orders)} đơn hàng
+            <div className="dashboard-card order-time-chart">
+              <div className="card-header">
+                <h3>Thời gian đặt hàng</h3>
+                <span className="card-period">Từ 1-6 Tháng 12, 2024</span>
+                <button className="view-report-btn">Xem báo cáo</button>
+              </div>
+              <div className="card-content">
+                <div className="donut-chart-container">
+                  <div className="donut-chart-wrapper">
+                    {orderTimeChartConfig && (
+                      <Doughnut
+                        data={orderTimeChartConfig.data}
+                        options={orderTimeChartConfig.options}
+                      />
+                    )}
+                    <div className="donut-center">
+                      <div className="donut-center-label">Đơn hàng</div>
+                      <div className="donut-center-value">
+                        {dashboardData.orderTimeData.reduce(
+                          (sum, item) => sum + item.orders,
+                          0
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="product-revenue">
-                    {formatCurrency(product.revenue)}
+                  <div className="donut-legend">
+                    {dashboardData.orderTimeData.map((item, index) => (
+                      <div key={item.time} className="legend-item">
+                        <span
+                          className="legend-dot"
+                          style={{
+                            backgroundColor:
+                              index === 0 ? '#60a5fa' : index === 1 ? '#3b82f6' : '#93c5fd',
+                          }}
+                        ></span>
+                        <span>
+                          {item.label} {item.percentage}%
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="dashboard-card recent-orders">
-          <div className="card-header">
-            <h3>Đơn hàng gần đây</h3>
-          </div>
-          <div className="card-content">
-            <div className="orders-list">
-              {dashboardData.recentOrders.map((order) => (
-                <div key={order.id} className="order-item">
-                  <div className="order-info">
-                    <div className="order-number">{order.orderNumber}</div>
-                    <div className="order-customer">{order.customerName}</div>
-                    <div className="order-product">{order.product}</div>
-                  </div>
-                  <div className="order-amount">
-                    {formatCurrency(order.amount)}
-                  </div>
-                  <div className={`order-status ${order.status}`}>
-                    {order.status === 'completed'
-                      ? 'Hoàn thành'
-                      : order.status === 'pending'
-                      ? 'Chờ xử lý'
-                      : order.status === 'processing'
-                      ? 'Đang xử lý'
-                      : 'Đã hủy'}
-                  </div>
+            <div className="dashboard-card orders-line-chart">
+              <div className="card-header">
+                <h3>Đơn hàng theo ngày</h3>
+                <span className="card-period">Mock data tuần này</span>
+              </div>
+              <div className="card-content">
+                <div className="chart-container orders-line-chart-inner">
+                  <Line
+                    data={ordersLineChartConfig.data}
+                    options={ordersLineChartConfig.options}
+                  />
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <div className="dashboard-card top-products">
+              <div className="card-header">
+                <h3>Sản phẩm bán chạy</h3>
+              </div>
+              <div className="card-content">
+                <div className="products-list">
+                  {dashboardData.topProducts.map((product) => (
+                    <div key={product.id} className="product-item">
+                      <div className="product-icon">
+                        <i className="fas fa-server"></i>
+                      </div>
+                      <div className="product-info">
+                        <div className="product-name">{product.name}</div>
+                        <div className="product-meta">
+                          {formatNumber(product.orders)} đơn hàng
+                        </div>
+                      </div>
+                      <div className="product-revenue">
+                        {formatCurrency(product.revenue)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-card recent-orders">
+              <div className="card-header">
+                <h3>Đơn hàng gần đây</h3>
+              </div>
+              <div className="card-content">
+                <div className="orders-list">
+                  {dashboardData.recentOrders.map((order) => (
+                    <div key={order.id} className="order-item">
+                      <div className="order-info">
+                        <div className="order-number">{order.orderNumber}</div>
+                        <div className="order-customer">{order.customerName}</div>
+                        <div className="order-product">{order.product}</div>
+                      </div>
+                      <div className="order-amount">
+                        {formatCurrency(order.amount)}
+                      </div>
+                      <div className={`order-status ${order.status}`}>
+                        {order.status === 'completed'
+                          ? 'Hoàn thành'
+                          : order.status === 'pending'
+                            ? 'Chờ xử lý'
+                            : order.status === 'processing'
+                              ? 'Đang xử lý'
+                              : 'Đã hủy'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

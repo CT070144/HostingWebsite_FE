@@ -65,59 +65,68 @@ const AdminOrdersPage = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [error, setError] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [allOrders, setAllOrders] = useState([]); // All orders for statistics
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    statusCounts: {},
+    revenueByStatus: {},
+    revenueByDate: {},
+  });
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'week', 'month'
-  
+
   // Modal state for order details
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
 
-  // Fetch ALL orders for statistics (fetch all pages)
+  // Fetch statistics from backend API
   useEffect(() => {
-    const fetchAllOrdersForStats = async () => {
+    const fetchStatistics = async () => {
       try {
         setLoadingStats(true);
-        let allOrdersData = [];
-        let currentPage = 1;
-        let hasMore = true;
-        const fetchLimit = 100; // Fetch 100 per page
-        
-        // Fetch all pages until no more data
-        while (hasMore) {
-          const response = await orderService.list({ 
-            page: currentPage, 
-            limit: fetchLimit 
+        const response = await orderService.getStatistics(dateFilter);
+        const data = response.data;
+
+        // Transform revenue_by_date array to object for charts
+        const revenueByDateObj = {};
+        if (Array.isArray(data.revenue_by_date)) {
+          data.revenue_by_date.forEach(item => {
+            revenueByDateObj[item.date] = item.revenue;
           });
-          const data = response.data;
-          const orders = Array.isArray(data.orders) ? data.orders : [];
-          
-          if (orders.length > 0) {
-            allOrdersData = [...allOrdersData, ...orders];
-            currentPage++;
-            
-            // Check if there are more pages
-            const total = data.total || 0;
-            hasMore = allOrdersData.length < total;
-          } else {
-            hasMore = false;
-          }
         }
-        
-        setAllOrders(allOrdersData);
+
+        setStats({
+          totalOrders: data.total_orders || 0,
+          totalRevenue: data.total_revenue || 0,
+          pendingOrders: data.pending_orders || 0,
+          completedOrders: data.completed_orders || 0,
+          statusCounts: data.status_distribution || {},
+          revenueByStatus: data.revenue_by_status || {},
+          revenueByDate: revenueByDateObj,
+        });
       } catch (err) {
-        console.error('Failed to fetch all orders for stats:', err);
-        setAllOrders([]);
+        console.error('Failed to fetch statistics:', err);
+        setStats({
+          totalOrders: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          completedOrders: 0,
+          statusCounts: {},
+          revenueByStatus: {},
+          revenueByDate: {},
+        });
       } finally {
         setLoadingStats(false);
       }
     };
 
-    fetchAllOrdersForStats();
+    fetchStatistics();
   }, [dateFilter]); // Refresh stats when date filter changes
 
   // Fetch orders for table (with pagination)
@@ -126,19 +135,20 @@ const AdminOrdersPage = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const params = {
           page,
           limit,
         };
-        
-        if (statusFilter !== 'all') {
+
+        // Add status filter if not 'all'
+        if (statusFilter && statusFilter !== 'all') {
           params.status = statusFilter;
         }
 
         const response = await orderService.list(params);
         const data = response.data;
-        
+
         setOrders(Array.isArray(data.orders) ? data.orders : []);
         setTotal(data.total || 0);
       } catch (err) {
@@ -152,64 +162,6 @@ const AdminOrdersPage = () => {
 
     fetchOrders();
   }, [page, limit, statusFilter]);
-
-  // Calculate statistics from ALL orders (not just current page)
-  const stats = useMemo(() => {
-    // Use allOrders for statistics, not just current page orders
-    const ordersForStats = allOrders;
-    
-    // Filter by date if needed
-    let filteredOrders = ordersForStats;
-    if (dateFilter !== 'all') {
-      const now = new Date();
-      filteredOrders = ordersForStats.filter((order) => {
-        const orderDate = new Date(order.created_at);
-        if (dateFilter === 'today') {
-          return orderDate.toDateString() === now.toDateString();
-        }
-        if (dateFilter === 'week') {
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return orderDate >= weekAgo;
-        }
-        if (dateFilter === 'month') {
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          return orderDate >= monthAgo;
-        }
-        return true;
-      });
-    }
-
-    const totalRevenue = filteredOrders.reduce((sum, order) => {
-      return sum + (order.total_amount || 0);
-    }, 0);
-
-    const statusCounts = filteredOrders.reduce((acc, order) => {
-      const status = (order.status || 'UNKNOWN').toUpperCase();
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    const revenueByStatus = filteredOrders.reduce((acc, order) => {
-      const status = (order.status || 'UNKNOWN').toUpperCase();
-      acc[status] = (acc[status] || 0) + (order.total_amount || 0);
-      return acc;
-    }, {});
-
-    // Group by date for chart
-    const revenueByDate = filteredOrders.reduce((acc, order) => {
-      const date = new Date(order.created_at).toLocaleDateString('vi-VN');
-      acc[date] = (acc[date] || 0) + (order.total_amount || 0);
-      return acc;
-    }, {});
-
-    return {
-      totalOrders: filteredOrders.length,
-      totalRevenue,
-      statusCounts,
-      revenueByStatus,
-      revenueByDate,
-    };
-  }, [orders, dateFilter]);
 
   // Chart configurations
   const statusChartConfig = useMemo(() => {
@@ -352,39 +304,34 @@ const AdminOrdersPage = () => {
     try {
       await orderService.updateStatus(orderId, newStatus);
       notifySuccess('Cập nhật trạng thái đơn hàng thành công');
-      
+
       // Refresh orders for table
       const response = await orderService.list({ page, limit, status: statusFilter !== 'all' ? statusFilter : undefined });
       const data = response.data;
       setOrders(Array.isArray(data.orders) ? data.orders : []);
-      
-      // Refresh all orders for statistics (fetch all pages)
+
+      // Refresh statistics from backend
       try {
-        let allOrdersData = [];
-        let currentPage = 1;
-        let hasMore = true;
-        const fetchLimit = 100;
-        
-        while (hasMore) {
-          const statsResponse = await orderService.list({ 
-            page: currentPage, 
-            limit: fetchLimit 
+        const statsResponse = await orderService.getStatistics(dateFilter);
+        const statsData = statsResponse.data;
+
+        // Transform revenue_by_date array to object
+        const revenueByDateObj = {};
+        if (Array.isArray(statsData.revenue_by_date)) {
+          statsData.revenue_by_date.forEach(item => {
+            revenueByDateObj[item.date] = item.revenue;
           });
-          const statsData = statsResponse.data;
-          const orders = Array.isArray(statsData.orders) ? statsData.orders : [];
-          
-          if (orders.length > 0) {
-            allOrdersData = [...allOrdersData, ...orders];
-            currentPage++;
-            
-            const total = statsData.total || 0;
-            hasMore = allOrdersData.length < total;
-          } else {
-            hasMore = false;
-          }
         }
-        
-        setAllOrders(allOrdersData);
+
+        setStats({
+          totalOrders: statsData.total_orders || 0,
+          totalRevenue: statsData.total_revenue || 0,
+          pendingOrders: statsData.pending_orders || 0,
+          completedOrders: statsData.completed_orders || 0,
+          statusCounts: statsData.status_distribution || {},
+          revenueByStatus: statsData.revenue_by_status || {},
+          revenueByDate: revenueByDateObj,
+        });
       } catch (statsErr) {
         console.error('Failed to refresh stats:', statsErr);
       }
@@ -399,7 +346,7 @@ const AdminOrdersPage = () => {
       setLoadingOrderDetail(true);
       setShowOrderModal(true);
       setSelectedOrder(null);
-      
+
       const response = await orderService.getById(orderId);
       const order = response.data?.order || response.data;
       setSelectedOrder(order);
@@ -609,7 +556,7 @@ const AdminOrdersPage = () => {
                   {orders.map((order) => {
                     const badge = getStatusBadge(order.status);
                     const itemCount = Array.isArray(order.items) ? order.items.length : 0;
-                    
+
                     return (
                       <tr key={order.order_id}>
                         <td>

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Container, 
-  Row, 
-  Col, 
-  Card, 
-  Form, 
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
   Button,
   FormCheck,
   Table,
@@ -35,7 +35,7 @@ const Cart = () => {
   const [selectedCartItemMap, setSelectedCartItemMap] = useState({}); // { [cartItemId]: true/false }
   const [showMissingInfoAlert, setShowMissingInfoAlert] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     idCard: '',
@@ -76,7 +76,7 @@ const Cart = () => {
           const response = await userService.getProfile();
           const profileData = response.data?.user || response.data;
           setUserProfile(profileData);
-          
+
           // Pre-fill form with profile data
           if (profileData) {
             setFormData(prev => ({
@@ -90,7 +90,7 @@ const Cart = () => {
               ward: profileData.Ward || prev.ward || 'Phường An Hội Tây',
               idCard: profileData.IdentityNumber || prev.idCard,
             }));
-            
+
             // Set customer type based on AccountType
             if (profileData.AccountType) {
               if (profileData.AccountType === 'PERSONAL') {
@@ -99,7 +99,7 @@ const Cart = () => {
                 setCustomerType('organization');
               }
             }
-            
+
             // Set account type to existing if user has profile
             setAccountType('existing');
           }
@@ -215,7 +215,7 @@ const Cart = () => {
       notifyWarning('Vui lòng đọc và đồng ý với Điều khoản dịch vụ và Chính sách bảo vệ dữ liệu cá nhân');
       return;
     }
-    
+
     if (cartItems.length === 0) {
       notifyWarning('Giỏ hàng của bạn đang trống');
       return;
@@ -296,7 +296,7 @@ const Cart = () => {
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h3 className="mb-0">Sản phẩm/Tùy chọn</h3>
                 </div>
-                
+
                 {cartLoading ? (
                   <div className="text-center py-5">
                     <div className="spinner-border text-primary" role="status">
@@ -344,7 +344,7 @@ const Cart = () => {
                           <th>Sản phẩm</th>
                           <th>Giá/Chu kỳ</th>
                           <th>Số lượng</th>
-                          <th style={{textAlign:'center'}}>Thao tác</th>
+                          <th style={{ textAlign: 'center' }}>Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -371,7 +371,7 @@ const Cart = () => {
                                 <strong>{item.productName || item.product?.name || 'Sản phẩm'}</strong>
                                 <div className="small">
                                   Chu kỳ: {getCycleLabel(item.paymentCycle || item.billingCycle)}
-                                  
+
                                   {/* Display config */}
                                   {item.config && (
                                     <div className="mt-2">
@@ -390,7 +390,7 @@ const Cart = () => {
                                       )}
                                     </div>
                                   )}
-                                  
+
                                   {/* Display addons */}
                                   {item.addonsApplied && item.addonsApplied.length > 0 && (
                                     <div className="mt-2">
@@ -405,12 +405,12 @@ const Cart = () => {
                                       ))}
                                     </div>
                                   )}
-                                  
+
                                   {/* Display discount */}
                                   {item.discountCode && (
                                     <div className="text-success mt-1">
                                       <i className="fas fa-tag me-1"></i>
-                                      Mã giảm giá: {item.discountCode} 
+                                      Mã giảm giá: {item.discountCode}
                                       {item.discountPercent > 0 && (
                                         <span> (-{item.discountPercent}%)</span>
                                       )}
@@ -425,21 +425,21 @@ const Cart = () => {
                             <td>
                               <div>
                                 <div>{formatPrice(item.unitPrice || item.productPrice || 0)} VND/{getCyclePeriod(item.paymentCycle || item.billingCycle)}</div>
-                                
+
                                 {/* Show unit price breakdown */}
                                 {item.quantity > 1 && (
                                   <div className="text-muted small">
                                     x{item.quantity} = {formatPrice((item.unitPrice || item.productPrice || 0) * item.quantity)} VND
                                   </div>
                                 )}
-                                
+
                                 {/* Show discount if exists */}
                                 {item.discountAmount > 0 && (
                                   <div className="text-success small">
                                     Giảm: -{formatPrice(item.discountAmount)} VND
                                   </div>
                                 )}
-                                
+
                                 <div className="text-muted small mt-1">
                                   Tổng: {formatPrice(item.totalPrice || item.total || 0)} VND
                                 </div>
@@ -449,7 +449,7 @@ const Cart = () => {
                               <Form.Control
                                 type="text"
                                 value={
-                                 'x' + (item.quantity || 1)}
+                                  'x' + (item.quantity || 1)}
                                 readOnly
                                 style={{ width: '70px', textAlign: 'center', backgroundColor: '#f8f9fa' }}
                               />
@@ -478,12 +478,12 @@ const Cart = () => {
                         ))}
                       </tbody>
                     </Table>
-                    
+
                     <div className="d-flex gap-2 mt-3">
                       <Button variant="primary" onClick={handleContinueShopping}>
                         Tiếp tục mua hàng
                       </Button>
-                      
+
                     </div>
                   </>
                 )}
@@ -491,18 +491,18 @@ const Cart = () => {
             </Card>
 
             {/* Phần Khuyến mại */}
-            
+
 
             {/* Phần Thông tin thanh toán */}
             <Card className="mb-4">
               <Card.Body>
                 <h3 className="mb-4">Thông tin thanh toán</h3>
-                
-              
+
+
 
                 {accountType === 'existing' && user && (
                   <>
-                 
+
 
                     {/* Hiển thị form thông tin đã điền sẵn từ profile */}
                     {userProfile && !loadingProfile && (
@@ -945,10 +945,10 @@ const Cart = () => {
             <Card className="order-summary-card">
               <Card.Body>
                 <h3 className="mb-4">Thông tin đơn hàng</h3>
-                
+
                 {selectedItems.length === 0 ? (
                   <Alert variant="warning" className="mb-3">
-                   Tích chọn sản phẩm muốn đặt hàng.
+                    Tích chọn sản phẩm muốn đặt hàng.
                   </Alert>
                 ) : (
                   <div className="mb-3">
@@ -993,9 +993,9 @@ const Cart = () => {
                   </Alert>
                 )}
 
-                <Button 
-                  variant="primary" 
-                  size="lg" 
+                <Button
+                  variant="primary"
+                  size="lg"
                   className="w-100 mt-4 payment-button"
                   onClick={handlePayment}
                 >
@@ -1063,58 +1063,58 @@ const Cart = () => {
               <Tab.Pane eventKey="terms">
                 <div className="policy-content">
                   <h4 className="mb-3">Điều khoản dịch vụ</h4>
-                  
+
                   <h5>1. Chấp nhận điều khoản</h5>
                   <p>
-                    Bằng việc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ và bị ràng buộc bởi các điều khoản và điều kiện này. 
+                    Bằng việc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ và bị ràng buộc bởi các điều khoản và điều kiện này.
                     Nếu bạn không đồng ý với bất kỳ phần nào của các điều khoản này, bạn không được phép sử dụng dịch vụ.
                   </p>
 
                   <h5>2. Mô tả dịch vụ</h5>
                   <p>
-                    Chúng tôi cung cấp các dịch vụ hosting, VPS, và các dịch vụ công nghệ thông tin liên quan. 
+                    Chúng tôi cung cấp các dịch vụ hosting, VPS, và các dịch vụ công nghệ thông tin liên quan.
                     Dịch vụ được cung cấp "nguyên trạng" và có thể thay đổi mà không cần thông báo trước.
                   </p>
 
                   <h5>3. Đăng ký tài khoản</h5>
                   <p>
-                    Để sử dụng dịch vụ, bạn phải đăng ký tài khoản và cung cấp thông tin chính xác, đầy đủ. 
+                    Để sử dụng dịch vụ, bạn phải đăng ký tài khoản và cung cấp thông tin chính xác, đầy đủ.
                     Bạn chịu trách nhiệm bảo mật thông tin đăng nhập và mọi hoạt động diễn ra dưới tài khoản của bạn.
                   </p>
 
                   <h5>4. Thanh toán và hoàn tiền</h5>
                   <p>
-                    Tất cả các khoản thanh toán phải được thực hiện đúng hạn. Chúng tôi có quyền tạm ngừng hoặc chấm dứt dịch vụ 
+                    Tất cả các khoản thanh toán phải được thực hiện đúng hạn. Chúng tôi có quyền tạm ngừng hoặc chấm dứt dịch vụ
                     nếu thanh toán bị trễ. Chính sách hoàn tiền được áp dụng theo từng gói dịch vụ cụ thể.
                   </p>
 
                   <h5>5. Sử dụng dịch vụ</h5>
                   <p>
-                    Bạn cam kết sử dụng dịch vụ một cách hợp pháp và không vi phạm quyền của bên thứ ba. 
+                    Bạn cam kết sử dụng dịch vụ một cách hợp pháp và không vi phạm quyền của bên thứ ba.
                     Bạn không được sử dụng dịch vụ cho các mục đích bất hợp pháp, gây hại, hoặc vi phạm pháp luật.
                   </p>
 
                   <h5>6. Bảo mật</h5>
                   <p>
-                    Chúng tôi cam kết bảo vệ thông tin của bạn nhưng không thể đảm bảo an ninh tuyệt đối. 
+                    Chúng tôi cam kết bảo vệ thông tin của bạn nhưng không thể đảm bảo an ninh tuyệt đối.
                     Bạn chịu trách nhiệm bảo vệ thông tin đăng nhập và dữ liệu của mình.
                   </p>
 
                   <h5>7. Chấm dứt dịch vụ</h5>
                   <p>
-                    Chúng tôi có quyền chấm dứt hoặc tạm ngừng dịch vụ của bạn nếu vi phạm các điều khoản này 
+                    Chúng tôi có quyền chấm dứt hoặc tạm ngừng dịch vụ của bạn nếu vi phạm các điều khoản này
                     hoặc vì lý do bảo mật, kỹ thuật.
                   </p>
 
                   <h5>8. Thay đổi điều khoản</h5>
                   <p>
-                    Chúng tôi có quyền thay đổi các điều khoản này bất cứ lúc nào. 
+                    Chúng tôi có quyền thay đổi các điều khoản này bất cứ lúc nào.
                     Việc tiếp tục sử dụng dịch vụ sau khi thay đổi được coi là bạn đã chấp nhận các điều khoản mới.
                   </p>
 
                   <h5>9. Giới hạn trách nhiệm</h5>
                   <p>
-                    Chúng tôi không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên nào 
+                    Chúng tôi không chịu trách nhiệm cho bất kỳ thiệt hại trực tiếp, gián tiếp, ngẫu nhiên nào
                     phát sinh từ việc sử dụng hoặc không thể sử dụng dịch vụ.
                   </p>
 
@@ -1124,14 +1124,14 @@ const Cart = () => {
                   </p>
                 </div>
               </Tab.Pane>
-              
+
               <Tab.Pane eventKey="privacy">
                 <div className="policy-content">
                   <h4 className="mb-3">Chính sách bảo vệ dữ liệu cá nhân</h4>
-                  
+
                   <h5>1. Thu thập thông tin</h5>
                   <p>
-                    Chúng tôi thu thập thông tin cá nhân của bạn khi bạn đăng ký, sử dụng dịch vụ, hoặc liên hệ với chúng tôi. 
+                    Chúng tôi thu thập thông tin cá nhân của bạn khi bạn đăng ký, sử dụng dịch vụ, hoặc liên hệ với chúng tôi.
                     Thông tin thu thập bao gồm: họ tên, email, số điện thoại, địa chỉ, số CCCD/Passport, và thông tin thanh toán.
                   </p>
 
@@ -1149,8 +1149,8 @@ const Cart = () => {
 
                   <h5>3. Bảo vệ thông tin</h5>
                   <p>
-                    Chúng tôi áp dụng các biện pháp bảo mật kỹ thuật và tổ chức để bảo vệ thông tin cá nhân của bạn 
-                    khỏi truy cập trái phép, mất mát, hoặc phá hủy. Tuy nhiên, không có phương thức truyền tải qua Internet 
+                    Chúng tôi áp dụng các biện pháp bảo mật kỹ thuật và tổ chức để bảo vệ thông tin cá nhân của bạn
+                    khỏi truy cập trái phép, mất mát, hoặc phá hủy. Tuy nhiên, không có phương thức truyền tải qua Internet
                     nào là an toàn 100%.
                   </p>
 
@@ -1167,7 +1167,7 @@ const Cart = () => {
 
                   <h5>5. Cookie và công nghệ theo dõi</h5>
                   <p>
-                    Chúng tôi sử dụng cookie và công nghệ tương tự để cải thiện trải nghiệm người dùng, 
+                    Chúng tôi sử dụng cookie và công nghệ tương tự để cải thiện trải nghiệm người dùng,
                     phân tích lưu lượng truy cập, và cá nhân hóa nội dung. Bạn có thể quản lý cookie thông qua cài đặt trình duyệt.
                   </p>
 
@@ -1185,20 +1185,20 @@ const Cart = () => {
 
                   <h5>7. Lưu trữ dữ liệu</h5>
                   <p>
-                    Chúng tôi lưu trữ thông tin cá nhân của bạn trong thời gian cần thiết để cung cấp dịch vụ 
-                    và tuân thủ các nghĩa vụ pháp lý. Sau khi chấm dứt dịch vụ, chúng tôi sẽ xóa hoặc ẩn danh hóa dữ liệu 
+                    Chúng tôi lưu trữ thông tin cá nhân của bạn trong thời gian cần thiết để cung cấp dịch vụ
+                    và tuân thủ các nghĩa vụ pháp lý. Sau khi chấm dứt dịch vụ, chúng tôi sẽ xóa hoặc ẩn danh hóa dữ liệu
                     theo quy định pháp luật.
                   </p>
 
                   <h5>8. Bảo mật thanh toán</h5>
                   <p>
-                    Tất cả các giao dịch thanh toán được xử lý thông qua các nhà cung cấp thanh toán được mã hóa. 
+                    Tất cả các giao dịch thanh toán được xử lý thông qua các nhà cung cấp thanh toán được mã hóa.
                     Chúng tôi không lưu trữ thông tin thẻ tín dụng hoặc chi tiết thanh toán đầy đủ trên hệ thống của mình.
                   </p>
 
                   <h5>9. Thay đổi chính sách</h5>
                   <p>
-                    Chúng tôi có thể cập nhật chính sách này theo thời gian. Chúng tôi sẽ thông báo cho bạn về 
+                    Chúng tôi có thể cập nhật chính sách này theo thời gian. Chúng tôi sẽ thông báo cho bạn về
                     bất kỳ thay đổi quan trọng nào thông qua email hoặc thông báo trên website.
                   </p>
 
@@ -1220,8 +1220,8 @@ const Cart = () => {
           <Button variant="secondary" onClick={() => setShowPolicyModal(false)}>
             Đóng
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => {
               setAgreedToTerms(true);
               setShowPolicyModal(false);
