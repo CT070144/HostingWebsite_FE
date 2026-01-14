@@ -5,10 +5,6 @@ const InstanceTabPanel = ({ activeTab, onTabChange, instance }) => {
       const tabs = [
             { id: 'summary', icon: 'fa-info-circle', label: 'Summary' },
             { id: 'console', icon: 'fa-terminal', label: 'Console', requireRunning: true },
-<<<<<<< HEAD
-           
-=======
->>>>>>> origin/feature/instance-management
             { id: 'hardware', icon: 'fa-microchip', label: 'Hardware' },
       ];
 
