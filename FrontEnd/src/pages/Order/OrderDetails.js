@@ -290,6 +290,7 @@ const OrderDetails = () => {
   const [generatedKeys, setGeneratedKeys] = useState(null);
   const [sshSubmitting, setSshSubmitting] = useState(false);
   const [sshError, setSshError] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const paymentPollingIntervalRef = useRef(null);
   const pollingIntervalRef = useRef(null);
@@ -547,6 +548,67 @@ const OrderDetails = () => {
     }
   };
 
+  // Cancel payment and order
+  const handleCancelPayment = async () => {
+    if (!window.confirm('Ban co chac muon huy thanh toan? Don hang se bi xoa.')) {
+      return;
+    }
+
+    console.log('[Cancel] Starting cancel process...');
+    console.log('[Cancel] orderId from params:', orderId);
+    console.log('[Cancel] payment_id:', payment?.payment_id);
+
+    try {
+      setCancelling(true);
+
+      // Stop all polling immediately
+      console.log('[Cancel] Stopping polling...');
+      if (paymentPollingIntervalRef.current) {
+        clearInterval(paymentPollingIntervalRef.current);
+        paymentPollingIntervalRef.current = null;
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      setPollingPayment(false);
+      setPollingForVM(false);
+
+      // Cancel payment on PayOS and delete from DB
+      if (payment?.payment_id) {
+        console.log('[Cancel] Cancelling payment:', payment.payment_id);
+        try {
+          await paymentService.cancelPayment(payment.payment_id);
+          console.log('[Cancel] Payment cancelled successfully');
+        } catch (err) {
+          console.error('[Cancel] Failed to cancel payment:', err);
+        }
+      }
+
+      // Delete order using orderId from URL params
+      console.log('[Cancel] Deleting order:', orderId);
+      if (orderId) {
+        try {
+          const response = await orderService.deleteOrder(orderId);
+          console.log('[Cancel] Order deleted successfully:', orderId, response);
+        } catch (err) {
+          console.error('[Cancel] Failed to delete order:', err);
+        }
+      } else {
+        console.error('[Cancel] orderId is undefined!');
+      }
+
+      console.log('[Cancel] Navigating to /cart');
+      alert('Da huy thanh toan thanh cong!');
+      navigate('/cart');
+    } catch (err) {
+      console.error('[Cancel] Failed:', err);
+      alert('Khong the huy thanh toan. Vui long thu lai.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const badge = getStatusBadge(order?.status);
   const currentStep = useMemo(() => {
     if (vmReady) return 2;
@@ -679,14 +741,34 @@ const OrderDetails = () => {
                   </Col>
                   <Col md={6}>
                     <Alert variant="info">
-                      <h6>Hướng dẫn thanh toán:</h6>
+                      <h6>Huong dan thanh toan:</h6>
                       <ol className="mb-0">
-                        <li>Mở ứng dụng ngân hàng của bạn</li>
-                        <li>Quét mã QR bên trái</li>
-                        <li>Xác nhận thanh toán</li>
-                        <li>Chờ hệ thống xác nhận (tự động)</li>
+                        <li>Mo ung dung ngan hang cua ban</li>
+                        <li>Quet ma QR ben trai</li>
+                        <li>Xac nhan thanh toan</li>
+                        <li>Cho he thong xac nhan (tu dong)</li>
                       </ol>
                     </Alert>
+
+                    <div className="d-grid gap-2 mt-3">
+                      <Button
+                        variant="outline-danger"
+                        onClick={handleCancelPayment}
+                        disabled={cancelling}
+                      >
+                        {cancelling ? (
+                          <>
+                            <Spinner animation="border" size="sm" className="me-2" />
+                            Dang huy...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-times me-2"></i>
+                            Huy thanh toan
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </Col>
                 </Row>
               ) : null}

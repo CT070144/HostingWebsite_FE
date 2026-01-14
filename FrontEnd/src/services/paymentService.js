@@ -9,4 +9,7 @@ export const paymentService = {
 
       // Check and sync payment status with PayOS (for polling)
       checkPaymentStatus: (paymentID) => api.post(`/user/payment/check/${paymentID}`),
+
+      // Cancel/delete pending payment
+      cancelPayment: (paymentID) => api.delete(`/user/payment/${paymentID}`),
 };
