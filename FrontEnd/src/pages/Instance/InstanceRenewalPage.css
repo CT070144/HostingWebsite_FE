@@ -1,8 +1,244 @@
-.instance-renewal-page .cycle-option:hover {
-    border-color: #0d6efd !important;
-    background-color: #f8f9fa;
+/* Instance Renewal Page Styles */
+.instance-renewal-page {
+    background-color: var(--bg-secondary);
+    min-height: 100vh;
 }
 
-.instance-renewal-page .bg-primary-light {
-    background-color: #e7f1ff !important;
+/* Card Styles */
+.instance-renewal-page .renewal-main-card,
+.instance-renewal-page .renewal-payment-card,
+.instance-renewal-page .renewal-success-card {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.instance-renewal-page .renewal-header {
+    background: var(--gradient-primary);
+    background-color: var(--primary-darker) !important;
+    padding: 1.5rem;
+    border: none;
+}
+
+.instance-renewal-page .renewal-header h4 {
+    color: var(--text-white) !important;
+    font-weight: 700;
+}
+
+/* Success State */
+.instance-renewal-page .success-icon-wrapper {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.2) 100%);
+    border-radius: 50%;
+}
+
+.instance-renewal-page .success-icon-wrapper i {
+    font-size: 5rem;
+    color: var(--success-color);
+}
+
+/* Instance Info Box */
+.instance-renewal-page .instance-info-box {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.instance-renewal-page .info-row {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.instance-renewal-page .info-label {
+    min-width: 140px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+.instance-renewal-page .info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.instance-renewal-page .info-value code {
+    background-color: var(--bg-tertiary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--primary-darker);
+}
+
+/* Cycle Options */
+.instance-renewal-page .cycle-option {
+    position: relative;
+    padding: 2rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.instance-renewal-page .cycle-option:hover {
+    border-color: var(--primary-color);
+    background-color: var(--primary-ultra-light);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.instance-renewal-page .cycle-option-selected {
+    border-color: var(--primary-darker) !important;
+    background: linear-gradient(135deg, var(--primary-ultra-light) 0%, rgba(219, 234, 254, 0.5) 100%) !important;
+    box-shadow: var(--shadow-primary) !important;
+    transform: translateY(-4px);
+}
+
+.instance-renewal-page .selected-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    background-color: var(--primary-darker);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+}
+
+.instance-renewal-page .cycle-label {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.instance-renewal-page .cycle-option-selected .cycle-label {
+    color: var(--primary-darker);
+}
+
+/* Payment Section */
+.instance-renewal-page .qr-container {
+    border: 3px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.instance-renewal-page .qr-iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+    border-radius: var(--radius-md);
+}
+
+.instance-renewal-page .payment-amount-box {
+    background: linear-gradient(135deg, var(--primary-ultra-light) 0%, rgba(219, 234, 254, 0.3) 100%);
+    padding: 1rem 2rem;
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--primary-light);
+}
+
+/* Alert Styles */
+.instance-renewal-page .renewal-info-alert {
+    background: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 110, 253, 0.05) 100%);
+    border: 2px solid var(--primary-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.instance-renewal-page .renewal-info-alert h6 {
+    color: var(--primary-darker);
+}
+
+.instance-renewal-page .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(13, 110, 253, 0.1);
+}
+
+.instance-renewal-page .info-item:last-child {
+    border-bottom: none;
+}
+
+.instance-renewal-page .info-item .info-label {
+    min-width: auto;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.instance-renewal-page .info-item .info-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.instance-renewal-page .renewal-guide-alert {
+    background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.instance-renewal-page .renewal-guide-alert h6 {
+    color: var(--text-primary);
+}
+
+.instance-renewal-page .renewal-guide-list {
+    line-height: 2;
+}
+
+.instance-renewal-page .renewal-guide-list li {
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+/* Button Styles */
+.instance-renewal-page .btn-primary-custom {
+    background-color: var(--primary-darker);
+    border-color: var(--primary-darker);
+    color: var(--text-white);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.instance-renewal-page .btn-primary-custom:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-lg);
+}
+
+.instance-renewal-page .btn-primary-custom:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .instance-renewal-page .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .instance-renewal-page .info-label {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+    }
+    
+    .instance-renewal-page .qr-iframe {
+        height: 400px;
+    }
 }

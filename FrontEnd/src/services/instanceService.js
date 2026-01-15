@@ -33,4 +33,8 @@ export const instanceService = {
       // Renew Instance
       renewInstance: (instanceId, billingCycle) =>
             api.post(`/user/instances/${instanceId}/renew`, { billing_cycle: billingCycle }),
+
+      // Get instance hardware information
+      getHardware: (instanceId) =>
+            api.get(`/user/instances/${instanceId}/hardware`),
 };

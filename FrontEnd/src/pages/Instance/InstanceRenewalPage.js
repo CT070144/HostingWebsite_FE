@@ -78,7 +78,7 @@ const InstanceRenewalPage = () => {
                               paymentPollingIntervalRef.current = null;
                         }
                         setPaymentSuccess(true);
-                        notify.notifySuccess('Thanh toan thanh cong! Instance da duoc gia han.');
+                        notify.notifySuccess('Thanh toán thành công! Instance đã được gia hạn.');
                   }
             } catch (err) {
                   console.error('Failed to poll payment status:', err);
@@ -147,7 +147,7 @@ const InstanceRenewalPage = () => {
                   );
 
                   if (!addedItem) {
-                        throw new Error('Khong tim thay item trong gio hang');
+                        throw new Error('Không tìm thấy item trong giỏ hàng');
                   }
 
                   // 4. Checkout specific item
@@ -173,7 +173,7 @@ const InstanceRenewalPage = () => {
       };
 
       const handleCancelPayment = async () => {
-            if (!window.confirm('Ban co chac muon huy thanh toan?')) {
+            if (!window.confirm('Bạn có chắc muốn hủy thanh toán?')) {
                   return;
             }
 
@@ -193,18 +193,18 @@ const InstanceRenewalPage = () => {
                   // Reset states
                   setPayment(null);
                   setOrderData(null);
-                  notify.notifySuccess('Da huy thanh toan');
+                  notify.notifySuccess('Đã hủy thanh toán');
             } catch (err) {
                   console.error('Failed to cancel payment:', err);
-                  notify.notifyError('Khong the huy thanh toan');
+                  notify.notifyError('Không thể hủy thanh toán');
             }
       };
 
       const cycles = [
-            { value: '1', label: '1 Thang', multiplier: 1 },
-            { value: '3', label: '3 Thang', multiplier: 3 },
-            { value: '6', label: '6 Thang', multiplier: 6 },
-            { value: '12', label: '1 Nam (12 Thang)', multiplier: 12 },
+            { value: '1', label: '1 Tháng', multiplier: 1 },
+            { value: '3', label: '3 Tháng', multiplier: 3 },
+            { value: '6', label: '6 Tháng', multiplier: 6 },
+            { value: '12', label: '1 Năm (12 Tháng)', multiplier: 12 },
       ];
 
       if (loading) return <div className="text-center py-5"><Spinner animation="border" /></div>;
@@ -214,18 +214,25 @@ const InstanceRenewalPage = () => {
       if (paymentSuccess) {
             return (
                   <Container className="py-5 instance-renewal-page">
-                        <Card className="shadow-sm">
-                              <Card.Body className="text-center py-5">
+                        <Card className="shadow-lg border-0 renewal-success-card">
+                              <Card.Body className="text-center py-5 px-4">
                                     <div className="mb-4">
-                                          <i className="fas fa-check-circle text-success" style={{ fontSize: '4rem' }}></i>
+                                          <div className="success-icon-wrapper">
+                                                <i className="fas fa-check-circle text-success"></i>
+                                          </div>
                                     </div>
-                                    <h3 className="text-success mb-3">Gia han thanh cong!</h3>
-                                    <p className="text-muted mb-4">
-                                          Instance cua ban da duoc gia han them {billingCycle} thang.
+                                    <h3 className="text-success mb-3 fw-bold">Gia hạn thành công!</h3>
+                                    <p className="text-muted mb-4 fs-5">
+                                          Instance của bạn đã được gia hạn thêm {cycles.find(c => c.value === billingCycle)?.label.toLowerCase()}.
                                           <br />
-                                          Ngay het han moi se duoc cap nhat trong vai giay.
+                                          <span className="text-secondary">Ngày hết hạn mới sẽ được cập nhật trong vài giây.</span>
                                     </p>
-                                    <Button variant="primary" onClick={() => navigate(`/instances/${instanceId}/summary`)}>
+                                    <Button 
+                                          variant="primary" 
+                                          size="lg"
+                                          className="btn-primary-custom px-4"
+                                          onClick={() => navigate(`/instances/${instanceId}/summary`)}
+                                    >
                                           <i className="fas fa-server me-2"></i>
                                           Xem Instance
                                     </Button>
@@ -239,80 +246,103 @@ const InstanceRenewalPage = () => {
       if (payment && !paymentSuccess) {
             return (
                   <Container className="py-5 instance-renewal-page">
-                        <Card className="shadow-sm">
-                              <Card.Header className="bg-primary text-white">
-                                    <h4 className="mb-0"><i className="fas fa-qrcode me-2"></i>Thanh toan gia han</h4>
+                        <Card className="shadow-lg border-0 renewal-payment-card">
+                              <Card.Header className="renewal-header">
+                                    <h4 className="mb-0 text-white fw-bold">
+                                          <i className="fas fa-qrcode me-2"></i>
+                                          Thanh toán gia hạn
+                                    </h4>
                               </Card.Header>
-                              <Card.Body>
+                              <Card.Body className="p-4">
                                     {paymentLoading ? (
-                                          <div className="text-center py-4">
-                                                <Spinner animation="border" size="sm" className="me-2" />
-                                                Dang tao ma thanh toan...
+                                          <div className="text-center py-5">
+                                                <Spinner animation="border" variant="primary" size="lg" className="me-2" />
+                                                <p className="mt-3 text-muted">Đang tạo mã thanh toán...</p>
                                           </div>
                                     ) : (
                                           <Row>
                                                 <Col md={7}>
                                                       <div className="text-center">
-                                                            <h5>Quet ma QR de thanh toan</h5>
+                                                            <h5 className="mb-4 fw-bold text-dark">
+                                                                  <i className="fas fa-mobile-alt me-2 text-primary"></i>
+                                                                  Quét mã QR để thanh toán
+                                                            </h5>
                                                             {payment.qr_content ? (
                                                                   <div className="my-3">
-                                                                        <div className="border rounded p-2" style={{ backgroundColor: '#f8f9fa' }}>
+                                                                        <div className="qr-container">
                                                                               <iframe
                                                                                     src={payment.qr_content}
-                                                                                    style={{
-                                                                                          width: '100%',
-                                                                                          height: '500px',
-                                                                                          border: 'none',
-                                                                                          borderRadius: '8px'
-                                                                                    }}
+                                                                                    className="qr-iframe"
                                                                                     title="PayOS Payment"
                                                                               />
                                                                         </div>
-                                                                        <p className="text-muted small mt-2">
-                                                                              <i className="fas fa-info-circle me-1"></i>
-                                                                              Quet ma QR ben tren de thanh toan
+                                                                        <p className="text-muted small mt-3">
+                                                                              <i className="fas fa-info-circle me-1 text-primary"></i>
+                                                                              Quét mã QR bên trên để thanh toán
                                                                         </p>
                                                                   </div>
                                                             ) : (
-                                                                  <p className="text-muted">Dang tai trang thanh toan...</p>
+                                                                  <p className="text-muted">
+                                                                        <Spinner animation="border" size="sm" className="me-2" />
+                                                                        Đang tải trang thanh toán...
+                                                                  </p>
                                                             )}
-                                                            <div className="mt-3">
-                                                                  <p><strong>So tien:</strong> {formatPrice(payment.amount)} VND</p>
+                                                            <div className="mt-4 payment-amount-box">
+                                                                  <p className="mb-0">
+                                                                        <span className="text-muted">Số tiền: </span>
+                                                                        <strong className="text-primary fs-4">{formatPrice(payment.amount)} VND</strong>
+                                                                  </p>
                                                             </div>
                                                       </div>
                                                 </Col>
                                                 <Col md={5}>
-                                                      <Alert variant="info">
-                                                            <h6>Thong tin gia han:</h6>
-                                                            <p className="mb-1"><strong>Instance:</strong> VM-{instance.external_vm_id}</p>
-                                                            <p className="mb-1"><strong>Chu ky:</strong> {cycles.find(c => c.value === billingCycle)?.label}</p>
-                                                            <p className="mb-0"><strong>So tien:</strong> {formatPrice(payment.amount)} VND</p>
+                                                      <Alert variant="info" className="renewal-info-alert" style={{ backgroundColor: 'var(--primary-color-dark)' }}>
+                                                            <h6 className="mb-3 fw-bold">
+                                                                  <i className="fas fa-info-circle me-2"></i>
+                                                                  Thông tin gia hạn
+                                                            </h6>
+                                                            <div className="info-item">
+                                                                  <span className="info-label">Instance:</span>
+                                                                  <span className="info-value">VM-{instance.external_vm_id}</span>
+                                                            </div>
+                                                            <div className="info-item">
+                                                                  <span className="info-label">Chu kỳ:</span>
+                                                                  <span className="info-value">{cycles.find(c => c.value === billingCycle)?.label}</span>
+                                                            </div>
+                                                            <div className="info-item mb-0">
+                                                                  <span className="info-label">Số tiền:</span>
+                                                                  <span className="info-value text-primary fw-bold">{formatPrice(payment.amount)} VND</span>
+                                                            </div>
                                                       </Alert>
 
-                                                      <Alert variant="light" className="mt-3">
-                                                            <h6>Huong dan:</h6>
-                                                            <ol className="mb-0 ps-3">
-                                                                  <li>Mo ung dung ngan hang</li>
-                                                                  <li>Quet ma QR ben trai</li>
-                                                                  <li>Xac nhan thanh toan</li>
-                                                                  <li>Cho he thong xac nhan (tu dong)</li>
+                                                      <Alert variant="light" className="mt-3 renewal-guide-alert">
+                                                            <h6 className="mb-3 fw-bold">
+                                                                  <i className="fas fa-lightbulb me-2 text-warning"></i>
+                                                                  Hướng dẫn
+                                                            </h6>
+                                                            <ol className="mb-0 ps-3 renewal-guide-list">
+                                                                  <li>Mở ứng dụng ngân hàng</li>
+                                                                  <li>Quét mã QR bên trái</li>
+                                                                  <li>Xác nhận thanh toán</li>
+                                                                  <li>Chờ hệ thống xác nhận (tự động)</li>
                                                             </ol>
                                                       </Alert>
 
                                                       {pollingPayment && (
                                                             <div className="text-center mt-3">
-                                                                  <Spinner animation="border" size="sm" className="me-2" />
-                                                                  <span className="text-muted">Dang cho thanh toan...</span>
+                                                                  <Spinner animation="border" size="sm" variant="primary" className="me-2" />
+                                                                  <span className="text-muted">Đang chờ thanh toán...</span>
                                                             </div>
                                                       )}
 
                                                       <div className="d-grid gap-2 mt-3">
                                                             <Button
-                                                                  variant="outline-danger"
+                                                                  variant="danger"
+                                                                  size="lg"
                                                                   onClick={handleCancelPayment}
                                                             >
                                                                   <i className="fas fa-times me-2"></i>
-                                                                  Huy thanh toan
+                                                                  Hủy thanh toán
                                                             </Button>
                                                       </div>
                                                 </Col>
@@ -327,31 +357,63 @@ const InstanceRenewalPage = () => {
       // Default: Billing cycle selection
       return (
             <Container className="py-5 instance-renewal-page">
-                  <Card className="shadow-sm">
-                        <Card.Header className="bg-primary text-white">
-                              <h4 className="mb-0"><i className="fas fa-sync-alt me-2"></i>Gia han Instance</h4>
+                  <Card className="shadow-lg border-0 renewal-main-card">
+                        <Card.Header className="renewal-header">
+                              <h4 className="mb-0 text-white fw-bold">
+                                    <i className="fas fa-sync-alt me-2"></i>
+                                    Gia hạn VPS
+                              </h4>
                         </Card.Header>
-                        <Card.Body>
+                        <Card.Body className="p-4">
                               <Row className="mb-4">
                                     <Col md={12}>
-                                          <h5>Thong tin Instance</h5>
-                                          <div className="p-3 bg-light rounded">
-                                                <p className="mb-1"><strong>ID:</strong> {instance.instance_id}</p>
-                                                <p className="mb-1"><strong>VM:</strong> {instance.node_name} (VM-{instance.external_vm_id})</p>
-                                                <p className="mb-1"><strong>Trang thai:</strong> {instance.status}</p>
-                                                <p className="mb-0"><strong>Het han:</strong> {instance.next_due_date ? new Date(instance.next_due_date).toLocaleDateString('vi-VN') : 'N/A'}</p>
+                                          <h5 className="mb-3 fw-bold text-dark">
+                                                <i className="fas fa-info-circle me-2 text-primary"></i>
+                                                Thông tin VPS
+                                          </h5>
+                                          <div className="instance-info-box p-4">
+                                                <div className="info-row mb-2">
+                                                      <span className="info-label">
+                                                            <i className="fas fa-check-circle me-2 text-primary"></i>
+                                                            ID:
+                                                      </span>
+                                                      <code className="info-value">{instance.instance_id}</code>
+                                                </div>
+                                                <div className="info-row mb-2">
+                                                      <span className="info-label">
+                                                            <i className="fas fa-server me-2 text-primary"></i>
+                                                            VM:
+                                                      </span>
+                                                      <span className="info-value">{instance.node_name} (VM-{instance.external_vm_id})</span>
+                                                </div>
+                                                <div className="info-row mb-2">
+                                                      <span className="info-label">
+                                                            <i className="fas fa-circle me-2 text-primary"></i>
+                                                            Trạng thái:
+                                                      </span>
+                                                      <span className="info-value">{instance.status}</span>
+                                                </div>
+                                                <div className="info-row mb-0">
+                                                      <span className="info-label">
+                                                            <i className="fas fa-calendar-times me-2 text-primary"></i>
+                                                            Hết hạn:
+                                                      </span>
+                                                      <span className="info-value">{instance.next_due_date ? new Date(instance.next_due_date).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                                </div>
                                           </div>
                                     </Col>
                               </Row>
 
-                              <h5 className="mb-3">Chon chu ky gia han</h5>
-                              <Row className="g-3">
+                              <h5 className="mb-4 fw-bold text-dark">
+                                    <i className="fas fa-calendar-alt me-2 text-primary"></i>
+                                    Chọn chu kỳ gia hạn
+                              </h5>
+                              <Row className="g-3 mb-4">
                                     {cycles.map((cycle) => (
                                           <Col md={3} sm={6} key={cycle.value}>
                                                 <div
-                                                      className={`cycle-option p-3 border rounded text-center ${billingCycle === cycle.value ? 'border-primary bg-primary-light' : ''}`}
+                                                      className={`cycle-option ${billingCycle === cycle.value ? 'cycle-option-selected' : ''}`}
                                                       onClick={() => setBillingCycle(cycle.value)}
-                                                      style={{ cursor: 'pointer', transition: 'all 0.2s', backgroundColor: billingCycle === cycle.value ? '#e7f1ff' : 'transparent' }}
                                                 >
                                                       <Form.Check
                                                             type="radio"
@@ -361,24 +423,44 @@ const InstanceRenewalPage = () => {
                                                             onChange={() => setBillingCycle(cycle.value)}
                                                             className="d-none"
                                                       />
-                                                      <strong className="d-block fs-5">{cycle.label}</strong>
+                                                      {billingCycle === cycle.value && (
+                                                            <div className="selected-badge">
+                                                                  <i className="fas fa-check-circle"></i>
+                                                            </div>
+                                                      )}
+                                                      <strong className="d-block cycle-label">{cycle.label}</strong>
                                                 </div>
                                           </Col>
                                     ))}
                               </Row>
 
-                              <div className="mt-4 text-end">
-                                    <Button variant="secondary" className="me-2" onClick={() => navigate('/instances')}>
-                                          Huy bo
+                              <div className="mt-4 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <Button 
+                                          variant="outline-secondary" 
+                                          size="lg"
+                                          onClick={() => navigate('/instances')}
+                                    >
+                                          <i className="fas fa-arrow-left me-2"></i>
+                                          Hủy bỏ
                                     </Button>
                                     <Button
                                           variant="primary"
                                           size="lg"
+                                          className="btn-primary-custom px-5"
                                           onClick={handleRenew}
                                           disabled={processing}
                                     >
-                                          {processing ? <Spinner animation="border" size="sm" className="me-2" /> : <i className="fas fa-credit-card me-2"></i>}
-                                          Thanh toan ngay
+                                          {processing ? (
+                                                <>
+                                                      <Spinner animation="border" size="sm" className="me-2" />
+                                                      Đang xử lý...
+                                                </>
+                                          ) : (
+                                                <>
+                                                      <i className="fas fa-credit-card me-2"></i>
+                                                      Thanh toán ngay
+                                                </>
+                                          )}
                                     </Button>
                               </div>
                         </Card.Body>
