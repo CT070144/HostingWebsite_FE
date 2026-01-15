@@ -280,17 +280,12 @@ const OrderDetails = () => {
   const [pollingForVM, setPollingForVM] = useState(false);
   const [vmReady, setVmReady] = useState(false);
 
-  // SSH configuration states
-  const [sshConfig, setSshConfig] = useState({
-    ciuser: 'ubuntu',
-    cipassword: '',
-    nameserver: '8.8.8.8',
-    sshkeys: ''
-  });
-  const [generatedKeys, setGeneratedKeys] = useState(null);
-  const [sshSubmitting, setSshSubmitting] = useState(false);
-  const [sshError, setSshError] = useState(null);
-  const [sshSuccess, setSshSuccess] = useState(false);
+  // SSH configuration states - Map by instance_id
+  const [sshConfigs, setSshConfigs] = useState({});
+  const [generatedKeys, setGeneratedKeys] = useState({});
+  const [sshSubmitting, setSshSubmitting] = useState({});
+  const [sshErrors, setSshErrors] = useState({});
+  const [sshSuccess, setSshSuccess] = useState({});
   const [cancelling, setCancelling] = useState(false);
 
   const paymentPollingIntervalRef = useRef(null);
@@ -440,13 +435,23 @@ const OrderDetails = () => {
     try {
       const res = await instanceService.getAllInstances();
       const allInstances = res.data?.instances || [];
-      setInstances(allInstances);
 
-      const waitingInstances = allInstances.filter(
+      // Filter instances belonging to current order
+      const orderInstances = allInstances.filter(
+        inst => inst.order_id === orderId
+      );
+      setInstances(orderInstances);
+
+      // Check if all instances for this order are ready for SSH config
+      const waitingInstances = orderInstances.filter(
         inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY'
       );
+      const provisioningInstances = orderInstances.filter(
+        inst => inst.status === 'PROVISIONING' || inst.provisioning_status === 'PROCESSING'
+      );
 
-      if (waitingInstances.length > 0) {
+      // VM ready when we have at least one instance waiting for SSH and no more provisioning
+      if (waitingInstances.length > 0 && provisioningInstances.length === 0) {
         setVmReady(true);
         setPollingForVM(false);
         if (pollingIntervalRef.current) {
@@ -457,7 +462,7 @@ const OrderDetails = () => {
     } catch (err) {
       console.error('Failed to poll instances:', err);
     }
-  }, []);
+  }, [orderId]);
 
   useEffect(() => {
     // Start polling when payment is PAID (either from order status or payment status)
@@ -487,68 +492,93 @@ const OrderDetails = () => {
   }, [order, payment, vmReady, pollingForVM, pollForVMStatus]);
 
   // Generate SSH keys
-  const handleGenerateSSHKey = async () => {
+  // Initialize SSH config for an instance
+  const getOrInitSshConfig = useCallback((instanceId) => {
+    if (!sshConfigs[instanceId]) {
+      setSshConfigs(prev => ({
+        ...prev,
+        [instanceId]: {
+          ciuser: 'ubuntu',
+          cipassword: '',
+          nameserver: '8.8.8.8',
+          sshkeys: ''
+        }
+      }));
+    }
+    return sshConfigs[instanceId] || {
+      ciuser: 'ubuntu',
+      cipassword: '',
+      nameserver: '8.8.8.8',
+      sshkeys: ''
+    };
+  }, [sshConfigs]);
+
+  // Generate SSH keys for specific instance
+  const handleGenerateSSHKey = async (instanceId) => {
     try {
       const res = await instanceService.generateSSHKey();
-      setGeneratedKeys(res.data);
-      setSshConfig(prev => ({ ...prev, sshkeys: res.data.public_key }));
+      setGeneratedKeys(prev => ({ ...prev, [instanceId]: res.data }));
+      setSshConfigs(prev => ({
+        ...prev,
+        [instanceId]: {
+          ...(prev[instanceId] || { ciuser: 'ubuntu', cipassword: '', nameserver: '8.8.8.8', sshkeys: '' }),
+          sshkeys: res.data.public_key
+        }
+      }));
     } catch (err) {
       console.error('Failed to generate SSH key:', err);
       alert('Không thể tạo SSH key. Vui lòng thử lại.');
     }
   };
 
-  // Submit SSH configuration
-  const handleSubmitSSH = async () => {
-    const waitingInstances = instances.filter(
-      inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY'
-    );
+  // Submit SSH configuration for specific instance
+  const handleSubmitSSH = async (instanceId) => {
+    const config = sshConfigs[instanceId];
 
-    if (waitingInstances.length === 0) {
-      console.warn('[SSH Config] No instances waiting for SSH configuration');
-      setSshError('Không tìm thấy máy ảo cần cấu hình');
+    if (!config) {
+      setSshErrors(prev => ({ ...prev, [instanceId]: 'Chưa có cấu hình SSH' }));
       return;
     }
 
-    if (!sshConfig.sshkeys.trim()) {
-      console.warn('[SSH Config] SSH key is empty');
-      setSshError('Vui lòng nhập hoặc tạo SSH key');
+    if (!config.sshkeys.trim()) {
+      setSshErrors(prev => ({ ...prev, [instanceId]: 'Vui lòng nhập hoặc tạo SSH key' }));
       return;
     }
 
-    if (!sshConfig.cipassword.trim()) {
-      console.warn('[SSH Config] Password is empty');
-      setSshError('Vui lòng nhập mật khẩu');
+    if (!config.cipassword.trim()) {
+      setSshErrors(prev => ({ ...prev, [instanceId]: 'Vui lòng nhập mật khẩu' }));
       return;
     }
 
     try {
-      setSshSubmitting(true);
-      setSshError(null);
+      setSshSubmitting(prev => ({ ...prev, [instanceId]: true }));
+      setSshErrors(prev => ({ ...prev, [instanceId]: null }));
 
-      const instance = waitingInstances[0];
-      console.log('[SSH Config] Starting SSH configuration for instance:', instance.instance_id);
+      console.log('[SSH Config] Starting SSH configuration for instance:', instanceId);
 
-      await instanceService.configureSSH(instance.instance_id, {
-        ciuser: sshConfig.ciuser,
-        cipassword: sshConfig.cipassword,
-        nameserver: sshConfig.nameserver,
-        sshkeys: sshConfig.sshkeys
+      await instanceService.configureSSH(instanceId, {
+        ciuser: config.ciuser,
+        cipassword: config.cipassword,
+        nameserver: config.nameserver,
+        sshkeys: config.sshkeys
       });
 
-      console.log('[SSH Config] SSH configuration successful, showing success state');
-      // Show Success State locally - DO NOT NAVIGATE
-      setSshSuccess(true);
+      console.log('[SSH Config] SSH configuration successful for:', instanceId);
+      setSshSuccess(prev => ({ ...prev, [instanceId]: true }));
+
+      // Update instances list to reflect new status
+      pollForVMStatus();
 
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      console.log('[SSH Config] sshSuccess state set to true, scrolled to top');
     } catch (err) {
       console.error('[SSH Config] Failed to configure SSH:', err);
-      setSshError(err?.response?.data?.error || err?.message || 'Không thể cấu hình SSH');
+      setSshErrors(prev => ({
+        ...prev,
+        [instanceId]: err?.response?.data?.error || err?.message || 'Không thể cấu hình SSH'
+      }));
     } finally {
-      setSshSubmitting(false);
+      setSshSubmitting(prev => ({ ...prev, [instanceId]: false }));
     }
   };
 
@@ -793,161 +823,382 @@ const OrderDetails = () => {
           </Card>
         )}
 
-        {/* Step 2.5: Waiting for VM Creation */}
+        {/* Step 2.5: Waiting for VM Creation - Per VM Display */}
         {pollingForVM && !vmReady && (
-          <Card className="mb-4">
-            <Card.Body>
-              <div className="text-center py-4">
-                <Spinner animation="border" className="mb-3" />
-                <h5>Đang tạo máy ảo...</h5>
-                <p className="text-muted">Vui lòng chờ trong giây lát. Quá trình này có thể mất 1-2 phút.</p>
-              </div>
-            </Card.Body>
-          </Card>
+          <div className="mb-4 vm-creating-section">
+            <h4 className="mb-3">Dang tao may ao</h4>
+            <Alert variant="info">
+              <i className="fa-solid fa-info-circle me-2"></i>
+              He thong dang tao may ao cho ban. Vui long cho trong giay lat.
+            </Alert>
+
+            {instances.length > 0 ? (
+              /* Show individual VM cards when instances are being created */
+              instances.map((instance, index) => {
+                const isProvisioning = instance.status === 'PROVISIONING' || instance.provisioning_status === 'PROCESSING';
+                const isReady = instance.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY';
+
+                return (
+                  <Card key={instance.instance_id} className={`mb-3 vm-creating-card ${isReady ? 'border-success' : ''}`}>
+                    <Card.Body>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center">
+                          <div className="vm-icon-wrapper me-3">
+                            {isProvisioning ? (
+                              <Spinner animation="border" size="sm" variant="primary" />
+                            ) : isReady ? (
+                              <i className="fas fa-check-circle fa-lg text-success"></i>
+                            ) : (
+                              <i className="fas fa-server fa-lg text-secondary"></i>
+                            )}
+                          </div>
+                          <div>
+                            <h6 className="mb-1">VM #{index + 1}</h6>
+                            <small className="text-muted">{instance.instance_id}</small>
+                          </div>
+                        </div>
+                        <div className="text-end">
+                          {isProvisioning && (
+                            <Badge bg="warning" className="vm-status-badge">
+                              <Spinner animation="border" size="sm" className="me-1" />
+                              Dang clone...
+                            </Badge>
+                          )}
+                          {isReady && (
+                            <Badge bg="success" className="vm-status-badge">
+                              <i className="fas fa-check me-1"></i>
+                              San sang
+                            </Badge>
+                          )}
+                          {!isProvisioning && !isReady && (
+                            <Badge bg="secondary" className="vm-status-badge">
+                              {instance.status}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {isProvisioning && (
+                        <div className="mt-3">
+                          <div className="progress vm-progress">
+                            <div
+                              className="progress-bar progress-bar-striped progress-bar-animated"
+                              role="progressbar"
+                              style={{ width: '100%' }}
+                            ></div>
+                          </div>
+                          <small className="text-muted d-block mt-2">
+                            Dang sao chep he dieu hanh va cau hinh... (co the mat 1-2 phut)
+                          </small>
+                        </div>
+                      )}
+                    </Card.Body>
+                  </Card>
+                );
+              })
+            ) : (
+              /* Fallback: Show generic loading when no instances yet */
+              <Card className="mb-3">
+                <Card.Body>
+                  <div className="text-center py-4">
+                    <Spinner animation="border" className="mb-3" />
+                    <h5>Dang khoi tao...</h5>
+                    <p className="text-muted">Dang chuan bi tao may ao. Vui long cho...</p>
+                  </div>
+                </Card.Body>
+              </Card>
+            )}
+          </div>
         )}
 
-        {/* Step 3: SSH Configuration */}
-        {vmReady && !sshSuccess && (
-          <Card className="mb-4">
-            <Card.Body>
-              <h4 className="mb-3">Cấu hình SSH Key</h4>
+        {/* Step 3: SSH Configuration - Batch Mode */}
+        {vmReady && instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY').length > 0 && (() => {
+          const waitingInstances = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
+          const allConfigured = waitingInstances.every(inst => sshSuccess[inst.instance_id]);
+
+          // Check if batch submission is in progress
+          const isBatchSubmitting = Object.values(sshSubmitting).some(v => v === true);
+
+          return (
+            <div className="mb-4 vm-config-section">
+              <h4 className="mb-3">Cau hinh SSH Key cho cac may ao</h4>
               <Alert variant="success">
                 <i className="fa-solid fa-check-circle me-2"></i>
-                Máy ảo đã được tạo thành công! Vui lòng cấu hình SSH key để truy cập.
+                May ao da duoc tao thanh cong! Vui long dien thong tin SSH cho {waitingInstances.length} may ao ben duoi.
               </Alert>
 
-              {sshError && <Alert variant="danger">{sshError}</Alert>}
+              {/* Display all VM forms */}
+              {waitingInstances.map((instance, index) => {
+                const config = getOrInitSshConfig(instance.instance_id);
+                const error = sshErrors[instance.instance_id];
+                const success = sshSuccess[instance.instance_id];
+                const keys = generatedKeys[instance.instance_id];
 
-              <Form>
-                <Row className="mb-3">
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Username</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={sshConfig.ciuser}
-                        onChange={(e) => setSshConfig(prev => ({ ...prev, ciuser: e.target.value }))}
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group>
-                      <Form.Label>Password *</Form.Label>
-                      <Form.Control
-                        type="password"
-                        value={sshConfig.cipassword}
-                        onChange={(e) => setSshConfig(prev => ({ ...prev, cipassword: e.target.value }))}
-                        placeholder="Nhập mật khẩu"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+                return (
+                  <Card key={instance.instance_id} className={`mb-3 ssh-config-card ${success ? 'border-success' : ''}`}>
+                    <Card.Body>
+                      <div className="d-flex align-items-center justify-content-between mb-3">
+                        <h5 className="mb-0">
+                          <i className="fa-solid fa-server me-2"></i>
+                          VM #{index + 1} - {instance.instance_id}
+                        </h5>
+                        {success && (
+                          <Badge bg="success">
+                            <i className="fas fa-check-circle me-1"></i>
+                            Da cau hinh
+                          </Badge>
+                        )}
+                      </div>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Nameserver</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={sshConfig.nameserver}
-                    onChange={(e) => setSshConfig(prev => ({ ...prev, nameserver: e.target.value }))}
-                  />
-                </Form.Group>
+                      {error && <Alert variant="danger">{error}</Alert>}
 
-                <Form.Group className="mb-3">
-                  <Form.Label>SSH Public Key *</Form.Label>
-                  <div className="mb-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={handleGenerateSSHKey}
-                    >
-                      <i className="fa-solid fa-key me-2"></i>
-                      Tạo SSH Key mới
-                    </Button>
-                  </div>
-                  <Form.Control
-                    as="textarea"
-                    rows={4}
-                    value={sshConfig.sshkeys}
-                    onChange={(e) => setSshConfig(prev => ({ ...prev, sshkeys: e.target.value }))}
-                    placeholder="Dán SSH public key của bạn hoặc nhấn nút 'Tạo SSH Key mới'"
-                  />
-                  <Form.Text className="text-muted">
-                    SSH key phải bắt đầu với ssh-rsa, ssh-ed25519, hoặc ecdsa-sha2-*
-                  </Form.Text>
-                </Form.Group>
+                      <Form>
+                        <Row className="mb-3">
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Username</Form.Label>
+                              <Form.Control
+                                type="text"
+                                value={config.ciuser}
+                                onChange={(e) => setSshConfigs(prev => ({
+                                  ...prev,
+                                  [instance.instance_id]: { ...config, ciuser: e.target.value }
+                                }))}
+                                disabled={success}
+                              />
+                            </Form.Group>
+                          </Col>
+                          <Col md={6}>
+                            <Form.Group>
+                              <Form.Label>Password *</Form.Label>
+                              <Form.Control
+                                type="password"
+                                value={config.cipassword}
+                                onChange={(e) => setSshConfigs(prev => ({
+                                  ...prev,
+                                  [instance.instance_id]: { ...config, cipassword: e.target.value }
+                                }))}
+                                placeholder="Nhap mat khau"
+                                disabled={success}
+                              />
+                            </Form.Group>
+                          </Col>
+                        </Row>
 
-                {generatedKeys && (
-                  <Alert variant="warning">
-                    <h6>Private Key (Lưu lại ngay!):</h6>
-                    <pre className="mb-0" style={{ fontSize: '0.85em', maxHeight: '200px', overflow: 'auto' }}>
-                      {generatedKeys.private_key}
-                    </pre>
-                    <small className="text-danger d-block mt-2">
-                      ⚠️ Đây là lần duy nhất bạn có thể xem private key. Vui lòng lưu lại ngay!
-                    </small>
-                  </Alert>
-                )}
+                        <Form.Group className="mb-3">
+                          <Form.Label>Nameserver</Form.Label>
+                          <Form.Control
+                            type="text"
+                            value={config.nameserver}
+                            onChange={(e) => setSshConfigs(prev => ({
+                              ...prev,
+                              [instance.instance_id]: { ...config, nameserver: e.target.value }
+                            }))}
+                            disabled={success}
+                          />
+                        </Form.Group>
 
-                <div className="d-flex gap-2">
-                  <Button
-                    variant="success"
-                    onClick={handleSubmitSSH}
-                    disabled={sshSubmitting}
-                  >
-                    {sshSubmitting ? (
-                      <>
-                        <Spinner animation="border" size="sm" className="me-2" />
-                        Đang cấu hình...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fa-solid fa-check me-2"></i>
-                        Hoàn tất cấu hình
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        )}
+                        <Form.Group className="mb-3">
+                          <Form.Label>SSH Public Key *</Form.Label>
+                          <div className="mb-2">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleGenerateSSHKey(instance.instance_id)}
+                              disabled={success}
+                            >
+                              <i className="fa-solid fa-key me-2"></i>
+                              Tao SSH Key moi
+                            </Button>
+                          </div>
+                          <Form.Control
+                            as="textarea"
+                            rows={4}
+                            value={config.sshkeys}
+                            onChange={(e) => setSshConfigs(prev => ({
+                              ...prev,
+                              [instance.instance_id]: { ...config, sshkeys: e.target.value }
+                            }))}
+                            placeholder="Dan SSH public key cua ban hoac nhan nut 'Tao SSH Key moi'"
+                            disabled={success}
+                          />
+                          <Form.Text className="text-muted">
+                            SSH key phai bat dau voi ssh-rsa, ssh-ed25519, hoac ecdsa-sha2-*
+                          </Form.Text>
+                        </Form.Group>
+
+                        {keys && (
+                          <Alert variant="warning">
+                            <h6>Private Key (Luu lai ngay!):</h6>
+                            <pre className="mb-0" style={{ fontSize: '0.85em', maxHeight: '200px', overflow: 'auto' }}>
+                              {keys.private_key}
+                            </pre>
+                            <small className="text-danger d-block mt-2">
+                              ⚠️ Day la lan duy nhat ban co the xem private key. Vui long luu lai ngay!
+                            </small>
+                          </Alert>
+                        )}
+                      </Form>
+                    </Card.Body>
+                  </Card>
+                );
+              })}
+
+              {/* Batch Submit Button at the end */}
+              {!allConfigured && (
+                <Card className="batch-submit-section">
+                  <Card.Body>
+                    <div className="text-center">
+                      <Button
+                        variant="success"
+                        size="lg"
+                        onClick={async () => {
+                          // Validate all forms
+                          const errors = {};
+                          let hasError = false;
+
+                          for (const instance of waitingInstances) {
+                            const config = sshConfigs[instance.instance_id];
+                            if (!config || !config.sshkeys.trim()) {
+                              errors[instance.instance_id] = 'Vui long nhap hoac tao SSH key';
+                              hasError = true;
+                            } else if (!config.cipassword.trim()) {
+                              errors[instance.instance_id] = 'Vui long nhap mat khau';
+                              hasError = true;
+                            }
+                          }
+
+                          if (hasError) {
+                            setSshErrors(errors);
+                            return;
+                          }
+
+                          // Clear errors
+                          setSshErrors({});
+
+                          // Set all to submitting
+                          const submittingState = {};
+                          waitingInstances.forEach(inst => {
+                            submittingState[inst.instance_id] = true;
+                          });
+                          setSshSubmitting(submittingState);
+
+                          // Submit all in parallel
+                          const promises = waitingInstances.map(async (instance) => {
+                            const config = sshConfigs[instance.instance_id];
+                            try {
+                              console.log(`[Batch SSH] Configuring VM: ${instance.instance_id}`);
+                              await instanceService.configureSSH(instance.instance_id, {
+                                ciuser: config.ciuser,
+                                cipassword: config.cipassword,
+                                nameserver: config.nameserver,
+                                sshkeys: config.sshkeys
+                              });
+                              console.log(`[Batch SSH] Success: ${instance.instance_id}`);
+                              return { instanceId: instance.instance_id, success: true };
+                            } catch (err) {
+                              console.error(`[Batch SSH] Failed: ${instance.instance_id}`, err);
+                              return {
+                                instanceId: instance.instance_id,
+                                success: false,
+                                error: err?.response?.data?.error || err?.message || 'Khong the cau hinh SSH'
+                              };
+                            }
+                          });
+
+                          const results = await Promise.all(promises);
+
+                          // Update states based on results
+                          const newSubmitting = {};
+                          const newSuccess = {};
+                          const newErrors = {};
+
+                          results.forEach(result => {
+                            newSubmitting[result.instanceId] = false;
+                            if (result.success) {
+                              newSuccess[result.instanceId] = true;
+                            } else {
+                              newErrors[result.instanceId] = result.error;
+                            }
+                          });
+
+                          setSshSubmitting(newSubmitting);
+                          setSshSuccess(prev => ({ ...prev, ...newSuccess }));
+                          setSshErrors(newErrors);
+
+                          // Update instances list
+                          pollForVMStatus();
+
+                          // Scroll to top to show success
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={isBatchSubmitting}
+                        className="px-5"
+                      >
+                        {isBatchSubmitting ? (
+                          <>
+                            <Spinner animation="border" size="sm" className="me-2" />
+                            Dang cau hinh {waitingInstances.length} may ao...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-check-circle me-2"></i>
+                            Hoan tat tat ca cau hinh ({waitingInstances.length} VMs)
+                          </>
+                        )}
+                      </Button>
+
+                      {isBatchSubmitting && (
+                        <div className="mt-3">
+                          <div className="progress batch-progress">
+                            <div
+                              className="progress-bar progress-bar-striped progress-bar-animated"
+                              role="progressbar"
+                              style={{ width: '100%' }}
+                            ></div>
+                          </div>
+                          <small className="text-muted d-block mt-2">
+                            Vui long doi, dang cau hinh SSH va khoi dong cac may ao...
+                          </small>
+                        </div>
+                      )}
+                    </div>
+                  </Card.Body>
+                </Card>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Step 4: Success Message */}
-        {sshSuccess && (
-          <Card className="mb-4 text-center border-success">
-            <Card.Body className="py-5">
-              <div className="mb-3 text-success">
-                <i className="fas fa-check-circle fa-4x"></i>
-              </div>
-              <h3 className="text-success mb-3">Đơn hàng đã hoàn thành!</h3>
-              <p className="text-muted mb-4">
-                Cảm ơn bạn đã sử dụng dịch vụ. Máy ảo của bạn đã sẵn sàng sử dụng.
-              </p>
-              <div className="d-flex justify-content-center gap-3">
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    // Navigate to the created instance's summary page
-                    const createdInstance = instances.find(inst =>
-                      inst.status === 'RUNNING' || inst.status === 'CONFIGURING'
-                    );
-                    if (createdInstance) {
-                      navigate(`/instances/${createdInstance.instance_id}/summary`);
-                    } else {
-                      // Fallback to instances list if no instance found
-                      navigate('/instances');
-                    }
-                  }}
-                >
-                  <i className="fas fa-server me-2"></i> Quản lý Instance
-                </Button>
-                <Button variant="outline-primary" onClick={() => navigate('/')}>
-                  Về trang chủ
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        )}
+        {(() => {
+          const waitingVMs = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
+          const allConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
+
+          return allConfigured && (
+            <Card className="mb-4 text-center border-success">
+              <Card.Body className="py-5">
+                <div className="mb-3 text-success">
+                  <i className="fas fa-check-circle fa-4x"></i>
+                </div>
+                <h3 className="text-success mb-3">Tất cả máy ảo đã được cấu hình thành công!</h3>
+                <p className="text-muted mb-4">
+                  Cảm ơn bạn đã sử dụng dịch vụ. {waitingVMs.length} máy ảo của bạn đã sẵn sàng sử dụng.
+                </p>
+                <div className="d-flex justify-content-center gap-3">
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate('/instances')}
+                  >
+                    <i className="fas fa-server me-2"></i> Quản lý VPS
+                  </Button>
+                  <Button variant="outline-primary" onClick={() => navigate('/')}>
+                    <i className="fas fa-home me-2"></i> Trang chủ
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          );
+        })()}
 
         <Row className="g-3">
           <Col lg={5}>

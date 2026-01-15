@@ -121,15 +121,15 @@
   border-color: var(--primary-color);
 }
 
-.order-details-page .card .ant-steps-item-finish .ant-steps-item-icon > .ant-steps-icon {
+.order-details-page .card .ant-steps-item-finish .ant-steps-item-icon>.ant-steps-icon {
   color: var(--text-white);
 }
 
-.order-details-page .card .ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title {
+.order-details-page .card .ant-steps-item-finish>.ant-steps-item-container>.ant-steps-item-content>.ant-steps-item-title {
   color: var(--primary-color);
 }
 
-.order-details-page .card .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title {
+.order-details-page .card .ant-steps-item-process>.ant-steps-item-container>.ant-steps-item-content>.ant-steps-item-title {
   color: var(--primary-color);
   font-weight: 600;
 }
@@ -198,7 +198,275 @@
   font-size: 1.1rem;
 }
 
+/* SSH Configuration Cards */
+.order-details-page .ssh-config-card {
+  border: 2px solid var(--border-color);
+  transition: all var(--transition-base);
+}
+
+.order-details-page .ssh-config-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-lg);
+}
+
+.order-details-page .ssh-config-card.border-success {
+  border-color: var(--success-color);
+  background-color: var(--success-ultra-light);
+}
+
+.order-details-page .ssh-config-card h5 {
+  color: var(--text-primary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.order-details-page .ssh-config-card h5 i {
+  color: var(--primary-color);
+}
+
+.order-details-page .ssh-config-card .alert-danger {
+  background-color: var(--danger-ultra-light);
+  border-color: var(--danger-color);
+  color: var(--danger-dark);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.order-details-page .ssh-config-card .alert-warning {
+  background-color: var(--warning-ultra-light);
+  border-color: var(--warning-color);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+}
+
+.order-details-page .ssh-config-card .form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem var(--primary-ultra-light);
+}
+
+.order-details-page .ssh-config-card textarea.form-control {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.order-details-page .ssh-config-card pre {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Batch Submit Section */
+.order-details-page .batch-submit-section {
+  border: 2px solid var(--primary-color);
+  background: linear-gradient(135deg, var(--primary-ultra-light) 0%, var(--bg-primary) 100%);
+  box-shadow: var(--shadow-lg);
+}
+
+.order-details-page .batch-submit-section .btn-success {
+  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  border: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+}
+
+.order-details-page .batch-submit-section .btn-success:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.order-details-page .batch-submit-section .btn-success:active {
+  transform: translateY(-1px);
+}
+
+.order-details-page .batch-submit-section .btn-success:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.order-details-page .batch-progress {
+  height: 12px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-tertiary);
+  overflow: hidden;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.order-details-page .batch-progress .progress-bar {
+  background: linear-gradient(90deg, var(--success-color), var(--success-light));
+}
+
+/* Success State Card */
+.order-details-page .ssh-success-card {
+  border: 2px solid var(--success-color);
+  background: linear-gradient(135deg, var(--success-ultra-light) 0%, var(--bg-primary) 100%);
+}
+
+.order-details-page .ssh-success-card .fa-check-circle {
+  color: var(--success-color);
+  animation: successPulse 1.5s ease-in-out;
+}
+
+@keyframes successPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Multiple VM Configuration Section */
+.order-details-page .vm-config-section h4 {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.order-details-page .vm-config-section .alert-success {
+  background-color: var(--success-ultra-light);
+  border-color: var(--success-color);
+  color: var(--success-dark);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+}
+
+/* Button Styles for SSH Config */
+.order-details-page .btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: var(--text-white);
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.order-details-page .btn-success:hover:not(:disabled) {
+  background-color: var(--success-dark);
+  border-color: var(--success-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.order-details-page .btn-success:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.order-details-page .btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.order-details-page .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--text-white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* VM Creating Section - Step 2 */
+.order-details-page .vm-creating-section h4 {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 2px solid var(--info-color, #17a2b8);
+}
+
+.order-details-page .vm-creating-section .alert-info {
+  background-color: var(--info-ultra-light, #e7f5ff);
+  border-color: var(--info-color, #17a2b8);
+  color: var(--info-dark, #0c5460);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.order-details-page .vm-creating-card {
+  border: 2px solid var(--border-color);
+  transition: all var(--transition-base);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.order-details-page .vm-creating-card:hover {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
+.order-details-page .vm-creating-card.border-success {
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, var(--success-ultra-light) 0%, var(--bg-primary) 100%);
+}
+
+.order-details-page .vm-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-ultra-light);
+  border-radius: 50%;
+}
+
+.order-details-page .vm-creating-card.border-success .vm-icon-wrapper {
+  background-color: var(--success-ultra-light);
+}
+
+.order-details-page .vm-creating-card h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.order-details-page .vm-status-badge {
+  font-size: 0.85rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.order-details-page .vm-progress {
+  height: 8px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-tertiary);
+  overflow: hidden;
+}
+
+.order-details-page .vm-progress .progress-bar {
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+}
+
 /* Responsive */
+
 @media (max-width: 768px) {
   .order-details-page .d-flex.gap-2 {
     flex-direction: column;
@@ -217,6 +485,12 @@
   .order-details-page .invoice-preview-card {
     min-height: 50vh;
   }
+
+  .order-details-page .ssh-config-card {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .order-details-page .ssh-config-card h5 {
+    font-size: 1rem;
+  }
 }
-
-
