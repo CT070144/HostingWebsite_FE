@@ -29,6 +29,7 @@ import AdminBannersPage from './pages/Dashboard/Admin/AdminBannersPage';
 import AdminFaqsPage from './pages/Dashboard/Admin/AdminFaqsPage';
 import AdminServiceFeaturesPage from './pages/Dashboard/Admin/AdminServiceFeaturesPage';
 import ProxmoxLayout from './pages/Instance/ProxmoxLayout';
+import InstanceRenewalPage from './pages/Instance/InstanceRenewalPage';
 import TestAPI from './test api/TestAPI';
 import './App.css';
 
@@ -46,6 +47,16 @@ function App() {
       />
 
       {/* Instance Routes - Full screen without Layout */}
+      <Route
+        path="/instances/:instanceId/renew"
+        element={
+          <ProtectedRoute requireAuth={true}>
+            <Layout>
+              <InstanceRenewalPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/instances"
         element={

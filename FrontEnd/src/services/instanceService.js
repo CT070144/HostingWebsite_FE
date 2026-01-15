@@ -29,4 +29,8 @@ export const instanceService = {
 
       // Get real-time instance stats
       getLiveStats: (instanceId) => api.get(`/user/instances/${instanceId}/live`),
+
+      // Renew Instance
+      renewInstance: (instanceId, billingCycle) =>
+            api.post(`/user/instances/${instanceId}/renew`, { billing_cycle: billingCycle }),
 };

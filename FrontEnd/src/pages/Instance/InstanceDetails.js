@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, NavLink, Routes, Route, Navigate } from 'react-router-dom';
-import { Container, Card, Breadcrumb, Nav, Spinner, Alert, ButtonGroup } from 'react-bootstrap';
+import { Container, Card, Breadcrumb, Nav, Spinner, Alert, ButtonGroup, Button } from 'react-bootstrap';
 import { useNotify } from '../../contexts/NotificationContext';
 import { instanceService } from '../../services/instanceService';
 import StatusBadge from '../../components/StatusBadge/StatusBadge';
@@ -110,6 +110,15 @@ const InstanceDetails = () => {
                                                             {instance.node_name}
                                                       </span>
                                                       <StatusBadge status={instance.status} />
+                                                      <Button
+                                                            variant="outline-primary"
+                                                            size="sm"
+                                                            className="ms-3"
+                                                            onClick={() => navigate(`/instances/${instanceId}/renew`)}
+                                                      >
+                                                            <i className="fas fa-sync-alt me-1"></i>
+                                                            Gia hạn
+                                                      </Button>
                                                 </div>
                                           </div>
                                           <ButtonGroup className="vm-controls">
@@ -183,7 +192,7 @@ const InstanceDetails = () => {
                               </Card.Body>
                         </Card>
                   </Container>
-            </div>
+            </div >
       );
 };
 

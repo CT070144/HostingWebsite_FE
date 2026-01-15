@@ -94,7 +94,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                                                 <span className="info-label">VM ID:</span>
                                                 <span className="info-value">VM-{instance.external_vm_id}</span>
                                           </div>
-                                         
+
                                           <div className="info-row">
                                                 <span className="info-label">Status:</span>
                                                 <span className="info-value">{instance.status}</span>
@@ -117,6 +117,10 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                                           <div className="info-row">
                                                 <span className="info-label">Cập nhật:</span>
                                                 <span className="info-value">{formatDate(instance.updated_at)}</span>
+                                          </div>
+                                          <div className="info-row">
+                                                <span className="info-label">Hết hạn:</span>
+                                                <span className="info-value">{instance.next_due_date ? formatDate(instance.next_due_date) : 'N/A'}</span>
                                           </div>
                                     </Card.Body>
                               </Card>

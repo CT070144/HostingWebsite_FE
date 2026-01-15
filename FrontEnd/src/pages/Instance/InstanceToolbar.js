@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, ButtonGroup } from 'react-bootstrap';
 import StatusBadge from '../../components/StatusBadge/StatusBadge';
 import './InstanceToolbar.css';
 
 const InstanceToolbar = ({ instance, onAction, loading }) => {
+      const navigate = useNavigate();
       if (!instance) {
             return (
                   <div className="instance-toolbar">
@@ -26,6 +28,16 @@ const InstanceToolbar = ({ instance, onAction, loading }) => {
                               VM-{instance.external_vm_id} ({instance.instance_id})
                         </span>
                         <StatusBadge status={instance.status} />
+                        <Button
+                              variant="outline-light"
+                              size="sm"
+                              className="ms-3"
+                              onClick={() => navigate(`/instances/${instance.instance_id}/renew`)}
+                              style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                        >
+                              <i className="fas fa-sync-alt me-1"></i>
+                              Gia hạn
+                        </Button>
                   </div>
 
                   <div className="toolbar-right">

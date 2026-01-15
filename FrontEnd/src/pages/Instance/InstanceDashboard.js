@@ -228,6 +228,15 @@ const InstanceDashboard = () => {
                                                                                           Chi tiết
                                                                                     </Button>
 
+                                                                                    <Button
+                                                                                          variant="outline-success"
+                                                                                          size="sm"
+                                                                                          onClick={() => navigate(`/instances/${instance.instance_id}/renew`)}
+                                                                                    >
+                                                                                          <i className="fas fa-sync-alt me-1"></i>
+                                                                                          Gia hạn
+                                                                                    </Button>
+
                                                                                     {instance.status === 'RUNNING' && (
                                                                                           <>
                                                                                                 <VMActionButton
