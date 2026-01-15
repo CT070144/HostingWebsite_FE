@@ -602,73 +602,136 @@ const Hosting = () => {
                       }
                     });
 
-                    // Format attribute label
-                    const formatAttributeLabel = (key) => {
-                      const labelMap = {
-                        cpuCores: 'CPU Cores',
-                        ramGB: 'RAM (GB)',
-                        storageGB: 'Storage (GB)',
-                        diskSpaceGB: 'Disk Space (GB)',
-                        bandwidthTB: 'Băng thông (TB)',
-                        storagePoolType: 'Loại ổ cứng',
-                        addonDomains: 'Addon Domains',
-                        controlPanel: 'Control Panel',
-                        databaseLimit: 'Database Limit',
-                        websites: 'Website',
-                        emails: 'Tài Khoản Emails',
-                        ssl: 'SSL, Backup',
-                        themesPlugins: 'Themes & Plugins',
-                        ssd: 'SSD',
-                        ram: 'RAM',
-                        cpu: 'CPU',
-                        bandwidth: 'Băng thông, MySQL',
-                        resourceIdentifier: 'Resource Identifier',
-                        unitOfMeasure: 'Đơn vị đo',
-                        unitPrice: 'Giá đơn vị',
-                      };
-                      return labelMap[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                    // Map keys to their normalized label names (for grouping)
+                    const keyToLabelMap = {
+                      'CPU Cores': 'CPU Cores',
+                      cpu: 'CPU Cores',
+                      'RAM': 'RAM',
+                      'RAM ': 'RAM',
+                      storageGB: 'Storage',
+                      diskSpaceGB: 'Storage',
+                      ssd: 'Storage',
+                      bandwidthTB: 'Băng thông',
+                      bandwidth: 'Băng thông',
+                      'Storagepooltype': 'Loại ổ cứng',
+                      'StoragePoolType': 'Loại ổ cứng',
+                      addonDomains: 'Addon Domains',
+                      controlPanel: 'Control Panel',
+                      databaseLimit: 'Database Limit',
+                      websites: 'Website',
+                      emails: 'Tài Khoản Emails',
+                      ssl: 'SSL, Backup',
+                      themesPlugins: 'Themes & Plugins',
+                      resourceIdentifier: 'Resource Identifier',
+                      unitOfMeasure: 'Đơn vị đo',
+                      unitPrice: 'Giá đơn vị',
                     };
 
-                    // Format attribute value
-                    const formatAttributeValue = (key, value) => {
+                    // Format attribute label (fallback for keys not in map)
+                    const formatAttributeLabel = (key) => {
+                      const normalizedLabel = keyToLabelMap[key];
+                      if (normalizedLabel) return normalizedLabel;
+                      
+                      // For keys not in map, format properly without splitting single letters
+                      // Convert camelCase to Title Case, but keep acronyms together
+                      const formatted = key
+                        .replace(/([A-Z])/g, ' $1') // Add space before uppercase
+                        .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+                        .trim();
+                      
+                      // Don't split if it results in single letters separated
+                      return key;
+                    };
+
+                    // Get normalized label for a key
+                    const getNormalizedLabel = (key) => {
+                      return keyToLabelMap[key] || formatAttributeLabel(key);
+                    };
+
+                    // Group keys by their normalized label
+                    const labelGroups = {};
+                    allAttributeKeys.forEach(key => {
+                      const label = getNormalizedLabel(key);
+                      if (!labelGroups[label]) {
+                        labelGroups[label] = [];
+                      }
+                      labelGroups[label].push(key);
+                    });
+
+                    // Format attribute value based on key
+                    const formatAttributeValue = (keys, product) => {
+                      // Try each key in the group to find a value
+                      let value = null;
+                      let usedKey = null;
+                      
+                      for (const key of keys) {
+                        const val = product.spec?.attributes?.[key] ?? product.features?.[key];
+                        if (val !== null && val !== undefined && val !== '') {
+                          value = val;
+                          usedKey = key;
+                          break;
+                        }
+                      }
+                      
                       if (value === null || value === undefined || value === '') return '-';
                       
-                      // Add units based on key
-                      if (key === 'ramGB' || key === 'storageGB' || key === 'diskSpaceGB') {
+                      // Format based on the key that was used
+                      if (usedKey === 'ramGB' || usedKey === 'storageGB' || usedKey === 'diskSpaceGB' || usedKey === 'ssd') {
                         return `${value} GB`;
                       }
-                      if (key === 'bandwidthTB') {
+                      if (usedKey === 'bandwidthTB' || usedKey === 'bandwidth') {
+                        // Check if already has unit
+                        const str = String(value);
+                        if (str.includes('TB') || str.includes('GB') || str.includes('MySQL')) {
+                          return str;
+                        }
                         return `${value} TB`;
                       }
-                      if (key === 'cpuCores') {
+                      if (usedKey === 'cpuCores') {
                         return `${value} cores`;
                       }
-                      if (key === 'unitPrice') {
+                      if (usedKey === 'cpu') {
+                        // If value is a number, add "cores"
+                        if (typeof value === 'number' || !isNaN(Number(value))) {
+                          return `${value} cores`;
+                        }
+                        return String(value);
+                      }
+                      if (usedKey === 'ramGB' || usedKey === 'ram') {
+                        // If value is a number, add "GB"
+                        if (typeof value === 'number' || !isNaN(Number(value))) {
+                          return `${value} GB`;
+                        }
+                        return String(value);
+                      }
+                      if (usedKey === 'unitPrice') {
                         return formatPrice(value);
                       }
                       
                       return String(value);
                     };
 
-                    // Convert Set to Array and sort
-                    const sortedKeys = Array.from(allAttributeKeys).sort();
+                    // Convert grouped labels to array and sort
+                    const sortedLabels = Object.keys(labelGroups).sort();
 
-                    return sortedKeys.map(attrKey => (
-                      <tr key={attrKey}>
-                        <td style={{ backgroundColor: '#f5f5f5' }}>
-                          <strong>{formatAttributeLabel(attrKey)}</strong>
-                        </td>
-                        {products.map((product) => {
-                          // Try to get value from spec.attributes first, then features
-                          const value = product.spec?.attributes?.[attrKey] ?? product.features?.[attrKey];
-                          return (
-                            <td key={product.id} style={{ textAlign: 'center' }}>
-                              {formatAttributeValue(attrKey, value)}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ));
+                    return sortedLabels.map(label => {
+                      const keys = labelGroups[label];
+                      return (
+                        <tr key={label}>
+                          <td style={{ backgroundColor: '#f5f5f5' }}>
+                            <strong>{label}</strong>
+                          </td>
+                          {products.map((product) => {
+                            const value = formatAttributeValue(keys, product);
+                            return (
+                              <td key={product.id} style={{ textAlign: 'center' }}>
+                                {value}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    });
                   })()}
 
                   {/* Order Button Row */}

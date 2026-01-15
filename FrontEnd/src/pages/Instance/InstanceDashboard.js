@@ -188,9 +188,9 @@ const InstanceDashboard = () => {
                                                 <Table hover className="instances-table mb-0">
                                                       <thead>
                                                             <tr>
-                                                                  <th>Instance ID</th>
-                                                                  <th>VM ID</th>
-                                                                  <th>Node</th>
+                                                                  <th>ID Instance</th>
+                                                                  <th>ID VM</th>
+                                                                  <th>Nút</th>
                                                                   <th>Trạng thái</th>
                                                                   <th>Ngày tạo</th>
                                                                   <th className="text-end">Thao tác</th>

@@ -136,7 +136,7 @@ const InstanceConsole = ({ instance }) => {
                               <div>
                                     <h5 className="mb-0">
                                           <i className="fas fa-terminal me-2"></i>
-                                          noVNC Console
+                                          Console noVNC
                                     </h5>
                                     {connected && (
                                           <small className="text-success">

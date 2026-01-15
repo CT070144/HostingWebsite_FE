@@ -3,9 +3,9 @@ import './InstanceTabPanel.css';
 
 const InstanceTabPanel = ({ activeTab, onTabChange, instance }) => {
       const tabs = [
-            { id: 'summary', icon: 'fa-info-circle', label: 'Summary' },
+            { id: 'summary', icon: 'fa-info-circle', label: 'Tổng quan' },
             { id: 'console', icon: 'fa-terminal', label: 'Console', requireRunning: true },
-            { id: 'hardware', icon: 'fa-microchip', label: 'Hardware' },
+            { id: 'hardware', icon: 'fa-microchip', label: 'Phần cứng' },
       ];
 
       const isTabDisabled = (tab) => {
@@ -19,7 +19,7 @@ const InstanceTabPanel = ({ activeTab, onTabChange, instance }) => {
       return (
             <div className="instance-tab-panel">
                   <div className="tab-panel-header">
-                        <h6 className="panel-title">Options</h6>
+                        <h6 className="panel-title">Tùy chọn</h6>
                   </div>
 
                   <div className="tab-list">

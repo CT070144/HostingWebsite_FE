@@ -10,7 +10,7 @@ const InstanceToolbar = ({ instance, onAction, loading }) => {
             return (
                   <div className="instance-toolbar">
                         <div className="toolbar-left">
-                              <span className="toolbar-title">No VM Selected</span>
+                              <span className="toolbar-title">Chưa chọn VM</span>
                         </div>
                   </div>
             );
@@ -46,37 +46,37 @@ const InstanceToolbar = ({ instance, onAction, loading }) => {
                                     variant="success"
                                     onClick={() => onAction('start')}
                                     disabled={isRunning || isProcessing || loading}
-                                    title="Start VM"
+                                    title="Khởi động VM"
                               >
                                     <i className="fas fa-play me-1"></i>
-                                    Start
+                                    Khởi động
                               </Button>
                               <Button
                                     variant="warning"
                                     onClick={() => onAction('suspend')}
                                     disabled={!isRunning || isProcessing || loading}
-                                    title="Suspend VM"
+                                    title="Tạm dừng VM"
                               >
                                     <i className="fas fa-pause me-1"></i>
-                                    Suspend
+                                    Tạm dừng
                               </Button>
                               <Button
                                     variant="info"
                                     onClick={() => onAction('restart')}
                                     disabled={!isRunning || isProcessing || loading}
-                                    title="Restart VM"
+                                    title="Khởi động lại VM"
                               >
                                     <i className="fas fa-redo me-1"></i>
-                                    Restart
+                                    Khởi động lại
                               </Button>
                               <Button
                                     variant="danger"
                                     onClick={() => onAction('stop')}
                                     disabled={isStopped || isProcessing || loading}
-                                    title="Stop VM"
+                                    title="Dừng VM"
                               >
                                     <i className="fas fa-stop me-1"></i>
-                                    Stop
+                                    Dừng
                               </Button>
                         </ButtonGroup>
                   </div>

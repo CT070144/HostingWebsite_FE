@@ -80,17 +80,32 @@ const SlidesTab = ({ notifySuccess, notifyError, notifyWarning }) => {
     try {
       setLoading(true);
       const res = await bannerService.list();
-      setBanners(res.data.map(banner => ({
+      
+      // Handle different response formats
+      let slidesData = [];
+      if (Array.isArray(res.data)) {
+        slidesData = res.data;
+      } else if (res.data?.slides && Array.isArray(res.data.slides)) {
+        slidesData = res.data.slides;
+      } else if (res.data?.data && Array.isArray(res.data.data)) {
+        slidesData = res.data.data;
+      }
+      
+      setBanners(slidesData.map(banner => ({
         ...banner,
+        id: banner.slide_id || banner.id,
+        slide_id: banner.slide_id || banner.id,
         image: banner.image 
           ? (banner.image_type === 'url' || banner.image_type === 'URL' 
             ? banner.image 
             : `${baseUrl}${banner.image}`)
           : ''
-      })) || []);
+      })));
     } catch (err) {
       console.error('Load slides failed', err);
-      notifyError('Không tải được danh sách slide.');
+      const errorMessage = err?.response?.data?.message || err?.message || 'Không tải được danh sách slide.';
+      notifyError(errorMessage);
+      setBanners([]);
     } finally {
       setLoading(false);
     }
@@ -195,7 +210,8 @@ const SlidesTab = ({ notifySuccess, notifyError, notifyWarning }) => {
 
     try {
       if (editingBanner) {
-        await bannerService.update(editingBanner.slide_id || editingBanner.id, fd);
+        const slideId = editingBanner.slide_id || editingBanner.id;
+        await bannerService.update(slideId, fd);
         notifySuccess('Đã cập nhật banner thành công');
       } else {
         await bannerService.create(fd);
@@ -205,7 +221,8 @@ const SlidesTab = ({ notifySuccess, notifyError, notifyWarning }) => {
       handleCloseModal();
     } catch (err) {
       console.error('Save slide failed', err);
-      notifyError(editingBanner ? 'Cập nhật slide thất bại' : 'Thêm slide thất bại');
+      const errorMessage = err?.response?.data?.message || err?.message || (editingBanner ? 'Cập nhật slide thất bại' : 'Thêm slide thất bại');
+      notifyError(errorMessage);
     }
   };
 
@@ -239,7 +256,8 @@ const SlidesTab = ({ notifySuccess, notifyError, notifyWarning }) => {
       await fetchSlides();
     } catch (err) {
       console.error('Delete slide failed', err);
-      notifyError('Xóa slide thất bại.');
+      const errorMessage = err?.response?.data?.message || err?.message || 'Xóa slide thất bại.';
+      notifyError(errorMessage);
     }
   };
 
@@ -899,6 +917,7 @@ const HostingTab = ({ notifySuccess, notifyError, notifyWarning }) => {
       }
 
       if (editingBanner) {
+        console.log(submitFormData);
         await hostingBannerService.update(editingBanner.id, submitFormData);
         notifySuccess('Đã cập nhật banner thành công');
       } else {

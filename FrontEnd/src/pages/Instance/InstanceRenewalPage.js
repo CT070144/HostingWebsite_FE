@@ -45,12 +45,12 @@ const InstanceRenewalPage = () => {
                   const response = await instanceService.getAllInstances();
                   const foundInstance = response.data.instances.find(i => i.instance_id === instanceId);
                   if (!foundInstance) {
-                        setError('Instance not found');
+                        setError('Không tìm thấy instance');
                   } else {
                         setInstance(foundInstance);
                   }
             } catch (err) {
-                  setError('Failed to fetch instance details');
+                  setError('Không thể tải thông tin instance');
             } finally {
                   setLoading(false);
             }
@@ -165,8 +165,8 @@ const InstanceRenewalPage = () => {
 
             } catch (err) {
                   console.error(err);
-                  const errorMsg = err.response?.data?.error || err.message || 'Failed to process renewal';
-                  notify.notifyError(`Loi: ${errorMsg}`);
+                  const errorMsg = err.response?.data?.error || err.message || 'Không thể xử lý gia hạn';
+                  notify.notifyError(`Lỗi: ${errorMsg}`);
                   setProcessing(false);
                   setPaymentLoading(false);
             }

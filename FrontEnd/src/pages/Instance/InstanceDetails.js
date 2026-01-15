@@ -87,8 +87,8 @@ const InstanceDetails = () => {
             <div className="instance-details-page">
                   <Container className="py-4">
                         <Breadcrumb className="mb-3">
-                              <Breadcrumb.Item onClick={() => navigate('/dashboard')}>Dashboard</Breadcrumb.Item>
-                              <Breadcrumb.Item onClick={() => navigate('/instances')}>Instances</Breadcrumb.Item>
+                              <Breadcrumb.Item onClick={() => navigate('/dashboard')}>Bảng điều khiển</Breadcrumb.Item>
+                              <Breadcrumb.Item onClick={() => navigate('/instances')}>Máy ảo</Breadcrumb.Item>
                               <Breadcrumb.Item active>VM-{instance.external_vm_id}</Breadcrumb.Item>
                         </Breadcrumb>
 

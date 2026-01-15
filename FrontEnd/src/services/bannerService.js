@@ -3,7 +3,13 @@ import api from '../utils/api';
 // Quản lý slide/banner cho API thật
 export const bannerService = {
   // Public list
-  list: () => api.get('/public/homepage/slides'),
+  listPublic: () => api.get('/public/homepage/slides'),
+  
+  // Admin list
+  list: () => api.get('/admin/homepage/slides'),
+  
+  // Get by ID (Admin)
+  getById: (id) => api.get(`/admin/homepage/slides/${id}`),
 
   // Admin CRUD (multipart/form-data)
   create: (formData) => api.post('/admin/homepage/slides', formData, {

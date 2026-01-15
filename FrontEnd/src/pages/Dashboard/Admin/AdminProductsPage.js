@@ -16,8 +16,9 @@ const cx = classNames.bind(styles);
 const AdminProductsPage = () => {
   const navigate = useNavigate();
   const { notifySuccess, notifyError, notifyWarning } = useNotify();
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]); // Tất cả sản phẩm từ API (không lọc)
+  const [products, setProducts] = useState([]); // Sản phẩm đã lọc
+  const [filteredProducts, setFilteredProducts] = useState([]); // Sản phẩm đã lọc + tìm kiếm (để hiển thị)
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,8 +26,6 @@ const AdminProductsPage = () => {
   const [loadingProducts, setLoadingProducts] = useState(true);
   // Filter states
   const [filters, setFilters] = useState({
-    page: 1,
-    limit: 10,
     sort: '',
     service_type: '',
     spec_type: '',
@@ -144,57 +143,59 @@ const AdminProductsPage = () => {
     }
   };
 
-  // Fetch products function - moved outside useEffect so it can be called elsewhere
-  const fetchProducts = async (filterParams = null) => {
+  // Fetch all products from API (no pagination, no filters)
+  const fetchAllProducts = async () => {
     try {
       setLoadingProducts(true);
 
-      // Build query parameters
-      const params = filterParams || filters;
-      const queryParams = {
-        page: params.page || 1,
-        limit: params.limit || 10,
-      };
+      // Fetch all products by getting all pages
+      let allProductsData = [];
+      let currentPageNum = 1;
+      let hasMore = true;
+      const fetchLimit = 100; // Fetch 100 per page
 
-      // Add optional filters
-      if (params.sort) queryParams.sort = params.sort;
-      // API uses 'type' instead of 'service_type'
-      if (params.service_type) queryParams.type = params.service_type;
-      if (params.spec_type) queryParams.spec_type = params.spec_type;
-      if (params.location) queryParams.location = params.location;
-      if (params.is_active !== '') queryParams.is_active = params.is_active;
-      if (params.has_discount !== '') queryParams.has_discount = params.has_discount;
-      if (params.min_price) queryParams.min_price = Number(params.min_price);
-      if (params.max_price) queryParams.max_price = Number(params.max_price);
+      while (hasMore) {
+        try {
+          const queryParams = {
+            page: currentPageNum,
+            limit: fetchLimit,
+          };
 
-      // Add search term if exists (client-side search for now, or can be moved to API if supported)
+          const res = await productService.listPublic(queryParams);
 
-      const res = await productService.listPublic(queryParams);
+          // Handle different response formats
+          let productsData = [];
+          let total = 0;
 
-      // Handle different response formats
-      let productsData = [];
-      let total = 0;
-      let pages = 1;
+          if (Array.isArray(res.data)) {
+            productsData = res.data;
+            total = res.data.length;
+          } else if (res.data?.products && Array.isArray(res.data.products)) {
+            productsData = res.data.products;
+            total = res.data.total || res.data.products.length;
+          } else if (res.data?.data && Array.isArray(res.data.data)) {
+            productsData = res.data.data;
+            total = res.data.total || res.data.data.length;
+          } else if (res.data?.content && Array.isArray(res.data.content)) {
+            productsData = res.data.content;
+            total = res.data.totalElements || res.data.content.length;
+          }
 
-      if (Array.isArray(res.data)) {
-        productsData = res.data;
-        total = res.data.length;
-      } else if (res.data?.products && Array.isArray(res.data.products)) {
-        productsData = res.data.products;
-        total = res.data.total || res.data.products.length;
-        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
-      } else if (res.data?.data && Array.isArray(res.data.data)) {
-        productsData = res.data.data;
-        total = res.data.total || res.data.data.length;
-        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
-      } else if (res.data?.content && Array.isArray(res.data.content)) {
-        productsData = res.data.content;
-        total = res.data.totalElements || res.data.content.length;
-        pages = res.data.totalPages || Math.ceil(total / queryParams.limit);
+          if (productsData.length > 0) {
+            allProductsData = [...allProductsData, ...productsData];
+            currentPageNum++;
+            hasMore = allProductsData.length < total;
+          } else {
+            hasMore = false;
+          }
+        } catch (err) {
+          console.error('Failed to fetch page:', currentPageNum, err);
+          hasMore = false;
+        }
       }
 
       // Normalize products data to match new API format
-      const normalizedProducts = productsData.map((p) => {
+      const normalizedProducts = allProductsData.map((p) => {
         return {
           id: p.id,
           name: p.name || '',
@@ -210,28 +211,122 @@ const AdminProductsPage = () => {
         };
       });
 
-      setProducts(normalizedProducts);
-      setFilteredProducts(normalizedProducts);
-      setTotalProducts(total);
-      setTotalPages(pages);
-
-      // Update current page and items per page to sync with filters
-      setCurrentPage(params.page || 1);
-      setItemsPerPage(params.limit || 10);
+      setAllProducts(normalizedProducts);
     } catch (err) {
-      console.error('Failed to fetch products from API:', err);
+      console.error('Failed to fetch all products from API:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Không thể tải danh sách sản phẩm';
       notifyError(errorMessage);
-
-      // Set empty state on error
-      setProducts([]);
-      setFilteredProducts([]);
-      setTotalProducts(0);
-      setTotalPages(1);
+      setAllProducts([]);
     } finally {
       setLoadingProducts(false);
     }
   };
+
+  // Filter products client-side based on filters
+  const applyFilters = (productsToFilter) => {
+    let filtered = [...productsToFilter];
+
+    // Filter by service_type
+    if (filters.service_type) {
+      filtered = filtered.filter(p => p.service_type === filters.service_type);
+    }
+
+    // Filter by spec_type
+    if (filters.spec_type) {
+      filtered = filtered.filter(p => p.spec?.type === filters.spec_type);
+    }
+
+    // Filter by location
+    if (filters.location) {
+      filtered = filtered.filter(p => p.spec?.location === filters.location);
+    }
+
+    // Filter by is_active
+    if (filters.is_active !== '') {
+      const isActive = filters.is_active === 'true';
+      filtered = filtered.filter(p => (p.is_active ?? true) === isActive);
+    }
+
+    // Filter by has_discount
+    if (filters.has_discount !== '') {
+      const hasDiscount = filters.has_discount === 'true';
+      filtered = filtered.filter(p => {
+        if (hasDiscount) {
+          return p.discount !== null && p.discount !== undefined;
+        } else {
+          return !p.discount;
+        }
+      });
+    }
+
+    // Filter by min_price
+    if (filters.min_price) {
+      const minPrice = Number(filters.min_price);
+      filtered = filtered.filter(p => {
+        const price = p.monthlyPrice ?? p.price_monthly ?? 0;
+        return price >= minPrice;
+      });
+    }
+
+    // Filter by max_price
+    if (filters.max_price) {
+      const maxPrice = Number(filters.max_price);
+      filtered = filtered.filter(p => {
+        const price = p.monthlyPrice ?? p.price_monthly ?? 0;
+        return price <= maxPrice;
+      });
+    }
+
+    // Sort
+    if (filters.sort === 'price_asc') {
+      filtered.sort((a, b) => {
+        const priceA = a.monthlyPrice ?? a.price_monthly ?? 0;
+        const priceB = b.monthlyPrice ?? b.price_monthly ?? 0;
+        return priceA - priceB;
+      });
+    } else if (filters.sort === 'price_desc') {
+      filtered.sort((a, b) => {
+        const priceA = a.monthlyPrice ?? a.price_monthly ?? 0;
+        const priceB = b.monthlyPrice ?? b.price_monthly ?? 0;
+        return priceB - priceA;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Update filtered products when filters or allProducts change
+  useEffect(() => {
+    const filtered = applyFilters(allProducts);
+    setProducts(filtered);
+    
+    // Apply search term
+    if (searchTerm.trim() === '') {
+      setFilteredProducts(filtered);
+    } else {
+      const searchFiltered = filtered.filter((product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toString().includes(searchTerm)
+      );
+      setFilteredProducts(searchFiltered);
+    }
+    
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+  }, [filters, allProducts, searchTerm]);
+
+  // Update pagination when filteredProducts change
+  useEffect(() => {
+    const total = filteredProducts.length;
+    const pages = Math.ceil(total / itemsPerPage);
+    setTotalProducts(total);
+    setTotalPages(pages);
+    
+    // Reset to page 1 if current page is out of range
+    if (currentPage > pages && pages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredProducts, itemsPerPage, currentPage]);
 
   // Fetch addons function
   const fetchAddons = async () => {
@@ -269,7 +364,7 @@ const AdminProductsPage = () => {
       }
     };
 
-    fetchProducts();
+    fetchAllProducts();
     fetchDiscountCodes();
     fetchFeatured();
     fetchAddons();
@@ -308,42 +403,20 @@ const AdminProductsPage = () => {
     };
   }, [isModalOpen, isDiscountModalOpen, isFeaturedModalOpen, isFeaturedPreviewOpen, isAddonModalOpen]);
 
-  // Handle filter changes - fetch products with new filters
+  // Handle filter changes - only update filters, filtering happens in useEffect
   const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value, page: 1 }; // Reset to page 1 when filter changes
-    setFilters(newFilters);
-    fetchProducts(newFilters);
+    setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  // Handle search - can be client-side or trigger API call
-  useEffect(() => {
-    // Client-side search for now
-    if (searchTerm.trim() === '') {
-      setFilteredProducts(products);
-    } else {
-      const filtered = products.filter((product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.id.toString().includes(searchTerm)
-      );
-      setFilteredProducts(filtered);
-    }
-    setCurrentPage(1);
-  }, [searchTerm, products]);
-
-  // Handle pagination changes
+  // Handle pagination changes - client-side only
   const handlePageChange = (newPage) => {
-    const newFilters = { ...filters, page: newPage };
-    setFilters(newFilters);
-    fetchProducts(newFilters);
+    setCurrentPage(newPage);
   };
 
   const handleItemsPerPageChange = (newLimit) => {
     const newLimitNum = Number(newLimit);
-    const newFilters = { ...filters, limit: newLimitNum, page: 1 };
-    setFilters(newFilters);
     setItemsPerPage(newLimitNum);
     setCurrentPage(1);
-    fetchProducts(newFilters);
   };
 
   const formatPrice = (price) => {
@@ -358,7 +431,7 @@ const AdminProductsPage = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedProducts(filteredProducts.map((p) => p.id));
+      setSelectedProducts(currentProducts.map((p) => p.id));
     } else {
       setSelectedProducts([]);
     }
@@ -378,8 +451,8 @@ const AdminProductsPage = () => {
     try {
       await productService.remove(id);
       setSelectedProducts((prev) => prev.filter((selectedId) => selectedId !== id));
-      // Refresh products list with current filters
-      await fetchProducts(filters);
+      // Refresh all products from API
+      await fetchAllProducts();
       notifySuccess('Đã xóa sản phẩm thành công');
     } catch (err) {
       console.error('Delete product failed:', err);
@@ -398,8 +471,8 @@ const AdminProductsPage = () => {
       await Promise.all(deletePromises);
 
       setSelectedProducts([]);
-      // Refresh products list with current filters
-      await fetchProducts(filters);
+      // Refresh all products from API
+      await fetchAllProducts();
       notifySuccess(`Đã xóa ${selectedProducts.length} sản phẩm thành công`);
     } catch (err) {
       console.error('Delete products failed:', err);
@@ -459,9 +532,9 @@ const AdminProductsPage = () => {
 
   // Template features for new products
   const getDefaultFeatures = () => [
-    { key: 'cpuCores', value: '' },
-    { key: 'ramGB', value: '' },
-    { key: 'storageGB', value: '' },
+    { key: 'CPU Cores', value: '' },
+    { key: 'RAM', value: '' },
+    { key: 'Storage', value: '' },
   ];
 
   const handleAddNew = () => {
@@ -515,16 +588,16 @@ const AdminProductsPage = () => {
         // Update existing product
         await productService.update(editingProduct.id, productData);
 
-        // Refresh products list with current filters
-        await fetchProducts(filters);
+        // Refresh all products from API
+        await fetchAllProducts();
         notifySuccess('Đã cập nhật sản phẩm thành công');
       } else {
         // Create new product
         const res = await productService.create(productData);
         const newProduct = res.data || productData;
 
-        // Refresh products list with current filters
-        await fetchProducts(filters);
+        // Refresh all products from API
+        await fetchAllProducts();
         notifySuccess('Đã tạo sản phẩm mới thành công');
       }
 
@@ -549,75 +622,16 @@ const AdminProductsPage = () => {
 
   const handleExportExcel = async () => {
     try {
-      notifySuccess('Đang tải tất cả sản phẩm để xuất Excel...');
+      // Use already filtered products (applyFilters results)
+      const productsToExport = products; // This is already filtered by applyFilters
       
-      // Fetch all products without pagination
-      let allProducts = [];
-      let currentPage = 1;
-      let hasMore = true;
-      const fetchLimit = 100; // Fetch 100 per page
-
-      // Fetch all pages
-      while (hasMore) {
-        try {
-          const params = {
-            page: currentPage,
-            limit: fetchLimit,
-          };
-
-          // Copy filters but ignore pagination
-          Object.keys(filters).forEach(key => {
-            if (key !== 'page' && key !== 'limit' && filters[key]) {
-              if (key === 'min_price' || key === 'max_price') {
-                params[key] = Number(filters[key]);
-              } else if (key === 'service_type') {
-                // API uses 'type' instead of 'service_type'
-                params.type = filters[key];
-              } else if (filters[key] !== '') {
-                params[key] = filters[key];
-              }
-            }
-          });
-
-          const res = await productService.listPublic(params);
-          
-          let productsData = [];
-          let total = 0;
-
-          if (Array.isArray(res.data)) {
-            productsData = res.data;
-            total = res.data.length;
-          } else if (res.data?.products && Array.isArray(res.data.products)) {
-            productsData = res.data.products;
-            total = res.data.total || res.data.products.length;
-          } else if (res.data?.data && Array.isArray(res.data.data)) {
-            productsData = res.data.data;
-            total = res.data.total || res.data.data.length;
-          } else if (res.data?.content && Array.isArray(res.data.content)) {
-            productsData = res.data.content;
-            total = res.data.totalElements || res.data.content.length;
-          }
-
-          if (productsData.length > 0) {
-            allProducts = [...allProducts, ...productsData];
-            currentPage++;
-            hasMore = allProducts.length < total;
-          } else {
-            hasMore = false;
-          }
-        } catch (err) {
-          console.error('Failed to fetch page:', currentPage, err);
-          hasMore = false;
-        }
-      }
-
-      if (allProducts.length === 0) {
+      if (productsToExport.length === 0) {
         notifyWarning('Không có sản phẩm nào để xuất');
         return;
       }
 
       // Normalize products data
-      const normalizedProducts = allProducts.map((p) => {
+      const normalizedProducts = productsToExport.map((p) => {
         // Format spec attributes as string
         let specAttributesStr = 'Không có';
         if (p.spec?.attributes && typeof p.spec.attributes === 'object') {
@@ -687,7 +701,7 @@ const AdminProductsPage = () => {
       const fileName = `danh-sach-san-pham-${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      notifySuccess(`Đã xuất thành công ${allProducts.length} sản phẩm ra file Excel!`);
+      notifySuccess(`Đã xuất thành công ${productsToExport.length} sản phẩm ra file Excel!`);
     } catch (err) {
       console.error('Export Excel failed:', err);
       notifyError(err?.response?.data?.message || err?.message || 'Xuất file Excel thất bại');
@@ -1065,13 +1079,10 @@ const AdminProductsPage = () => {
     (discount.description || '').toLowerCase().includes(discountSearchTerm.toLowerCase())
   );
 
-  // Use products directly from API (already paginated), apply client-side search filter if needed
-  const currentProducts = searchTerm.trim()
-    ? filteredProducts.filter((product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.id.toString().includes(searchTerm)
-    )
-    : filteredProducts;
+  // Apply client-side pagination to filteredProducts
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
   return (
     <div className={cx('adminProductsPage')}>
@@ -1163,15 +1174,7 @@ const AdminProductsPage = () => {
           {/* Advanced filters */}
           {showAdvancedFilters && (
             <>
-              <select
-                className={cx('filterSelect')}
-                value={filters.spec_type}
-                onChange={(e) => handleFilterChange('spec_type', e.target.value)}
-              >
-                <option value="">Tất cả loại gói/spec</option>
-                <option value="Package">Package</option>
-                <option value="Usage_Unit">Usage Unit</option>
-              </select>
+             
 
               <select
                 className={cx('filterSelect')}
@@ -1218,8 +1221,6 @@ const AdminProductsPage = () => {
             className={cx('btn', 'btnSecondary')}
             onClick={() => {
               const resetFilters = {
-                page: 1,
-                limit: 20,
                 sort: '',
                 service_type: '',
                 spec_type: '',
@@ -1230,7 +1231,7 @@ const AdminProductsPage = () => {
                 max_price: '',
               };
               setFilters(resetFilters);
-              fetchProducts(resetFilters);
+              setSearchTerm('');
             }}
           >
             <i className="fas fa-redo"></i> Xóa bộ lọc
@@ -1254,7 +1255,7 @@ const AdminProductsPage = () => {
                 <th>
                   <input
                     type="checkbox"
-                    checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                    checked={currentProducts.length > 0 && currentProducts.every(p => selectedProducts.includes(p.id))}
                     onChange={handleSelectAll}
                   />
                 </th>

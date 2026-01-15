@@ -48,7 +48,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                               {canStart && (
                                     <VMActionButton
                                           icon="fa-play"
-                                          label="Start"
+                                          label="Khởi động"
                                           variant="success"
                                           size="sm"
                                           onAction={() => handleVMAction(instanceService.startVM, 'Khởi động VM')}
@@ -57,7 +57,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                               {canStop && (
                                     <VMActionButton
                                           icon="fa-stop"
-                                          label="Stop"
+                                          label="Dừng"
                                           variant="warning"
                                           size="sm"
                                           onAction={() => handleVMAction(instanceService.stopVM, 'Dừng VM')}
@@ -67,7 +67,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                               {canRestart && (
                                     <VMActionButton
                                           icon="fa-redo"
-                                          label="Restart"
+                                          label="Khởi động lại"
                                           variant="info"
                                           size="sm"
                                           onAction={() => handleVMAction(instanceService.restartVM, 'Khởi động lại VM')}
@@ -87,16 +87,16 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                                     </Card.Header>
                                     <Card.Body className="info-card-body">
                                           <div className="info-row">
-                                                <span className="info-label">Instance ID:</span>
+                                                <span className="info-label">ID Instance:</span>
                                                 <code className="info-value">{instance.instance_id}</code>
                                           </div>
                                           <div className="info-row">
-                                                <span className="info-label">VM ID:</span>
+                                                <span className="info-label">ID VM:</span>
                                                 <span className="info-value">VM-{instance.external_vm_id}</span>
                                           </div>
 
                                           <div className="info-row">
-                                                <span className="info-label">Status:</span>
+                                                <span className="info-label">Trạng thái:</span>
                                                 <span className="info-value">{instance.status}</span>
                                           </div>
                                     </Card.Body>
@@ -126,28 +126,7 @@ const InstanceSummary = ({ instance, onRefresh }) => {
                               </Card>
                         </Col>
 
-                        <Col md={12}>
-                              <Card className="info-card">
-                                    <Card.Header className="info-card-header">
-                                          <i className="fas fa-network-wired me-2"></i>
-                                          Kết nối
-                                    </Card.Header>
-                                    <Card.Body className="info-card-body">
-                                          <div className="info-row">
-                                                <span className="info-label">VNC Port:</span>
-                                                <span className="info-value">{instance.vnc_port || 'N/A'}</span>
-                                          </div>
-                                          <div className="info-row">
-                                                <span className="info-label">Product ID:</span>
-                                                <code className="info-value">{instance.product_id}</code>
-                                          </div>
-                                          <div className="info-row">
-                                                <span className="info-label">User ID:</span>
-                                                <code className="info-value">{instance.user_id}</code>
-                                          </div>
-                                    </Card.Body>
-                              </Card>
-                        </Col>
+                       
                   </Row>
 
                   {/* Monitoring Section */}

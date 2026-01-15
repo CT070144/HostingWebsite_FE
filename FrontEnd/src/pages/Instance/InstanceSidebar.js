@@ -41,7 +41,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                   <div className="sidebar-header-client">
                         <h6 className="sidebar-title">
                               <i className="fas fa-server me-2"></i>
-                              Server View
+                              Xem Server
                         </h6>
                   </div>
 
@@ -51,7 +51,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                                     <i className="fas fa-search"></i>
                               </InputGroup.Text>
                               <Form.Control
-                                    placeholder="Search..."
+                                    placeholder="Tìm kiếm..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="search-input"
@@ -62,7 +62,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                   <div className="sidebar-tree">
                         {loading ? (
                               <div className="tree-loading">
-                                    <i className="fas fa-spinner fa-spin"></i> Loading...
+                                    <i className="fas fa-spinner fa-spin"></i> Đang tải...
                               </div>
                         ) : (
                               <>
@@ -74,7 +74,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                                           >
                                                 <i className={`fas fa-chevron-${isRootExpanded ? 'down' : 'right'} me-2`}></i>
                                                 <i className="fas fa-database me-2"></i>
-                                                <span>VPS List</span>
+                                                <span>Danh sách VPS</span>
                                                 <span className="node-count ms-2">({filteredList.length})</span>
                                           </div>
 
@@ -96,7 +96,7 @@ const InstanceSidebar = ({ instances, selectedInstance, onSelectInstance, loadin
                                                             ))
                                                       ) : (
                                                             <div className="text-muted small p-2 ms-4">
-                                                                  No instances found
+                                                                  Không tìm thấy instance
                                                             </div>
                                                       )}
                                                 </div>

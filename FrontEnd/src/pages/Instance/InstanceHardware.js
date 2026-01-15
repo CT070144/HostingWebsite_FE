@@ -32,7 +32,7 @@ const InstanceHardware = ({ instance }) => {
                   <div className="hardware-header">
                         <h5 className="mb-0">
                               <i className="fas fa-microchip me-2"></i>
-                              Hardware Configuration
+                              Cấu hình phần cứng
                         </h5>
                   </div>
 
@@ -41,7 +41,7 @@ const InstanceHardware = ({ instance }) => {
                               <Card className="hw-card">
                                     <Card.Header className="hw-card-header">
                                           <i className="fas fa-microchip me-2"></i>
-                                          Processor (CPU)
+                                          Bộ xử lý (CPU)
                                     </Card.Header>
                                     <Card.Body className="hw-card-body">
                                           <div className="hw-row">
@@ -53,11 +53,11 @@ const InstanceHardware = ({ instance }) => {
                                                 <span className="hw-value">{hardwareData.cpu.cores}</span>
                                           </div>
                                           <div className="hw-row">
-                                                <span className="hw-label">Type:</span>
+                                                <span className="hw-label">Loại:</span>
                                                 <span className="hw-value">{hardwareData.cpu.type}</span>
                                           </div>
                                           <div className="hw-row">
-                                                <span className="hw-label">CPU Units:</span>
+                                                <span className="hw-label">Đơn vị CPU:</span>
                                                 <span className="hw-value">{hardwareData.cpu.units}</span>
                                           </div>
                                     </Card.Body>
@@ -68,11 +68,11 @@ const InstanceHardware = ({ instance }) => {
                               <Card className="hw-card">
                                     <Card.Header className="hw-card-header">
                                           <i className="fas fa-memory me-2"></i>
-                                          Memory (RAM)
+                                          Bộ nhớ (RAM)
                                     </Card.Header>
                                     <Card.Body className="hw-card-body">
                                           <div className="hw-row">
-                                                <span className="hw-label">Size:</span>
+                                                <span className="hw-label">Dung lượng:</span>
                                                 <span className="hw-value">{hardwareData.memory.size}</span>
                                           </div>
                                           <div className="hw-row">
@@ -87,15 +87,15 @@ const InstanceHardware = ({ instance }) => {
                               <Card className="hw-card">
                                     <Card.Header className="hw-card-header">
                                           <i className="fas fa-hdd me-2"></i>
-                                          Hard Disk
+                                          Ổ cứng
                                     </Card.Header>
                                     <Card.Body className="hw-card-body">
                                           <div className="hw-row">
-                                                <span className="hw-label">Size:</span>
+                                                <span className="hw-label">Dung lượng:</span>
                                                 <span className="hw-value">{hardwareData.disk.size}</span>
                                           </div>
                                           <div className="hw-row">
-                                                <span className="hw-label">Bus/Device:</span>
+                                                <span className="hw-label">Bus/Thiết bị:</span>
                                                 <span className="hw-value">{hardwareData.disk.interface}</span>
                                           </div>
                                           <div className="hw-row">
@@ -110,11 +110,11 @@ const InstanceHardware = ({ instance }) => {
                               <Card className="hw-card">
                                     <Card.Header className="hw-card-header">
                                           <i className="fas fa-network-wired me-2"></i>
-                                          Network Device
+                                          Thiết bị mạng
                                     </Card.Header>
                                     <Card.Body className="hw-card-body">
                                           <div className="hw-row">
-                                                <span className="hw-label">Model:</span>
+                                                <span className="hw-label">Mô hình:</span>
                                                 <span className="hw-value">{hardwareData.network.model}</span>
                                           </div>
                                           <div className="hw-row">
@@ -122,7 +122,7 @@ const InstanceHardware = ({ instance }) => {
                                                 <span className="hw-value">{hardwareData.network.bridge}</span>
                                           </div>
                                           <div className="hw-row">
-                                                <span className="hw-label">Firewall:</span>
+                                                <span className="hw-label">Tường lửa:</span>
                                                 <span className="hw-value">{hardwareData.network.firewall}</span>
                                           </div>
                                     </Card.Body>

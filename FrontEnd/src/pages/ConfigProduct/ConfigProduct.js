@@ -762,17 +762,7 @@ const ConfigProduct = () => {
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
-                      <Col md={12}>
-                        <FormCheck
-                          type="checkbox"
-                          id="control-panel"
-                          label="Control Panel (cPanel/Plesk)"
-                          checked={config.control_panel}
-                          onChange={(e) =>
-                            setConfig(prev => ({ ...prev, control_panel: e.target.checked }))
-                          }
-                        />
-                      </Col>
+                    
                     </Row>
                   )}
                 </Card.Body>
@@ -906,6 +896,7 @@ const ConfigProduct = () => {
 
                       if (editingCartItemId) {
                         // Update existing cart item
+                        console.log(cartData);
                         await cartService.updateItem(editingCartItemId, cartData);
                         notifySuccess('Đã cập nhật sản phẩm trong giỏ hàng!');
                       } else {

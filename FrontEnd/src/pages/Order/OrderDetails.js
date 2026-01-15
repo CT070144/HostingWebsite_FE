@@ -20,14 +20,15 @@ const getStatusBadge = (status) => {
 };
 
 // Map order status to step index for Steps component
-const getStatusStep = (status, sshSuccess) => {
-  if (sshSuccess) return 3;
+const getStatusStep = (status) => {
+  console.log('hehehe' + status);
   const s = String(status || '').toUpperCase();
   if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'DELIVERED') return 3;
   if (s === 'CONFIRMED' || s === 'PROCESSING') return 2;
   if (s === 'PAID') return 1;
   if (s === 'PENDING') return 0;
-  return 3;
+  
+  return 0;
 };
 
 const getCycleLabel = (cycle) => {
@@ -645,11 +646,15 @@ const OrderDetails = () => {
 
   const badge = getStatusBadge(order?.status);
   const currentStep = useMemo(() => {
-    if (sshSuccess) return 3; // Step 4: Success
+    // Check if all waiting instances have been configured successfully
+    const waitingVMs = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
+    const allConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
+    
+    if (allConfigured) return 3; // Step 4: Success
     if (vmReady) return 2;
     if (pollingForVM) return 1;
-    return getStatusStep(order?.status, sshSuccess);
-  }, [order?.status, pollingForVM, vmReady, sshSuccess]);
+    return getStatusStep(order?.status);
+  }, [order?.status, pollingForVM, vmReady, sshSuccess, instances]);
 
   const steps = [
     {
@@ -742,7 +747,7 @@ const OrderDetails = () => {
               ) : payment ? (
                 <Row>
                   <Col md={6}>
-                    <div className="text-center">
+                    <div className="text-center payment-qr-section">
                       <h5>Quét mã QR để thanh toán</h5>
 
                       {payment.qr_content ? (
@@ -786,20 +791,35 @@ const OrderDetails = () => {
                       </div>
                     </div>
                   </Col>
-                  <Col md={6}>
-                    <Alert variant="info">
-                      <h6>Huong dan thanh toan:</h6>
-                      <ol className="mb-0">
-                        <li>Mo ung dung ngan hang cua ban</li>
-                        <li>Quet ma QR ben trai</li>
-                        <li>Xac nhan thanh toan</li>
-                        <li>Cho he thong xac nhan (tu dong)</li>
+                  <Col md={4}>
+                    <div className="payment-guide-card">
+                      <h6 className="payment-guide-title">
+                        <i className="fas fa-info-circle me-2"></i>
+                        Hướng dẫn thanh toán
+                      </h6>
+                      <ol className="payment-guide-steps">
+                        <li className="payment-guide-step">
+                          <i className="fas fa-mobile-alt payment-step-icon"></i>
+                          <span>Mở ứng dụng ngân hàng của bạn</span>
+                        </li>
+                        <li className="payment-guide-step">
+                          <i className="fas fa-qrcode payment-step-icon"></i>
+                          <span>Quét mã QR bên trái</span>
+                        </li>
+                        <li className="payment-guide-step">
+                          <i className="fas fa-check-circle payment-step-icon"></i>
+                          <span>Xác nhận thanh toán</span>
+                        </li>
+                        <li className="payment-guide-step">
+                          <i className="fas fa-clock payment-step-icon"></i>
+                          <span>Chờ hệ thống xác nhận (tự động)</span>
+                        </li>
                       </ol>
-                    </Alert>
+                    </div>
 
                     <div className="d-grid gap-2 mt-3">
                       <Button
-                        variant="outline-danger"
+                        variant="danger"
                         onClick={handleCancelPayment}
                         disabled={cancelling}
                       >
@@ -811,7 +831,7 @@ const OrderDetails = () => {
                         ) : (
                           <>
                             <i className="fa-solid fa-times me-2"></i>
-                            Huy thanh toan
+                            Hủy đơn hàng
                           </>
                         )}
                       </Button>
@@ -861,7 +881,7 @@ const OrderDetails = () => {
                           {isProvisioning && (
                             <Badge bg="warning" className="vm-status-badge">
                               <Spinner animation="border" size="sm" className="me-1" />
-                              Dang clone...
+                              Đang tạo máy ảo ...
                             </Badge>
                           )}
                           {isReady && (
@@ -887,7 +907,7 @@ const OrderDetails = () => {
                             ></div>
                           </div>
                           <small className="text-muted d-block mt-2">
-                            Dang sao chep he dieu hanh va cau hinh... (co the mat 1-2 phut)
+                           Đang tạo máy ảo... (có thể mất 1-2 phút)
                           </small>
                         </div>
                       )}
@@ -901,8 +921,8 @@ const OrderDetails = () => {
                 <Card.Body>
                   <div className="text-center py-4">
                     <Spinner animation="border" className="mb-3" />
-                    <h5>Dang khoi tao...</h5>
-                    <p className="text-muted">Dang chuan bi tao may ao. Vui long cho...</p>
+                    <h5>Đang khởi tạo...</h5>
+                    <p className="text-muted">Đang chuẩn bị tạo máy ảo. Vui lòng chờ...</p>
                   </div>
                 </Card.Body>
               </Card>
@@ -923,7 +943,7 @@ const OrderDetails = () => {
               <h4 className="mb-3">Cau hinh SSH Key cho cac may ao</h4>
               <Alert variant="success">
                 <i className="fa-solid fa-check-circle me-2"></i>
-                May ao da duoc tao thanh cong! Vui long dien thong tin SSH cho {waitingInstances.length} may ao ben duoi.
+                Máy ảo đã được tạo thành công! Vui lòng điền thông tin SSH cho {waitingInstances.length} máy ảo bên dưới.
               </Alert>
 
               {/* Display all VM forms */}
@@ -1022,7 +1042,7 @@ const OrderDetails = () => {
                             disabled={success}
                           />
                           <Form.Text className="text-muted">
-                            SSH key phai bat dau voi ssh-rsa, ssh-ed25519, hoac ecdsa-sha2-*
+                            SSH key phải bắt đầu với ssh-rsa, ssh-ed25519, hoặc ecdsa-sha2-*
                           </Form.Text>
                         </Form.Group>
 
@@ -1033,7 +1053,7 @@ const OrderDetails = () => {
                               {keys.private_key}
                             </pre>
                             <small className="text-danger d-block mt-2">
-                              ⚠️ Day la lan duy nhat ban co the xem private key. Vui long luu lai ngay!
+                              ⚠️ Đây là lần duy nhất bạn có thể xem private key. Vui lòng lưu lại ngay!
                             </small>
                           </Alert>
                         )}
@@ -1142,7 +1162,7 @@ const OrderDetails = () => {
                         ) : (
                           <>
                             <i className="fa-solid fa-check-circle me-2"></i>
-                            Hoan tat tat ca cau hinh ({waitingInstances.length} VMs)
+                            Hoàn tất cấu hình ({waitingInstances.length} máy ảo)
                           </>
                         )}
                       </Button>
@@ -1157,7 +1177,7 @@ const OrderDetails = () => {
                             ></div>
                           </div>
                           <small className="text-muted d-block mt-2">
-                            Vui long doi, dang cau hinh SSH va khoi dong cac may ao...
+                            Vui lòng đợi, đang cấu hình SSH và khởi động các máy ảo...
                           </small>
                         </div>
                       )}

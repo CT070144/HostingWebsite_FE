@@ -176,8 +176,7 @@
 }
 
 .stat-box {
-
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: 0 10px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
   text-align: center;

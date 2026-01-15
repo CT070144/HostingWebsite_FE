@@ -19,10 +19,10 @@ const InstanceConfig = ({ instance }) => {
                   icon: 'fa-info-circle',
 
                   items: [
-                        { label: 'Instance ID', value: instance.instance_id, code: true },
-                        { label: 'VM ID', value: `VM-${instance.external_vm_id}` },
-                        { label: 'Product ID', value: instance.product_id, code: true },
-                        { label: 'Order ID', value: instance.order_id || 'N/A', code: !!instance.order_id },
+                        { label: 'ID Instance', value: instance.instance_id, code: true },
+                        { label: 'ID VM', value: `VM-${instance.external_vm_id}` },
+                        { label: 'ID Sản phẩm', value: instance.product_id, code: true },
+                        { label: 'ID Đơn hàng', value: instance.order_id || 'N/A', code: !!instance.order_id },
                   ]
             },
             {
@@ -40,8 +40,8 @@ const InstanceConfig = ({ instance }) => {
                   icon: 'fa-network-wired',
 
                   items: [
-                        { label: 'VNC Port', value: instance.vnc_port || 'N/A' },
-                        { label: 'User ID', value: instance.user_id, code: true },
+                        { label: 'Cổng VNC', value: instance.vnc_port || 'N/A' },
+                        { label: 'ID Người dùng', value: instance.user_id, code: true },
                   ]
             }
       ];

@@ -204,6 +204,7 @@ const AdminBannerPage = () => {
 
     try {
       if (editingBanner) {
+        console.log(fd);
         await bannerService.update(editingBanner.slide_id || editingBanner.id, fd);
       } else {
         await bannerService.create(fd);

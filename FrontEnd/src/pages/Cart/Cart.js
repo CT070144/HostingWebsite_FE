@@ -30,7 +30,7 @@ const Cart = () => {
   const [accountType, setAccountType] = useState('new'); // 'existing' or 'new'
   const [customerType, setCustomerType] = useState('individual'); // 'individual' or 'organization'
   const [language, setLanguage] = useState('vi');
-  const [paymentMethod, setPaymentMethod] = useState('vietcombank');
+  const [paymentMethod, setPaymentMethod] = useState('payos');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [selectedCartItemMap, setSelectedCartItemMap] = useState({}); // { [cartItemId]: true/false }
   const [showMissingInfoAlert, setShowMissingInfoAlert] = useState(false);
@@ -826,114 +826,14 @@ const Cart = () => {
                   <Col md={6}>
                     <FormCheck
                       type="radio"
-                      id="vietcombank"
+                      id="payos"
                       name="paymentMethod"
-                      label="Vietcombank (VCB)"
-                      checked={paymentMethod === 'vietcombank'}
-                      onChange={() => setPaymentMethod('vietcombank')}
+                      label="Pay OS"
+                      checked={paymentMethod === 'payos'}
+                      onChange={() => setPaymentMethod('payos')}
                       className="payment-method-option"
                     />
-                    <FormCheck
-                      type="radio"
-                      id="paypal"
-                      name="paymentMethod"
-                      label="PayPal"
-                      checked={paymentMethod === 'paypal'}
-                      onChange={() => setPaymentMethod('paypal')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="credit-card-usd"
-                      name="paymentMethod"
-                      label="Credit Card USD (Visa, Master)"
-                      checked={paymentMethod === 'credit-card-usd'}
-                      onChange={() => setPaymentMethod('credit-card-usd')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="credit-card-vnd"
-                      name="paymentMethod"
-                      label="Credit Card VND (Visa, Master, American, JCB)"
-                      checked={paymentMethod === 'credit-card-vnd'}
-                      onChange={() => setPaymentMethod('credit-card-vnd')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="online-banking"
-                      name="paymentMethod"
-                      label="Online Banking (ATM, Bank)"
-                      checked={paymentMethod === 'online-banking'}
-                      onChange={() => setPaymentMethod('online-banking')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="cash"
-                      name="paymentMethod"
-                      label="Tiền mặt (Cash)"
-                      checked={paymentMethod === 'cash'}
-                      onChange={() => setPaymentMethod('cash')}
-                      className="payment-method-option"
-                    />
-                  </Col>
-                  <Col md={6}>
-                    <FormCheck
-                      type="radio"
-                      id="payoneer"
-                      name="paymentMethod"
-                      label="Payoneer"
-                      checked={paymentMethod === 'payoneer'}
-                      onChange={() => setPaymentMethod('payoneer')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="qr-payment"
-                      name="paymentMethod"
-                      label="QR Payment (ZaloPay, VNPay, mPay, QR Bank...)"
-                      checked={paymentMethod === 'qr-payment'}
-                      onChange={() => setPaymentMethod('qr-payment')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="momo"
-                      name="paymentMethod"
-                      label="MoMo"
-                      checked={paymentMethod === 'momo'}
-                      onChange={() => setPaymentMethod('momo')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="shopeepay"
-                      name="paymentMethod"
-                      label="ShopeePay"
-                      checked={paymentMethod === 'shopeepay'}
-                      onChange={() => setPaymentMethod('shopeepay')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="usdt"
-                      name="paymentMethod"
-                      label="USDT"
-                      checked={paymentMethod === 'usdt'}
-                      onChange={() => setPaymentMethod('usdt')}
-                      className="payment-method-option"
-                    />
-                    <FormCheck
-                      type="radio"
-                      id="usdc"
-                      name="paymentMethod"
-                      label="USDC"
-                      checked={paymentMethod === 'usdc'}
-                      onChange={() => setPaymentMethod('usdc')}
-                      className="payment-method-option"
-                    />
+                    
                   </Col>
                 </Row>
               </Card.Body>

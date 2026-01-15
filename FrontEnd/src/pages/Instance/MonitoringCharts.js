@@ -28,7 +28,7 @@ ChartJS.register(
 
 const MonitoringCharts = ({ instanceId }) => {
       const [metrics, setMetrics] = useState([]);
-      const [timeframe, setTimeframe] = useState('hour');
+      const [timeframe, setTimeframe] = useState('live');
       const [loading, setLoading] = useState(false);
       const [isLive, setIsLive] = useState(false);
 
@@ -237,25 +237,14 @@ const MonitoringCharts = ({ instanceId }) => {
                   <div className="d-flex justify-content-between align-items-center mb-4">
                         <h5 className="mb-0 fw-bold text-dark d-flex align-items-center">
                               <i className="fas fa-chart-area me-2 text-primary"></i>
-                              Metrics
+                             
                               {isLive ? (
-                                    <span className="live-badge ms-3">LIVE</span>
+                                    <span className="live-badge ms-3">TRỰC TIẾP</span>
                               ) : (
                                     loading && <Spinner animation="border" size="sm" className="ms-2 text-muted" />
                               )}
                         </h5>
-                        <div className="bg-light p-1 rounded-3 d-inline-block">
-                              {['live', 'hour', 'day', 'week'].map(t => (
-                                    <button
-                                          key={t}
-                                          className={`btn btn-sm ${timeframe === t ? 'btn-white shadow-sm fw-bold text-primary' : 'text-muted'}`}
-                                          style={{ minWidth: '60px', borderRadius: '6px', border: 'none', background: timeframe === t ? '#fff' : 'transparent' }}
-                                          onClick={() => setTimeframe(t)}
-                                    >
-                                          {t === 'live' ? '⚡ Live' : t.charAt(0).toUpperCase() + t.slice(1)}
-                                    </button>
-                              ))}
-                        </div>
+                        
                   </div>
 
                   <Row className="g-4">
@@ -268,7 +257,7 @@ const MonitoringCharts = ({ instanceId }) => {
                                                       <i className="fas fa-microchip"></i>
                                                 </div>
                                                 <div>
-                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>CPU Usage</h6>
+                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>Sử dụng CPU</h6>
                                                       <h4 className="fw-bold mb-0 text-dark">
                                                             {metrics.length > 0 ? (metrics[metrics.length - 1].cpu * 100).toFixed(1) : 0}%
                                                       </h4>
@@ -303,7 +292,7 @@ const MonitoringCharts = ({ instanceId }) => {
                                                       <i className="fas fa-memory"></i>
                                                 </div>
                                                 <div>
-                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>RAM Usage</h6>
+                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>Sử dụng RAM</h6>
                                                       <h4 className="fw-bold mb-0 text-dark">
                                                             {metrics.length > 0 ? formatBytes(metrics[metrics.length - 1].memused) : '0 B'}
                                                             {totalMemory > 0 && <span className="text-secondary ms-1 fs-6 fw-normal">/ {formatBytes(totalMemory)}</span>}
@@ -339,7 +328,7 @@ const MonitoringCharts = ({ instanceId }) => {
                                                       <i className="fas fa-network-wired"></i>
                                                 </div>
                                                 <div>
-                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>Net I/O</h6>
+                                                      <h6 className="text-secondary mb-0 text-uppercase small fw-bold" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>I/O Mạng</h6>
                                                       <h4 className="fw-bold mb-0 text-dark">
                                                             {metrics.length > 0 ? formatBytes(metrics[metrics.length - 1].netin) + '/s' : '0 B/s'}
                                                       </h4>
