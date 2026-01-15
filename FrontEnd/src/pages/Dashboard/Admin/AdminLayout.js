@@ -26,7 +26,6 @@ const AdminLayout = () => {
     subMenu: [
      
       { key: 'banner', label: 'Banner', path: '/admin/configuration/banner' },
-      { key: 'hosting-banner', label: 'Banner Hosting', path: '/admin/configuration/hosting-banner' },
       { key: 'faqs', label: 'FAQs', path: '/admin/configuration/faqs' },
       { key: 'service-features', label: 'Dịch vụ', path: '/admin/configuration/service-features' },
     ],

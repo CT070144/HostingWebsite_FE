@@ -90,7 +90,7 @@ const AdminOrdersPage = () => {
     const fetchStatistics = async () => {
       try {
         setLoadingStats(true);
-        const response = await orderService.getStatistics(dateFilter);
+        const response = await orderService.getStatistics(dateFilter, statusFilter);
         const data = response.data;
 
         // Transform revenue_by_date array to object for charts
@@ -127,7 +127,7 @@ const AdminOrdersPage = () => {
     };
 
     fetchStatistics();
-  }, [dateFilter]); // Refresh stats when date filter changes
+  }, [dateFilter, statusFilter]); // Refresh stats when date filter or status filter changes
 
   // Fetch orders for table (with pagination)
   useEffect(() => {
@@ -312,7 +312,7 @@ const AdminOrdersPage = () => {
 
       // Refresh statistics from backend
       try {
-        const statsResponse = await orderService.getStatistics(dateFilter);
+        const statsResponse = await orderService.getStatistics(dateFilter, statusFilter);
         const statsData = statsResponse.data;
 
         // Transform revenue_by_date array to object
@@ -385,34 +385,7 @@ const AdminOrdersPage = () => {
     <div className="dashboard-overview">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="page-title">Quản lý đơn hàng</h1>
-        <div className="d-flex gap-2">
-          <Form.Select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            style={{ width: 'auto' }}
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="PENDING">PENDING</option>
-            <option value="PAID">PAID</option>
-            <option value="SUCCESS">SUCCESS</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="CANCELLED">CANCELLED</option>
-            <option value="FAILED">FAILED</option>
-          </Form.Select>
-          <Form.Select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            style={{ width: 'auto' }}
-          >
-            <option value="all">Tất cả thời gian</option>
-            <option value="today">Hôm nay</option>
-            <option value="week">7 ngày qua</option>
-            <option value="month">30 ngày qua</option>
-          </Form.Select>
-        </div>
+        
       </div>
 
       {error && (
@@ -523,8 +496,34 @@ const AdminOrdersPage = () => {
       {/* Orders Table */}
       <Card>
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex order-list-header align-items-center mb-3">
             <h5 className="mb-0">Danh sách đơn hàng</h5>
+            <div className="d-flex gap-2 filter-list-header">
+          <Form.Select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            style={{ width: '200px' }}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="PENDING">Chờ thanh toán</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="CANCELLED">Đã hủy</option>
+            <option value="FAILED">Thất bại</option>
+          </Form.Select>
+          <Form.Select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            style={{ width: '200px' }}
+          >
+            <option value="all">Tất cả thời gian</option>
+            <option value="today">Hôm nay</option>
+            <option value="week">7 ngày qua</option>
+            <option value="month">30 ngày qua</option>
+          </Form.Select>
+        </div>
             <div className="text-muted">
               Tổng: {total} đơn hàng
             </div>
@@ -544,12 +543,12 @@ const AdminOrdersPage = () => {
                 <thead>
                   <tr>
                     <th>Order ID</th>
-                    <th>User ID</th>
+                    <th>Tên khách hàng</th>
                     <th>Trạng thái</th>
                     <th>Tổng tiền</th>
                     <th>Số sản phẩm</th>
+                    <th>Xem chi tiết</th>
                     <th>Ngày tạo</th>
-                    <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -563,7 +562,7 @@ const AdminOrdersPage = () => {
                           <code className="text-primary">{order.order_id.substring(0, 8)}...</code>
                         </td>
                         <td>
-                          <code>{order.user_id?.substring(0, 8)}...</code>
+                          <code className="user-name">{order.user_name}</code>
                         </td>
                         <td>
                           <Badge bg={badge.variant}>{badge.label}</Badge>
@@ -572,32 +571,13 @@ const AdminOrdersPage = () => {
                           <strong>{formatPrice(order.total_amount)} {order.currency || 'VND'}</strong>
                         </td>
                         <td>{itemCount}</td>
-                        <td>{formatDate(order.created_at)}</td>
                         <td>
-                          <div className="d-flex gap-2">
-                            <Form.Select
-                              size="sm"
-                              value={order.status}
-                              onChange={(e) => handleStatusChange(order.order_id, e.target.value)}
-                              style={{ width: 'auto', minWidth: '120px' }}
-                            >
-                              <option value="PENDING">PENDING</option>
-                              <option value="PAID">PAID</option>
-                              <option value="SUCCESS">SUCCESS</option>
-                              <option value="COMPLETED">COMPLETED</option>
-                              <option value="CANCELLED">CANCELLED</option>
-                              <option value="FAILED">FAILED</option>
-                            </Form.Select>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => handleViewOrder(order.order_id)}
-                              title="Xem chi tiết đơn hàng"
-                            >
-                              <i className="fas fa-eye"></i>
-                            </Button>
-                          </div>
+                          <Button variant="outline-primary" size="sm" onClick={() => handleViewOrder(order.order_id)}>
+                            <i className="fas fa-eye"></i>
+                          </Button>
                         </td>
+                        <td>{formatDate(order.created_at)}</td>
+                       
                       </tr>
                     );
                   })}
@@ -689,8 +669,8 @@ const AdminOrdersPage = () => {
                   </Col>
                   <Col md={6}>
                     <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">User ID:</span>
-                      <code>{selectedOrder.user_id}</code>
+                      <span className="text-muted">Khách hàng:</span>
+                      <code>{selectedOrder.user_name}</code>
                     </div>
                   </Col>
                   <Col md={6}>
@@ -748,7 +728,7 @@ const AdminOrdersPage = () => {
                               <td>
                                 <strong>{item.product_name || item.product_id || 'Sản phẩm'}</strong>
                               </td>
-                              <td>{getCycleLabel(item.billing_cycle)}</td>
+                              <td>{getCycleLabel(item.config.billing_cycle)}</td>
                               <td className="text-end">{item.quantity || 1}</td>
                               <td className="text-end">
                                 {formatPrice(item.unit_price)} {selectedOrder.currency || 'VND'}

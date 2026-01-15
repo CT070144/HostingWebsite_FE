@@ -5,7 +5,13 @@ export const orderService = {
   // Admin endpoints
   list: (params = {}) => api.get('/admin/orders', { params }),
   getById: (id) => api.get(`/admin/orders/${id}`),
-  getStatistics: (dateFilter = 'all') => api.get('/admin/orders/statistics', { params: { date_filter: dateFilter } }),
+  getStatistics: (dateFilter = 'all', statusFilter = 'all') => {
+    const params = { date_filter: dateFilter };
+    if (statusFilter && statusFilter !== 'all') {
+      params.status = statusFilter;
+    }
+    return api.get('/admin/orders/statistics', { params });
+  },
   updateStatus: (id, status) => api.patch(`/admin/orders/${id}/status`, { status }),
 
   // User endpoints

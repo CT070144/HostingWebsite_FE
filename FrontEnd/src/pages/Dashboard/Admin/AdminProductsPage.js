@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames/bind';
+import * as XLSX from 'xlsx';
 import styles from './AdminProductsPage.module.css';
 import hostingData from '../../../mockData/hosting.json';
 import homeMockData from '../../../mockData/home.json';
@@ -20,12 +21,12 @@ const AdminProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loadingProducts, setLoadingProducts] = useState(true);
   // Filter states
   const [filters, setFilters] = useState({
     page: 1,
-    limit: 20,
+    limit: 10,
     sort: '',
     service_type: '',
     spec_type: '',
@@ -152,12 +153,13 @@ const AdminProductsPage = () => {
       const params = filterParams || filters;
       const queryParams = {
         page: params.page || 1,
-        limit: params.limit || 20,
+        limit: params.limit || 10,
       };
 
       // Add optional filters
       if (params.sort) queryParams.sort = params.sort;
-      if (params.service_type) queryParams.service_type = params.service_type;
+      // API uses 'type' instead of 'service_type'
+      if (params.service_type) queryParams.type = params.service_type;
       if (params.spec_type) queryParams.spec_type = params.spec_type;
       if (params.location) queryParams.location = params.location;
       if (params.is_active !== '') queryParams.is_active = params.is_active;
@@ -213,10 +215,9 @@ const AdminProductsPage = () => {
       setTotalProducts(total);
       setTotalPages(pages);
 
-      // Update current page if using API pagination
-      if (filterParams) {
-        setCurrentPage(params.page || 1);
-      }
+      // Update current page and items per page to sync with filters
+      setCurrentPage(params.page || 1);
+      setItemsPerPage(params.limit || 10);
     } catch (err) {
       console.error('Failed to fetch products from API:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Không thể tải danh sách sản phẩm';
@@ -337,9 +338,11 @@ const AdminProductsPage = () => {
   };
 
   const handleItemsPerPageChange = (newLimit) => {
-    const newFilters = { ...filters, limit: Number(newLimit), page: 1 };
+    const newLimitNum = Number(newLimit);
+    const newFilters = { ...filters, limit: newLimitNum, page: 1 };
     setFilters(newFilters);
-    setItemsPerPage(Number(newLimit));
+    setItemsPerPage(newLimitNum);
+    setCurrentPage(1);
     fetchProducts(newFilters);
   };
 
@@ -542,6 +545,153 @@ const AdminProductsPage = () => {
     link.href = url;
     link.download = 'products.json';
     link.click();
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      notifySuccess('Đang tải tất cả sản phẩm để xuất Excel...');
+      
+      // Fetch all products without pagination
+      let allProducts = [];
+      let currentPage = 1;
+      let hasMore = true;
+      const fetchLimit = 100; // Fetch 100 per page
+
+      // Fetch all pages
+      while (hasMore) {
+        try {
+          const params = {
+            page: currentPage,
+            limit: fetchLimit,
+          };
+
+          // Copy filters but ignore pagination
+          Object.keys(filters).forEach(key => {
+            if (key !== 'page' && key !== 'limit' && filters[key]) {
+              if (key === 'min_price' || key === 'max_price') {
+                params[key] = Number(filters[key]);
+              } else if (key === 'service_type') {
+                // API uses 'type' instead of 'service_type'
+                params.type = filters[key];
+              } else if (filters[key] !== '') {
+                params[key] = filters[key];
+              }
+            }
+          });
+
+          const res = await productService.listPublic(params);
+          
+          let productsData = [];
+          let total = 0;
+
+          if (Array.isArray(res.data)) {
+            productsData = res.data;
+            total = res.data.length;
+          } else if (res.data?.products && Array.isArray(res.data.products)) {
+            productsData = res.data.products;
+            total = res.data.total || res.data.products.length;
+          } else if (res.data?.data && Array.isArray(res.data.data)) {
+            productsData = res.data.data;
+            total = res.data.total || res.data.data.length;
+          } else if (res.data?.content && Array.isArray(res.data.content)) {
+            productsData = res.data.content;
+            total = res.data.totalElements || res.data.content.length;
+          }
+
+          if (productsData.length > 0) {
+            allProducts = [...allProducts, ...productsData];
+            currentPage++;
+            hasMore = allProducts.length < total;
+          } else {
+            hasMore = false;
+          }
+        } catch (err) {
+          console.error('Failed to fetch page:', currentPage, err);
+          hasMore = false;
+        }
+      }
+
+      if (allProducts.length === 0) {
+        notifyWarning('Không có sản phẩm nào để xuất');
+        return;
+      }
+
+      // Normalize products data
+      const normalizedProducts = allProducts.map((p) => {
+        // Format spec attributes as string
+        let specAttributesStr = 'Không có';
+        if (p.spec?.attributes && typeof p.spec.attributes === 'object') {
+          const attrs = Object.entries(p.spec.attributes)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('; ');
+          if (attrs) specAttributesStr = attrs;
+        }
+
+        // Format discount info
+        let discountStr = 'Không có';
+        if (p.discount) {
+          discountStr = `${p.discount.code || ''} - ${p.discount.discount_percent || 0}%`;
+          if (p.discount.max_cycle) {
+            discountStr += ` (Tối đa ${p.discount.max_cycle} tháng)`;
+          }
+          if (p.discount.description) {
+            discountStr += ` - ${p.discount.description}`;
+          }
+        }
+
+        return {
+          'ID': p.id || '',
+          'Tên sản phẩm': p.name || '',
+          'Loại dịch vụ': p.service_type || p.type || '',
+          'Giá tháng (VNĐ)': p.monthlyPrice ?? p.price_monthly ?? 0,
+          'Giá năm (VNĐ)': p.yearlyPrice ?? p.price_annually ?? 0,
+          'Nổi bật': p.hot ?? p.is_hot ? 'Có' : 'Không',
+          'Trạng thái': p.is_active !== false ? 'Hoạt động' : 'Ngừng hoạt động',
+          'Mã giảm giá': discountStr,
+          'Tên gói/Spec': p.spec?.spec_name || '',
+          'Loại gói': p.spec?.type || '',
+          'Location': p.spec?.location || '',
+          'Thuộc tính kỹ thuật': specAttributesStr,
+          'Ngày tạo': p.created_at || p.createdAt ? new Date(p.created_at || p.createdAt).toLocaleDateString('vi-VN') : '',
+          'Ngày cập nhật': p.updated_at || p.updatedAt ? new Date(p.updated_at || p.updatedAt).toLocaleDateString('vi-VN') : '',
+        };
+      });
+
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(normalizedProducts);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 10 }, // ID
+        { wch: 30 }, // Tên sản phẩm
+        { wch: 15 }, // Loại dịch vụ
+        { wch: 15 }, // Giá tháng
+        { wch: 15 }, // Giá năm
+        { wch: 10 }, // Nổi bật
+        { wch: 15 }, // Trạng thái
+        { wch: 40 }, // Mã giảm giá
+        { wch: 20 }, // Tên gói/Spec
+        { wch: 15 }, // Loại gói
+        { wch: 15 }, // Location
+        { wch: 50 }, // Thuộc tính kỹ thuật
+        { wch: 12 }, // Ngày tạo
+        { wch: 12 }, // Ngày cập nhật
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Danh sách sản phẩm');
+
+      // Generate Excel file
+      const fileName = `danh-sach-san-pham-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      notifySuccess(`Đã xuất thành công ${allProducts.length} sản phẩm ra file Excel!`);
+    } catch (err) {
+      console.error('Export Excel failed:', err);
+      notifyError(err?.response?.data?.message || err?.message || 'Xuất file Excel thất bại');
+    }
   };
 
   const handleImport = () => {
@@ -929,9 +1079,11 @@ const AdminProductsPage = () => {
       <div className={cx('pageHeader')}>
         <h1 className={cx('pageTitle')}>Danh sách sản phẩm</h1>
         <div className={cx('headerActions')}>
-          <button className={cx('btn', 'btnSecondary')} onClick={handleExport}>
-            <i className="fas fa-file-export"></i> Xuất file
-          </button>
+          <div className="btn-group">
+            <button className={cx('btn', 'btnSecondary')} onClick={handleExportExcel} title="Xuất file Excel">
+              <i className="fas fa-file-excel"></i> Xuất Excel
+            </button>
+          </div>
 
           <button className={cx('btn', 'btnSecondary')} onClick={handleOpenFeaturedModal}>
             <i className="fas fa-star"></i> Sản phẩm nổi bật
@@ -1315,6 +1467,7 @@ const AdminProductsPage = () => {
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(e.target.value)}
             >
+              <option value={5}>5</option>
               <option value={10}>10</option>
               <option value={20}>20</option>
               <option value={50}>50</option>
