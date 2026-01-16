@@ -27,7 +27,7 @@ const getStatusStep = (status) => {
   if (s === 'CONFIRMED' || s === 'PROCESSING') return 2;
   if (s === 'PAID') return 1;
   if (s === 'PENDING') return 0;
-  
+
   return 0;
 };
 
@@ -646,14 +646,19 @@ const OrderDetails = () => {
 
   const badge = getStatusBadge(order?.status);
   const currentStep = useMemo(() => {
+    // Check if we have any successful SSH configurations
+    const hasSuccessfulConfigs = Object.keys(sshSuccess).length > 0 && Object.values(sshSuccess).some(v => v === true);
+
     // Check if all waiting instances have been configured successfully
     const waitingVMs = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
-    const allConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
-    
-    if (allConfigured) return 3; // Step 4: Success
-    if (vmReady) return 2;
-    if (pollingForVM) return 1;
-    return getStatusStep(order?.status);
+    const allWaitingConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
+
+    // If we have successful configs and either all waiting VMs are configured OR there are no more waiting VMs
+    // (backend might have updated status), then we're done
+    if (hasSuccessfulConfigs && (allWaitingConfigured || waitingVMs.length === 0)) return 3; // Step 4: Success
+    if (vmReady || waitingVMs.length > 0) return 2; // Step 3: SSH Config
+    if (pollingForVM) return 1; // Step 2: Payment complete, waiting for VM
+    return getStatusStep(order?.status); // Step 1: Initial states
   }, [order?.status, pollingForVM, vmReady, sshSuccess, instances]);
 
   const steps = [
@@ -907,7 +912,7 @@ const OrderDetails = () => {
                             ></div>
                           </div>
                           <small className="text-muted d-block mt-2">
-                           Đang tạo máy ảo... (có thể mất 1-2 phút)
+                            Đang tạo máy ảo... (có thể mất 1-2 phút)
                           </small>
                         </div>
                       )}
@@ -1191,10 +1196,16 @@ const OrderDetails = () => {
 
         {/* Step 4: Success Message */}
         {(() => {
-          const waitingVMs = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
-          const allConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
+          // Check if we have any successful SSH configurations
+          const hasSuccessfulConfigs = Object.keys(sshSuccess).length > 0 && Object.values(sshSuccess).some(v => v === true);
 
-          return allConfigured && (
+          const waitingVMs = instances.filter(inst => inst.status === 'WAIT_FOR_USER_UPDATE_SSH_KEY');
+          const allWaitingConfigured = waitingVMs.length > 0 && waitingVMs.every(inst => sshSuccess[inst.instance_id]);
+
+          // Show success when we have configs and either all waiting are configured OR no more waiting VMs
+          const shouldShowSuccess = hasSuccessfulConfigs && (allWaitingConfigured || waitingVMs.length === 0);
+
+          return shouldShowSuccess && (
             <Card className="mb-4 text-center border-success">
               <Card.Body className="py-5">
                 <div className="mb-3 text-success">
@@ -1207,11 +1218,13 @@ const OrderDetails = () => {
                 <div className="d-flex justify-content-center gap-3">
                   <Button
                     variant="primary"
+                    size="lg"
                     onClick={() => navigate('/instances')}
+                    type="button"
                   >
                     <i className="fas fa-server me-2"></i> Quản lý VPS
                   </Button>
-                  <Button variant="outline-primary" onClick={() => navigate('/')}>
+                  <Button variant="outline-primary" onClick={() => navigate('/')} type="button">
                     <i className="fas fa-home me-2"></i> Trang chủ
                   </Button>
                 </div>
