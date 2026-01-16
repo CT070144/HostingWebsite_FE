@@ -309,6 +309,24 @@ const InstanceRenewalPage = () => {
                                                                   <span className="info-label">Chu kỳ:</span>
                                                                   <span className="info-value">{cycles.find(c => c.value === billingCycle)?.label}</span>
                                                             </div>
+                                                            {(() => {
+                                                                  // Tính tiền hàng và tiền thuế từ tổng số tiền (giả định tổng đã bao gồm thuế)
+                                                                  const totalAmount = payment.amount || 0;
+                                                                  const subtotal = Math.round(totalAmount / 1.08);
+                                                                  const tax = totalAmount - subtotal; // Đảm bảo tổng chính xác
+                                                                  return (
+                                                                        <>
+                                                                              <div className="info-item">
+                                                                                    <span className="info-label">Phí gia hạn:</span>
+                                                                                    <span className="info-value">{formatPrice(subtotal)} VND</span>
+                                                                              </div>
+                                                                              <div className="info-item">
+                                                                                    <span className="info-label">Thuế (8%):</span>
+                                                                                    <span className="info-value">{formatPrice(tax)} VND</span>
+                                                                              </div>
+                                                                        </>
+                                                                  );
+                                                            })()}
                                                             <div className="info-item mb-0">
                                                                   <span className="info-label">Số tiền:</span>
                                                                   <span className="info-value text-primary fw-bold">{formatPrice(payment.amount)} VND</span>
