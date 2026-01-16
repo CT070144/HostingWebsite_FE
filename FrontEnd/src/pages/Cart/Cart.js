@@ -166,6 +166,14 @@ const Cart = () => {
     }, 0);
   }, [selectedItems]);
 
+  const taxAmount = useMemo(() => {
+    return Math.round(selectedTotal * 0.08);
+  }, [selectedTotal]);
+
+  const finalTotal = useMemo(() => {
+    return selectedTotal + taxAmount;
+  }, [selectedTotal, taxAmount]);
+
   const missingPaymentInfoFields = useMemo(() => {
     const missing = [];
     const fullName = (formData.fullName || '').trim();
@@ -872,9 +880,16 @@ const Cart = () => {
 
                 <hr className="my-4" />
 
+                <div className="mb-2">
+                  <div className="d-flex justify-content-between">
+                    <div>Thuế (ước tính 8%)</div>
+                    <div>{formatPrice(taxAmount)} VND</div>
+                  </div>
+                </div>
+
                 <div className="order-total">
                   <div className="order-total-label">Tổng thanh toán</div>
-                  <div className="order-total-price">{formatPrice(selectedTotal)} VND</div>
+                  <div className="order-total-price">{formatPrice(finalTotal)} VND</div>
                 </div>
 
                 {showMissingInfoAlert && missingPaymentInfoFields.length > 0 && (
